@@ -40,10 +40,9 @@ body {
 /*#19664A*/
 /*#181F32*/
 
-/* If you have content inside .job-portal, you may need to adjust the z-index */
 .job-portal > * {
   position: relative;
-  z-index: 2; /* Ensure content is above the overlay */
+  z-index: 2; 
 }
 
 
@@ -170,6 +169,7 @@ body {
     border-bottom-right-radius: 0%;
   }
 }
+
 
 .hero-content {
   max-width: 1200px;
