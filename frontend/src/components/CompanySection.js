@@ -24,7 +24,7 @@ const CompanySection = () => {
         </div>
       </div>
 
-      <div className="company-stats-container">
+      {/* <div className="company-stats-container">
         <div className="stat-item">
           <h2 className="stat-number">12k+</h2>
           <h3 className="stat-title">Clients worldwide</h3>
@@ -48,7 +48,7 @@ const CompanySection = () => {
             At eu lobortis pretium tincidunt amet lacus ut aenean aliquet. Blandit a massa elementum...
           </p>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

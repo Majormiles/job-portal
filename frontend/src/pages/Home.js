@@ -5,7 +5,6 @@ import RecentJobs from '../components/RecentJobs';
 import JobCategories from '../components/JobCategories';
 import CompanySection from '../components/CompanySection';
 import CallToAction from '../components/CallToAction';
-import Testimonials from '../components/Testimonials';
 import FaqDropdown from '../components/FaqDropdown';
 import Footer from '../components/Footer';
 
@@ -19,7 +18,7 @@ const HomePage = () => {
       <JobCategories />
       <CompanySection />
       <CallToAction />
-      <Testimonials />
+      {/* <Testimonials /> */}
       <FaqDropdown />
       <Footer />
 
