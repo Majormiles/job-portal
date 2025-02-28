@@ -1,0 +1,103 @@
+/* BrowseCategories.css */
+
+.browse-categories-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 25px 25px;
+  margin-top: 150px;
+  border-bottom-right-radius: 50px;
+  border-top-left-radius: 50px;
+  background-color: white;
+  border: 1px solid #edecec;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  transition: box-shadow 0.0001s ease;
+}
+
+.browse-categories-container:hover {
+  box-shadow: 0 0 10px rgba(0, 235, 141, 0.185), 
+              0 0 25px rgba(0, 235, 141, 0.12);
+}
+
+.browse-title {
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  color: #111827;
+  margin: 0 0 16px 0;
+}
+
+.browse-description {
+  text-align: center;
+  color: #4B5563;
+  max-width: 700px;
+  margin: 0 auto 40px auto;
+  line-height: 1.6;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 20px;
+}
+
+.category-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.category-icon {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+}
+
+.category-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.job-count {
+  background-color: #ECFDF5;
+  color: #0D9488;
+  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  display: inline-block;
+}
+
+/* Responsive adjustments */
+@media (min-width: 576px) {
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 992px) {
+  .categories-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
