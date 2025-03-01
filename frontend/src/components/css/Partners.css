@@ -1,140 +1,55 @@
-/* Partners.css - Isolated styling for the partners carousel */
-
 .partners-carousel-container {
-    width: 100%;
-    background-color: white;
-    margin: 0 auto;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-  
-  .partners-heading {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #333;
-  }
-  
-  .partners-carousel {
-    max-width: 1200px;
-    margin: 0 auto;
-    background-color: white;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 20px;
-  }
-  
-  .partners-viewport {
-    display: flex;
-    overflow: hidden;
-    width: 100%;
-    position: relative;
-  }
-  
-  .partners-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-width: 100%;
-    padding: 20px 0;
-  }
-  
-  .partner-logo-container {
-    flex: 0 0 calc(20% - 20px); /* 20% for 5 logos per row with spacing */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 15px;
-    margin: 0 10px;
-    border-radius: 8px;
-    background-color: #fff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
-  }
-  
-  .partner-logo-container:hover {
-    transform: scale(1.05);
-  }
-  
-  .partner-logo {
-    max-width: 100%;
-    max-height: 60px;
-    object-fit: contain;
-  }
-  
-  .carousel-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 20px;
-  }
-  
-  .carousel-control {
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    font-size: 18px;
-    margin: 0 15px;
-    transition: background-color 0.3s ease;
-  }
-  
-  .carousel-control:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .carousel-indicators {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-  }
-  
-  .carousel-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: #ddd;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .carousel-indicator.active {
-    background-color: #666;
-  }
-  
-  /* Responsive styles */
-  @media (max-width: 1024px) {
-    .partners-carousel-container {
-     display: none;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .partner-logo-container {
-      flex: 0 0 calc(33.333% - 16px); /* 3 per row on medium screens */
-    }
-    
-    .partners-row {
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .partner-logo-container {
-      flex: 0 0 calc(50% - 16px); /* 2 per row on small screens */
-      margin: 8px;
-    }
-    
-    .carousel-control {
-      width: 36px;
-      height: 36px;
-      font-size: 16px;
-      margin: 0 10px;
-    }
-  }
+ width: 100%;
+  background-color: white;
+  margin: 0 auto;
+  padding: 10px 20%;
+  overflow: hidden;
+}
 
+.partners-heading {
+  text-align: center;
+  margin-bottom: 40px;
+  font-size: 2rem;
+}
+
+.partners-carousel {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.partners-track {
+  display: flex;
+  width: fit-content;
+}
+
+.partner-logo-container {
+  flex: 0 0 20%; 
+  padding: 0 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 160px;
+}
+
+.partner-logo {
+  max-width: 100%;
+  max-height: 80px;
+  background-color: white;
+  padding: 8px;
+  border-radius: 15%;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .partner-logo-container {
+    flex: 0 0 33.33%;
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .partner-logo-container {
+    flex: 0 0 50%;
+  }
+}

@@ -1,70 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import './css/Partners.css';
 
+import adobeLogo from '../assets/logo/adobe.png';
+import asanaLogo from '../assets/logo/asana.jpeg';
+import linearLogo from '../assets/logo/linear.png';
+import spotifyLogo from '../assets/logo/spotify.png';
+import slackLogo from '../assets/logo/slack.png';
 
 const Partners = ({ partners }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const logosPerRow = 5;
-
-  // Sample partner data if none is provided
+  const [position, setPosition] = useState(0);
+  
   const defaultPartners = [
-    { id: 1, name: 'Microsoft', logo: '../assets/logo/adobe.png' },
-    { id: 2, name: 'Google', logo: '../assets/logo/asana.jpeg' },
-    { id: 3, name: 'Asana', logo: '../assets/logo/asana.jpeg' },
-    { id: 4, name: 'Adobe', logo: '../assets/logo/asana.jpeg' },
-    { id: 5, name: 'Spotify', logo: '../assets/logo/asana.jpeg' },
-    { id: 6, name: 'Partner 6', logo: '../assets/logo/asana.jpeg' },
-    { id: 7, name: 'Partner 7', logo: '../assets/logo/asana.jpeg' },
-    { id: 8, name: 'Partner 8', logo: '../assets/logo/asana.jpeg' },
-    { id: 9, name: 'Partner 9', logo: '../assets/logo/asana.jpeg' },
-    { id: 10, name: 'Partner 10', logo: '../assets/logo/asana.jpeg' },
-    { id: 11, name: 'Partner 5', logo: '../assets/logo/asana.jpeg' },
-    { id: 12, name: 'Partner 6', logo: '../assets/logo/asana.jpeg' },
-    { id: 13, name: 'Partner 7', logo: '../assets/logo/asana.jpeg' },
-    { id: 14, name: 'Partner 8', logo: '../assets/logo/asana.jpeg' },
-    { id: 15, name: 'Partner 9', logo: '../assets/logo/asana.jpeg' },
-    { id: 16, name: 'Partner 10', logo: '../assets/logo/asana.jpeg' },
+    { id: 1, name: 'Adobe', logo: adobeLogo },
+    { id: 2, name: 'Asana', logo: asanaLogo },
+    { id: 3, name: 'Linear', logo: linearLogo },
+    { id: 4, name: 'Spotify', logo: spotifyLogo },
+    { id: 5, name: 'Slack', logo: slackLogo },
+    
   ];
 
   const partnerData = partners || defaultPartners;
-  const totalSlides = Math.ceil(partnerData.length / logosPerRow);
+  
+  const displayPartners = [...partnerData, ...partnerData];
 
-  // Auto-scroll functionality
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % totalSlides);
-    }, 7000);
-
-    return () => clearInterval(interval);
-  }, [totalSlides]);
-
-  const handlePrevious = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + totalSlides) % totalSlides);
-  };
-
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % totalSlides);
-  };
-
-  const renderPartnerLogos = () => {
-    const rows = [];
+    const speed = 0.03; // pixels per frame
+    let animationId;
+    let lastTimestamp = 0;
     
-    for (let i = 0; i < totalSlides; i++) {
-      const startIdx = i * logosPerRow;
-      const endIdx = Math.min(startIdx + logosPerRow, partnerData.length);
-      const rowPartners = partnerData.slice(startIdx, endIdx);
+    const animate = (timestamp) => {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const elapsed = timestamp - lastTimestamp;
       
-      rows.push(
+      setPosition(prevPosition => {
+        const newPosition = prevPosition + speed * (elapsed / 16);
+        
+        if (newPosition >= 100) {
+          return 0;
+        }
+        return newPosition;
+      });
+      
+      lastTimestamp = timestamp;
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    animationId = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="partners-carousel-container">
+  
+      <div className="partners-carousel">
         <div 
-          key={`row-${i}`} 
-          className="partners-row"
+          className="partners-track"
           style={{ 
-            transform: `translateX(-${currentIndex * 100}%)`,
-            transition: 'transform 0.5s ease-in-out'
+            transform: `translateX(-${position}%)`,
+            transition: 'transform 0.05s linear'
           }}
         >
-          {rowPartners.map((partner) => (
-            <div key={partner.id} className="partner-logo-container">
+          {displayPartners.map((partner, index) => (
+            <div key={`${partner.id}-${index}`} className="partner-logo-container">
               <img 
                 src={partner.logo} 
                 alt={`${partner.name} logo`} 
@@ -73,24 +75,7 @@ const Partners = ({ partners }) => {
             </div>
           ))}
         </div>
-      );
-    }
-    
-    return rows;
-  };
-
-  return (
-    <div className="partners-carousel-container">
-      <h2 className="partners-heading">Our Business Partners</h2>
-      
-      <div className="partners-carousel">
-        <div className="partners-viewport">
-          {renderPartnerLogos()}
-        </div>
-        
-      
       </div>
-
     </div>
   );
 };

@@ -1,7 +1,7 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import HomepageHeader from './components/HomepageHeader';
+import Header from './components/Header-one';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
 import About from './pages/About';
@@ -20,7 +20,7 @@ const AppContent = () => {
   
   return (
     <div className="App">
-      {isHomePage && <HomepageHeader />}
+      {isHomePage && <Header />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/jobs" element={<Jobs />} />
