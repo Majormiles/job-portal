@@ -1,7 +1,8 @@
 .partners-carousel-container {
- width: 100%;
+  width: 100%;
   background-color: white;
   margin: 0 auto;
+  color: black;
   padding: 10px 20%;
   overflow: hidden;
 }
@@ -24,32 +25,49 @@
 }
 
 .partner-logo-container {
-  flex: 0 0 20%; 
-  padding: 0 20px;
+  flex: 0 0 auto; /* Changed from percentage-based to auto */
+  padding: 0 10px; /* Reduced horizontal padding from 20px to 10px */
+  color: black;
   display: flex;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  min-width: 160px;
+  min-width: 160px; /* Reduced min-width */
+  gap: 10px; /* Gap between logo and name */
 }
 
 .partner-logo {
-  max-width: 100%;
-  max-height: 80px;
+  max-width: 60px; /* Slightly reduced logo size */
+  max-height: 50px;
   background-color: white;
   padding: 8px;
   border-radius: 15%;
   object-fit: contain;
 }
 
+.partner-name {
+  font-weight: 500;
+  font-size: 0.9rem; /* Slightly smaller font size */
+}
+
 @media (max-width: 768px) {
   .partner-logo-container {
-    flex: 0 0 33.33%;
-    display: none;
+    min-width: 150px;
+    padding: 0 8px; /* Further reduced padding for medium screens */
+  }
+  
+  .partners-carousel-container {
+    padding: 10px 10%;
   }
 }
 
 @media (max-width: 480px) {
   .partner-logo-container {
-    flex: 0 0 50%;
+    min-width: 130px;
+    padding: 0 5px; /* Minimal padding for mobile */
+  }
+  
+  .partners-carousel-container {
+    padding: 10px 5%;
   }
 }

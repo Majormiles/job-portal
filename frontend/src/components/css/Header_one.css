@@ -51,6 +51,7 @@ body {
   padding: 15px 0;
   color: white;
   width: 100%;
+  position: relative;
 }
 
 .header-container {
@@ -80,6 +81,19 @@ body {
   width: 24px;
   height: 24px;
   margin-right: 10px;
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+  background-color: rgba(42, 157, 143, 0.95);
+  width: 100%;
+}
+
+.mobile-menu.show {
+  max-height: 300px;
 }
 
 .main-nav .nav-links {
@@ -210,7 +224,7 @@ body {
 
 .search-input input {
   width: 100%;
-  padding: 5px 10px;
+  padding: 15px 20px;
   border: none;
   outline: none;
   font-size: 0.9rem;
@@ -272,14 +286,16 @@ body {
 
 /* Stats Section Styles */
 .stats-section {
-  max-width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .stats-container {
-  max-width: 100%;
-  margin: 0 auto;
   display: flex;
-  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
 }
 
 .stat-item {
@@ -316,10 +332,14 @@ body {
   opacity: 0.9;
 }
 
-@media (max-width: 992px) {
-  .stats-section {
-    display: none;
-  }
+/* Desktop auth buttons (always visible on desktop) */
+.desktop-auth {
+  display: flex;
+}
+
+/* Mobile auth buttons (only visible in mobile menu) */
+.mobile-auth {
+  display: none;
 }
 
 /* Responsive Styles */
@@ -344,56 +364,40 @@ body {
 }
 
 @media (max-width: 768px) {
-  .header-container {
-    flex-wrap: wrap;
+  /* Hide desktop auth buttons */
+  .desktop-auth {
+    display: none;
   }
-
+  
+  /* Show mobile menu toggle */
   .hamburger-menu {
     display: flex;
-    order: 3;
   }
-
-  .main-nav {
-    order: 4;
-    width: 100%;
-    display: none;
-  }
-
-  .auth-buttons {
-    order: 5;
-    width: 100%;
-    justify-content: center;
-    margin-top: 15px;
-    display: none;
-  }
-
-  .show-mobile-menu {
-    display: flex;
+  
+  /* Nav layout for mobile */
+  .main-nav .nav-links {
     flex-direction: column;
     align-items: center;
-    margin-top: 15px;
+    padding: 15px 0;
   }
-
-  .main-nav.show-mobile-menu .nav-links {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .main-nav.show-mobile-menu .nav-links li {
+  
+  .main-nav .nav-links li {
     margin: 10px 0;
   }
-
+  
+  /* Show auth buttons in mobile menu */
+  .mobile-auth {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 15px;
+  }
+  
   .hero-content h1 {
     font-size: 2.2rem;
   }
 
   .hero-content p {
     font-size: 1rem;
-  }
-
-  .stats-container {
-    flex-direction: column;
-    align-items: center;
   }
 }
 
@@ -416,5 +420,10 @@ body {
   .search-button {
     padding: 12px;
     font-size: 0.9rem;
+  }
+  
+  .stats-container {
+    flex-direction: column;
+    gap: 15px;
   }
 }

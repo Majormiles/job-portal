@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './css/HomepageHeader.css';
+import './css/Header_one.css';
 
 const JobPortal = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -23,6 +23,13 @@ const JobPortal = () => {
               </div>
               <span>Job Portal</span>
             </Link>
+            
+          </div>
+
+
+          <div className="auth-buttons desktop-auth">
+            <Link to="/login" className="login-btn">Login</Link>
+            <Link to="/register" className="register-btn">Register</Link>
           </div>
 
           <div className="hamburger-menu" onClick={toggleMobileMenu}>
@@ -30,8 +37,10 @@ const JobPortal = () => {
             <span></span>
             <span></span>
           </div>
-
-          <nav className={`main-nav ${showMobileMenu ? 'show-mobile-menu' : ''}`}>
+        </div>
+        
+        <div className={`mobile-menu ${showMobileMenu ? 'show' : ''}`}>
+          <nav className="main-nav">
             <ul className="nav-links">
               <li><Link to="/" className="active">Home</Link></li>
               <li><Link to="/jobs">Jobs</Link></li>
@@ -40,7 +49,7 @@ const JobPortal = () => {
             </ul>
           </nav>
 
-          <div className={`auth-buttons ${showMobileMenu ? 'show-mobile-menu' : ''}`}>
+          <div className="auth-buttons mobile-auth">
             <Link to="/login" className="login-btn">Login</Link>
             <Link to="/register" className="register-btn">Register</Link>
           </div>

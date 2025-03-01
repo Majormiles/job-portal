@@ -16,13 +16,13 @@ const Partners = ({ partners }) => {
     { id: 3, name: 'Linear', logo: linearLogo },
     { id: 4, name: 'Spotify', logo: spotifyLogo },
     { id: 5, name: 'Slack', logo: slackLogo },
-    
   ];
-
+  
   const partnerData = partners || defaultPartners;
   
+  // Duplicate partners for continuous scrolling effect
   const displayPartners = [...partnerData, ...partnerData];
-
+  
   useEffect(() => {
     const speed = 0.03; // pixels per frame
     let animationId;
@@ -53,14 +53,13 @@ const Partners = ({ partners }) => {
       }
     };
   }, []);
-
+  
   return (
     <div className="partners-carousel-container">
-  
       <div className="partners-carousel">
-        <div 
+        <div
           className="partners-track"
-          style={{ 
+          style={{
             transform: `translateX(-${position}%)`,
             transition: 'transform 0.05s linear'
           }}
@@ -70,8 +69,9 @@ const Partners = ({ partners }) => {
               <img 
                 src={partner.logo} 
                 alt={`${partner.name} logo`} 
-                className="partner-logo" 
+                className="partner-logo"
               />
+              <span className="partner-name">{partner.name}</span>
             </div>
           ))}
         </div>
