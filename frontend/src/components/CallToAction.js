@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import './css/CallToAction.css';
 import { Link } from 'react-router-dom';
-import jobsearchImage from '../assets/images/woman.png';
+import jobsearchImage from '../assets/images/business-woman.jpg';
 
 const CallToAction = () => {
   const imageContainerRef = useRef(null);

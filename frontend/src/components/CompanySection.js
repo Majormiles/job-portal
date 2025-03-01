@@ -1,5 +1,6 @@
 import React from 'react';
 import jobsearchImage from '../assets/images/jobsearch.png';
+import { Link, NavLink } from 'react-router-dom';
 import './css/CompanySection.css'; // We'll define this CSS file separately
 
 const CompanySection = () => {
@@ -10,15 +11,14 @@ const CompanySection = () => {
           <img src={jobsearchImage} alt="Company hero" className="hero-image" />
         </div>
         <div className="hero-content">
-          <h1 className="hero-title_company">Good Life Begins With A Good Company</h1>
+          <h2 className="hero-title_company">Good Life Begins With A Good Company</h2>
           <p className="hero-description">
             Success and fulfillment begin with the right workplace. A positive and supportive company culture fosters growth, innovation, and a sense of purpose.
             At our organization, we believe in providing an environment where talent thrives, ideas flourish, and individuals are empowered to reach their full potential.
           </p>
-          <div className="hero-buttons">
-            <button className="btn btn-primary">Search Job</button>
-            <a href="#" className="btn-link">Learn more</a>
-          </div>
+          {/* <div className="hero-buttons">
+            <Link to='/jobs'><button className="btn btn-primary">Search Job</button></Link>
+          </div> */}
         </div>
       </div>
 
@@ -47,6 +47,8 @@ const CompanySection = () => {
           </p>
         </div>
       </div> */}
+
+
     </div>
   );
 };

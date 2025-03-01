@@ -35,9 +35,8 @@ const Footer = () => {
             <ul className="footer-links">
               <li><a href="#">About Us</a></li>
               <li><a href="#">Our Team</a></li>
-              <li><a href="#">Partners</a></li>
-              <li><a href="#">For Candidates</a></li>
-              <li><a href="#">For Employers</a></li>
+              <li><a href="#">Companies</a></li>
+              <li><a href="#">For Job seekers</a></li>
             </ul>
           </div>
 
@@ -78,7 +77,7 @@ const Footer = () => {
         {/* Footer Bottom */}
         <div className="footer-bottom">
           <div className="copyright">
-            <p>© Copyright Job Portal 2024. Designed by Figma.guru</p>
+            <p>All right reserved &copy; Major Myles</p>
           </div>
           <div className="legal-links">
             <a href="#">Privacy Policy</a>

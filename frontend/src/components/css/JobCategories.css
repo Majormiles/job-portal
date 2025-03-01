@@ -1,12 +1,11 @@
 /* BrowseCategories.css */
 
 .browse-categories-container {
-  max-width: 1000px;
+  width: 100%;
   margin: 0 auto;
-  padding: 25px 25px;
-  margin-top: 150px;
-  border-bottom-right-radius: 50px;
-  border-top-left-radius: 50px;
+  padding: 25px 80px;
+  padding-bottom: 150px;
+  margin-top: 300px;
   background-color: white;
   border: 1px solid #edecec;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -14,10 +13,6 @@
   position: sticky;
 }
 
-.browse-categories-container:hover {
-  box-shadow: 0 0 10px rgba(0, 235, 141, 0.185), 
-              0 0 25px rgba(0, 235, 141, 0.12);
-}
 
 .browse-title {
   font-size: 32px;
