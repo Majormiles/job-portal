@@ -2,22 +2,26 @@
 
 /* Container styles */
 .recent-jobs-container {
-  margin: 0 auto 0; 
-  padding: 16px ;
-  padding-bottom: 50px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 40px 20px;
   background-color: white;
-  align-items: center;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  position: relative;
+  z-index: 20;
+  box-sizing: border-box;
 }
 
-.recent-jobs-container {
+.recent-jobs-header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
-
 
 .recent-jobs-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #111827;
   margin: 0;
@@ -27,28 +31,43 @@
   color: #0D9488;
   text-decoration: none;
   font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 .view-all-link:hover {
-  color: #0F766E;
+  background-color: rgba(13, 148, 136, 0.1);
 }
 
 .recent-jobs-description {
   color: #4B5563;
   margin-bottom: 32px;
-  
+  max-width: 700px;
 }
 
-/* Job card styles */
+/* Job list container */
 .job-list {
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
+/* Job card styles */
+.job-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #f3f4f6;
+}
 
 .job-card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 /* Job card header */
@@ -56,7 +75,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .job-logo-title {
@@ -66,18 +85,18 @@
 }
 
 .job-logo {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 4px;
+  flex-shrink: 0;
 }
 
 .job-logo-inner {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   background-color: white;
   border-radius: 50%;
 }
@@ -94,10 +113,10 @@
 }
 
 .job-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #111827;
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
 }
 
 .job-company {
@@ -111,18 +130,25 @@
   border: none;
   color: #9CA3AF;
   cursor: pointer;
-  padding: 0;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .bookmark-button:hover {
   color: #4B5563;
+  background-color: #f3f4f6;
 }
 
 /* Job details grid */
 .job-details-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 16px;
+  align-items: center;
 }
 
 .job-detail {
@@ -130,26 +156,29 @@
   align-items: center;
   color: #4B5563;
   font-size: 14px;
+  padding: 6px 0;
 }
 
 .job-detail-icon {
-  margin-right: 8px;
+  margin-right: 10px;
   color: #9CA3AF;
 }
 
 .job-button-container {
-  margin-top: 8px;
+  margin-top: 16px;
 }
 
 .job-details-button {
   background-color: #0D9488;
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 4px 16px;
+  border-radius: 6px;
+  padding: 10px 20px;
   font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  width: 100%;
+  font-weight: 500;
 }
 
 .job-details-button:hover {
@@ -157,19 +186,46 @@
 }
 
 /* Responsive styles */
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .job-details-grid {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-  
-  .job-location {
-    grid-column: span 2;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 16px;
+    column-gap: 24px;
   }
   
   .job-button-container {
+    grid-column: span 2;
+    margin-top: 8px;
+  }
+}
+
+@media (min-width: 768px) {
+  .job-details-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .job-button-container {
+    grid-column: span 1;
+    justify-self: end;
     margin-top: 0;
-    display: flex;
-    justify-content: flex-end;
+  }
+  
+  .job-details-button {
+    width: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .job-details-grid {
+    grid-template-columns: repeat(4, 1fr) auto;
     align-items: center;
+  }
+  
+  .job-location {
+    grid-column: span 1;
+  }
+  
+  .job-button-container {
+    justify-self: end;
   }
 }

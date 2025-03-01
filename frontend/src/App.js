@@ -10,6 +10,7 @@ import Companies from './pages/Companies';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import PostJob from './pages/PostJob';
+import PricingPlan from './pages/PricingPlan';
 import JobDetail from './pages/JobDetails';
 import './App.css';
 
@@ -31,6 +32,7 @@ const AppContent = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/post-job" element={<PostJob />} />
         <Route path="/job-detail" element={<JobDetail />} />
+        <Route path="/pricing-plan" element={<PricingPlan />} />
       </Routes>
     </div>
   );

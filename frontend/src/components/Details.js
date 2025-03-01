@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './css/DetailPage.css';
 
 const JobDetailPage = () => {
@@ -53,9 +54,12 @@ const JobDetailPage = () => {
           </div>
         </div>
 
-        <div className="apply-button-container">
-          <button className="apply-button">Apply Job</button>
-        </div>
+        <Link to='/pricing-plan'>
+          <div className="apply-button-container">
+            <button className="apply-button">Apply Job</button>
+          </div>
+
+        </Link>
 
         <section className="job-description">
           <h2>Job Description</h2>
