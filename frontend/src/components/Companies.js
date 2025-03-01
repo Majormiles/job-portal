@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './css/Partners.css';
+import './css/Companies.css';
 
 import adobeLogo from '../assets/logo/adobe.png';
 import asanaLogo from '../assets/logo/asana.jpeg';

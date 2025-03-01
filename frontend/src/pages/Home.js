@@ -1,6 +1,6 @@
 // src/pages/HomePage.js
 import React from 'react';
-import Partner from '../components/Partner';
+import Companies from '../components/Companies';
 import RecentJobs from '../components/RecentJobs';
 import JobCategories from '../components/JobCategories';
 import CompanySection from '../components/CompanySection';
@@ -13,7 +13,7 @@ const HomePage = () => {
   
   return (
     <>
-      <Partner />
+      <Companies />
       <RecentJobs />
       <JobCategories />
       <CompanySection />
