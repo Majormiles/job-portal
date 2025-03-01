@@ -1,8 +1,35 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import './css/CallToAction.css';
-import { Link, NavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import jobsearchImage from '../assets/images/woman.png';
+
 const CallToAction = () => {
+  const imageContainerRef = useRef(null);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate');
+          }
+        });
+      }, 
+      { threshold: 0.3 }
+    );
+    
+    if (imageContainerRef.current) {
+      observer.observe(imageContainerRef.current);
+    }
+    
+    // Clean up observer on component unmount
+    return () => {
+      if (imageContainerRef.current) {
+        observer.unobserve(imageContainerRef.current);
+      }
+    };
+  }, []);
+  
   return (
     <div className="cta-container">
       <div className="cta-content">
@@ -13,8 +40,7 @@ const CallToAction = () => {
         </p>
         <Link to='/jobs'><button className="cta-button">Find Jobs</button></Link>
       </div>
-      <div className="cta-image-container">
-        {/* This div will have the background image with blur effect applied in CSS */}
+      <div className="cta-image-container" ref={imageContainerRef}>
         <img src={jobsearchImage} alt="Company hero" className="hero-image" />
       </div>
     </div>
