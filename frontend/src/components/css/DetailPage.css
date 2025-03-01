@@ -132,6 +132,9 @@
   color: #45B19D;
 }
 
+/* #ff7b00 */
+
+
 /* Apply Button */
 .apply-button-container {
   margin-bottom: 55px;
@@ -139,7 +142,7 @@
 }
 
 .apply-button {
-  background-color: #45B19D;
+  background-color: #ff7b00;
   color: white;
   border: none;
   padding: 12px 25px;
