@@ -65,11 +65,12 @@ const RecentJobs = () => {
   return (
     <div className="recent-jobs-container">
       <div className="job-list">
-      <div className="recent-jobs-header">
-        <h1 className="recent-jobs-title">Recent Jobs Available</h1>
-        <a href="#" className="view-all-link">View all</a>
-      </div>
-      <p className="recent-jobs-description">At eu lobortis pretium tincidunt amet lacus ut aenean aliquet...</p>
+        <div className="recent-jobs-header">
+          <h1 className="recent-jobs-title">Latest Job Openings</h1>
+          <a href="#" className="view-all-link">See All</a>
+        </div>
+        <p className="recent-jobs-description">Find the best job opportunities tailored to your skills and experience...</p>
+
         {jobs.map(job => (
           <div key={job.id} className="job-card">
             <div className="job-card-header">

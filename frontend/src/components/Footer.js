@@ -24,8 +24,8 @@ const Footer = () => {
               <span className="logo-text">Job</span>
             </div>
             <p className="description">
-              Quis enim pellentesque viverra tellus eget malesuada facilisis. Congue 
-              nibh vivamus aliquet nunc mauris d...
+              Connecting talent with opportunities to build a successful career.
+              We provide a platform where job seekers can find their dream jobs. 
             </p>
           </div>
 

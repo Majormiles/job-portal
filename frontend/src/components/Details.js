@@ -54,13 +54,6 @@ const JobDetailPage = () => {
           </div>
         </div>
 
-        <Link to='/pricing-plan'>
-          <div className="apply-button-container">
-            <button className="apply-button">Apply Job</button>
-          </div>
-
-        </Link>
-
         <section className="job-description">
           <h2>Job Description</h2>
           <p>
@@ -100,6 +93,14 @@ const JobDetailPage = () => {
             <li>Commitment to continuous learning and professional development.</li>
           </ul>
         </section>
+
+
+        <Link to='/pricing-plan'>
+          <div className="apply-button-container">
+            <button className="apply-button">Apply Job</button>
+          </div>
+
+        </Link>
 
 
         <section className="tags-section">

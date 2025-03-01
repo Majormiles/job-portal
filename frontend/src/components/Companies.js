@@ -24,7 +24,7 @@ const Partners = ({ partners }) => {
   const displayPartners = [...partnerData, ...partnerData];
   
   useEffect(() => {
-    const speed = 0.03; // pixels per frame
+    const speed = 0.02; // pixels per frame
     let animationId;
     let lastTimestamp = 0;
     
