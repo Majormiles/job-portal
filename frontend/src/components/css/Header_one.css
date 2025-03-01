@@ -19,8 +19,8 @@ body {
   background-image: url('/src/assets/images/business-woman.jpg');
   background-size: cover;
   background-position: center;
-  position: relative; 
-  overflow: hidden; 
+  position: relative;
+  overflow: hidden;
 }
 
 .job-portal::before {
@@ -30,19 +30,20 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #2A9D8F; 
-  opacity: 0.95; 
+  background-color: #2A9D8F;
+  opacity: 0.95;
   backdrop-filter: blur(5px);
-  z-index: 1; 
+  z-index: 1;
 }
+
 /*#2A9D8F*/
 /*#007009*/
 /*#19664A*/
 /*#181F32*/
 
-.job-portal > * {
+.job-portal>* {
   position: relative;
-  z-index: 2; 
+  z-index: 2;
 }
 
 
@@ -179,6 +180,7 @@ body {
   .hero-section {
     border-bottom-right-radius: 0%;
   }
+
   .job-portal {
     border-bottom-right-radius: 0%;
   }
@@ -361,37 +363,42 @@ body {
   .search-button {
     padding: 15px;
   }
+
+  .stats-section {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {
+
   /* Hide desktop auth buttons */
   .desktop-auth {
     display: none;
   }
-  
+
   /* Show mobile menu toggle */
   .hamburger-menu {
     display: flex;
   }
-  
+
   /* Nav layout for mobile */
   .main-nav .nav-links {
     flex-direction: column;
     align-items: center;
     padding: 15px 0;
   }
-  
+
   .main-nav .nav-links li {
     margin: 10px 0;
   }
-  
+
   /* Show auth buttons in mobile menu */
   .mobile-auth {
     display: flex;
     justify-content: center;
     padding-bottom: 15px;
   }
-  
+
   .hero-content h1 {
     font-size: 2.2rem;
   }
@@ -421,7 +428,7 @@ body {
     padding: 12px;
     font-size: 0.9rem;
   }
-  
+
   .stats-container {
     flex-direction: column;
     gap: 15px;
