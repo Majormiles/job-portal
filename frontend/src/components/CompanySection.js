@@ -7,15 +7,13 @@ const CompanySection = () => {
     <div className="company-section">
       <div className="company-hero">
         <div className="hero-image-container">
-        <img src={jobsearchImage} alt="Company hero" className="hero-image" />
+          <img src={jobsearchImage} alt="Company hero" className="hero-image" />
         </div>
         <div className="hero-content">
           <h1 className="hero-title_company">Good Life Begins With A Good Company</h1>
           <p className="hero-description">
-            Ultricies purus dolor viverra mi laoreet at cursus justo. Ultricies purus diam egestas 
-            amet faucibus tempor blandit. Elit velit mauris aliquam est diam. Leo sagittis 
-            consectetur diam morbi erat aenean. Vulputate praesent congue faucibus in 
-            euismod feugiat euismod volutpat...
+            Success and fulfillment begin with the right workplace. A positive and supportive company culture fosters growth, innovation, and a sense of purpose.
+            At our organization, we believe in providing an environment where talent thrives, ideas flourish, and individuals are empowered to reach their full potential.
           </p>
           <div className="hero-buttons">
             <button className="btn btn-primary">Search Job</button>

@@ -60,39 +60,43 @@ const JobDetailPage = () => {
         <section className="job-description">
           <h2>Job Description</h2>
           <p>
-            Nunc sed a nisi purus. Nibh dis faucibus proin lacus tristique. Sit congue non vitae odio sit erat in. Felis eu ultrices s sed massa. 
-            Commodo impliset sed tempor nula bibinset ultrices iaculis aenean. Habitasse morbi faucibus in iaculis lectus. Nisi enim feugiat enim volutpat. 
-            Sem quis viverra viverra odio mauris nunc.
+            We are seeking a highly motivated and detail-oriented professional to join our team. The ideal candidate will be responsible for managing and overseeing key operational tasks, ensuring efficiency, and maintaining high-quality standards.
+            The role requires excellent problem-solving skills, strong communication abilities, and the capability to work both independently and collaboratively in a fast-paced environment.
           </p>
           <p>
-            Et nunc ut tempus duis nisi sed massa. Ornare varius faucibus nisi vitae vitae cras ornare. Cras facilisis dignissim augue lorem amet 
-            adipiscing cursus fames mauris. Tortor amet porta proin in. Orci imperdiet nisi dignissim pellentesque morbi vitae. Quique tincidunt metus lectus porta 
-            blandit sit sit sit sit. Ante mauris morbi diam habitant donec.
+            As part of this role, you will work closely with various departments, contributing to strategic planning, workflow optimization, and process improvement. You will also be expected to analyze data, identify challenges, and implement solutions that enhance overall productivity.
+            Adaptability, a proactive approach, and a commitment to professional growth are essential qualities for success in this position.
           </p>
         </section>
 
         <section className="key-responsibilities">
           <h2>Key Responsibilities</h2>
           <ul>
-            <li>Et nunc ut tempus duis nisi sed massa. Ornare varius faucibus nisi vitae vitae cras ornare. Cras facilisis dignissim augu</li>
-            <li>Cras facilisis dignissim augue lorem amet adipiscing cursus fames mauris. Tortor amet porta proin in</li>
-            <li>Ornare varius faucibus nisi vitae vitae cras ornare. Cras facilisis dignissim augue lorem amet adipiscing cursus fames</li>
-            <li>Tortor amet porta proin in. Orci imperdiet nisi dignissim pellentesque morbi vitae. Quique tincidunt metus lectus porta</li>
-            <li>Tortor amet porta proin in. Orci imperdiet nisi dignissim pellentesque morbi vitae. Quique tincidunt metus lectus porta</li>
-            <li>Tortor amet porta proin in. Orci imperdiet nisi dignissim pellentesque morbi vitae. Quique tincidunt metus lectus porta</li>
+            <li>Oversee daily operations and ensure all tasks are completed efficiently and on schedule.</li>
+            <li>Collaborate with cross-functional teams to develop and implement best practices.</li>
+            <li>Analyze workflow processes and recommend improvements for increased productivity.</li>
+            <li>Ensure compliance with company policies and industry standards.</li>
+            <li>Monitor project timelines, budgets, and deliverables to ensure goals are met.</li>
+            <li>Develop reports, presentations, and documentation to communicate progress and findings.</li>
+            <li>Provide guidance and support to team members, fostering a culture of collaboration and continuous improvement.</li>
+            <li>Resolve operational issues promptly and implement preventive measures to avoid recurring challenges.</li>
           </ul>
         </section>
 
         <section className="professional-skills">
           <h2>Professional Skills</h2>
           <ul>
-            <li>Et nunc ut tempus duis nisi sed massa. Ornare varius faucibus nisi vitae vitae cras ornare.</li>
-            <li>Ornare varius faucibus nisi vitae vitae cras ornare</li>
-            <li>Tortor amet porta proin in. Orci imperdiet nisi dignissim pellentesque morbi vitae</li>
-            <li>Tortor amet porta proin in. Orci imperdiet nisi dignissim pellentesque morbi vitae</li>
-            <li>Tortor amet porta proin in. Orci imperdiet nisi dignissim pellentesque morbi vitae</li>
+            <li>Strong analytical and problem-solving skills with a keen attention to detail.</li>
+            <li>Excellent verbal and written communication abilities.</li>
+            <li>Ability to manage multiple tasks efficiently and prioritize workload effectively.</li>
+            <li>Proficiency in using relevant software and tools to streamline workflows.</li>
+            <li>Experience in team collaboration and leadership.</li>
+            <li>Ability to adapt to changes and embrace new technologies and methodologies.</li>
+            <li>Strong time management and organizational skills.</li>
+            <li>Commitment to continuous learning and professional development.</li>
           </ul>
         </section>
+
 
         <section className="tags-section">
           <h3>Tags:</h3>
@@ -117,7 +121,7 @@ const JobDetailPage = () => {
         <section className="related-jobs">
           <h2>Related Jobs</h2>
           <p>At eu lobortis pretium tincidunt amet lacus ut aenean aliquet</p>
-          
+
           <div className="job-cards">
             {/* Job Card 1 */}
             <div className="job-card">
@@ -132,7 +136,7 @@ const JobDetailPage = () => {
                 <div className="job-info">
                   <h3>Internal Creative Coordinator</h3>
                   <p>Green Group</p>
-                  
+
                   <div className="job-meta">
                     <span><i className="fa fa-briefcase"></i> Commerce</span>
                     <span><i className="fa fa-clock-o"></i> Full time</span>
@@ -145,7 +149,7 @@ const JobDetailPage = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Job Card 2 */}
             <div className="job-card">
               <div className="job-card-header">
@@ -159,7 +163,7 @@ const JobDetailPage = () => {
                 <div className="job-info">
                   <h3>District Intranet Director</h3>
                   <p>VonRueden - Weber Co</p>
-                  
+
                   <div className="job-meta">
                     <span><i className="fa fa-briefcase"></i> Commerce</span>
                     <span><i className="fa fa-clock-o"></i> Full time</span>
@@ -172,7 +176,7 @@ const JobDetailPage = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Job Card 3 */}
             <div className="job-card">
               <div className="job-card-header">
@@ -186,7 +190,7 @@ const JobDetailPage = () => {
                 <div className="job-info">
                   <h3>Corporate Tactics Facilitator</h3>
                   <p>Cormier, Turner and Flatley Inc</p>
-                  
+
                   <div className="job-meta">
                     <span><i className="fa fa-briefcase"></i> Commerce</span>
                     <span><i className="fa fa-clock-o"></i> Full time</span>
@@ -202,11 +206,11 @@ const JobDetailPage = () => {
           </div>
         </section>
       </div>
-      
+
       <div className="job-sidebar">
         <div className="sidebar-card">
           <h3>Job Overview</h3>
-          
+
           <div className="overview-item">
             <div className="overview-icon"><i className="fa fa-briefcase"></i></div>
             <div className="overview-content">
@@ -214,7 +218,7 @@ const JobDetailPage = () => {
               <p className="overview-value">Corporate Solutions Executive</p>
             </div>
           </div>
-          
+
           <div className="overview-item">
             <div className="overview-icon"><i className="fa fa-clock-o"></i></div>
             <div className="overview-content">
@@ -222,7 +226,7 @@ const JobDetailPage = () => {
               <p className="overview-value">Full Time</p>
             </div>
           </div>
-          
+
           <div className="overview-item">
             <div className="overview-icon"><i className="fa fa-briefcase"></i></div>
             <div className="overview-content">
@@ -230,7 +234,7 @@ const JobDetailPage = () => {
               <p className="overview-value">Commerce</p>
             </div>
           </div>
-          
+
           <div className="overview-item">
             <div className="overview-icon"><i className="fa fa-calendar"></i></div>
             <div className="overview-content">
@@ -238,7 +242,7 @@ const JobDetailPage = () => {
               <p className="overview-value">5 Years</p>
             </div>
           </div>
-          
+
           <div className="overview-item">
             <div className="overview-icon"><i className="fa fa-graduation-cap"></i></div>
             <div className="overview-content">
@@ -246,7 +250,7 @@ const JobDetailPage = () => {
               <p className="overview-value">Master</p>
             </div>
           </div>
-          
+
           <div className="overview-item">
             <div className="overview-icon"><i className="fa fa-money"></i></div>
             <div className="overview-content">
@@ -254,7 +258,7 @@ const JobDetailPage = () => {
               <p className="overview-value">$40000-$45000</p>
             </div>
           </div>
-          
+
           <div className="overview-item">
             <div className="overview-icon"><i className="fa fa-map-marker"></i></div>
             <div className="overview-content">
@@ -262,36 +266,45 @@ const JobDetailPage = () => {
               <p className="overview-value">New-York, USA</p>
             </div>
           </div>
-          
+
           <div className="map-container">
-            <img src="https://via.placeholder.com/300x150" alt="Map" />
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d15853.182235823399!2d0.47855064999999997!3d6.61015005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sgh!4v1740799409286!5m2!1sen!2sgh"
+              width="100%"
+              height="450"
+              style={{ border: "0" }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade">
+            </iframe>
           </div>
+
         </div>
-        
+
         <div className="sidebar-card contact-form">
           <h3>Send Us Message</h3>
-          
+
           <form>
             <div className="form-group">
               <label htmlFor="fullName"><i className="fa fa-user"></i></label>
               <input type="text" id="fullName" placeholder="Full name" />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="email"><i className="fa fa-envelope"></i></label>
               <input type="email" id="email" placeholder="Email Address" />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="phone"><i className="fa fa-phone"></i></label>
               <input type="tel" id="phone" placeholder="Phone Number" />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="message"><i className="fa fa-comment"></i></label>
               <textarea id="message" placeholder="Your Message"></textarea>
             </div>
-            
+
             <button type="submit" className="submit-btn">Send Message</button>
           </form>
         </div>
