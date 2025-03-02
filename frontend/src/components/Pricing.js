@@ -6,11 +6,11 @@ import './css/PricingPlans.css';
 // ScrollToTop component to handle scrolling on route change
 const ScrollToTop = () => {
   const { pathname } = useLocation();
-  
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-  
+
   return null;
 };
 
@@ -105,7 +105,7 @@ const PricingPlans = () => {
               </div>
               <h1 className="pricing-heading">Pick Your Perfect Plan</h1>
             </div>
-            
+
             <div className="nav-button-container">
               <Link to='/' onClick={handleButtonClick}>
                 <button className="nav-button">Home</button>
@@ -115,27 +115,28 @@ const PricingPlans = () => {
 
           <div className="pricing-plans">
             {plans.map((plan) => (
-              <div 
-                key={plan.id} 
+              <div
+                key={plan.id}
                 className={`pricing-card ${plan.featured ? 'featured-card' : ''}`}
               >
                 <div className="plan-header">
                   <h2 className="plan-name">{plan.name}</h2>
                   <p className="starting-at">{plan.startingAt}</p>
                 </div>
-                
+
                 <div className="price-container">
                   <h3 className="price">{plan.price}<span className="period">{plan.period}</span></h3>
                   <p className="description">{plan.description}</p>
                 </div>
-                
-                <button 
+
+                <Link to='/checkout'><button
                   className={`price-button ${plan.buttonColor === 'green' ? 'green-button' : 'navy-button'}`}
                   onClick={handleButtonClick}
                 >
                   Get Price Estimate
                 </button>
-                
+                </Link>
+
                 <div className="features-list">
                   {plan.features.map((feature, index) => (
                     <div key={index} className="feature-item">

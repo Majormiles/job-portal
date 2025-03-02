@@ -1,6 +1,6 @@
 // src/pages/JobListingsPage.js
 import React from 'react';
-import JobDetails from '../components/Details';
+import Checkout from '../components/Checkout';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
@@ -10,7 +10,7 @@ const JobListingsPage = () => {
       <Header />
       <div className="hero"></div>
       <div className="content-section">
-        <JobDetails />
+        <Checkout />
       </div>
       <Footer />
     </div>

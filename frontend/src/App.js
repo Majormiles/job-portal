@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import PostJob from './pages/PostJob';
 import PricingPlan from './pages/PricingPlan';
+import CheckoutPage from './pages/CheckoutPage';
 import JobDetail from './pages/JobDetails';
 import './App.css';
 
@@ -33,6 +34,7 @@ const AppContent = () => {
         <Route path="/post-job" element={<PostJob />} />
         <Route path="/job-detail" element={<JobDetail />} />
         <Route path="/pricing-plan" element={<PricingPlan />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
       </Routes>
     </div>
   );
