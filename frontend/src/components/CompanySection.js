@@ -12,7 +12,7 @@ const CompanySection = () => {
         </div>
         <div className="hero-content">
           <h2 className="hero-title_company">Good Life Begins With A Good Company</h2>
-          <p className="hero-description">
+          <p className="hero-description-company">
             Success and fulfillment begin with the right workplace. A positive and supportive company culture fosters growth, innovation, and a sense of purpose.
             At our organization, we believe in providing an environment where talent thrives, ideas flourish, and individuals are empowered to reach their full potential.
           </p>
