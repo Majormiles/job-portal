@@ -666,6 +666,7 @@ body {
   
   .stat-item {
     flex: 1 1 100%;
+    display: none;
   }
   
   .stats-container {
