@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './css/JobListings.css'; // Assuming you have this external CSS file
 
 const JobListings = () => {
@@ -88,8 +88,6 @@ const JobListings = () => {
     { name: "Freelance", count: 10 },
   ];
 
-
-
   // Tags
   const tags = ["engineering", "design", "ui/ux", "marketing", "management", "soft", "construction"];
 
@@ -101,6 +99,34 @@ const JobListings = () => {
 
   // State for salary range
   const [salaryRange, setSalaryRange] = useState([0, 9999]);
+
+  // Function to scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Effect to scroll to top when page changes
+  useEffect(() => {
+    scrollToTop();
+  }, [currentPage]);
+
+  // Handle job details button click
+  const handleJobDetailsClick = () => {
+    // You can add navigation logic here if needed
+    // For example: navigate(`/job-details/${jobId}`);
+    
+    // Scroll to top
+    scrollToTop();
+  };
+
+  // Handle pagination click
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // The useEffect above will handle scrolling to the top
+  };
 
   return (
     <div className="job-listings-container">
@@ -167,8 +193,6 @@ const JobListings = () => {
               ))}
             </div>
           </div>
-
-    
    
           {/* Salary Range */}
           <div className="filter-section">
@@ -185,7 +209,7 @@ const JobListings = () => {
             </div>
             <div className="salary-range-display">
               <span>Salary: ${salaryRange[0]} - ${salaryRange[1]}</span>
-              <button className="apply-btn">Apply</button>
+              <button className="apply-btn" onClick={scrollToTop}>Apply</button>
             </div>
           </div>
 
@@ -212,7 +236,7 @@ const JobListings = () => {
           <div className="results-header">
             <div className="results-count">Showing 6-6 of 10 results</div>
             <div className="sort-container">
-              <select className="sort-select">
+              <select className="sort-select" onChange={scrollToTop}>
                 <option value="latest">Sort by latest</option>
                 <option value="salary-high">Sort by salary (high to low)</option>
                 <option value="salary-low">Sort by salary (low to high)</option>
@@ -256,7 +280,7 @@ const JobListings = () => {
                 </div>
                 <div className="job-card-right">
                   <button className="bookmark-btn">🔖</button>
-                  <button className="job-details-btn">Job Details</button>
+                  <button className="job-details-btn" onClick={handleJobDetailsClick}>Job Details</button>
                 </div>
               </div>
             ))}
@@ -266,17 +290,17 @@ const JobListings = () => {
           <div className="pagination">
             <button 
               className={`page-btn ${currentPage === 1 ? 'active' : ''}`}
-              onClick={() => setCurrentPage(1)}
+              onClick={() => handlePageChange(1)}
             >
               1
             </button>
             <button 
               className={`page-btn ${currentPage === 2 ? 'active' : ''}`}
-              onClick={() => setCurrentPage(2)}
+              onClick={() => handlePageChange(2)}
             >
               2
             </button>
-            <button className="next-btn">
+            <button className="next-btn" onClick={() => handlePageChange(currentPage + 1)}>
               Next <span className="next-icon">→</span>
             </button>
           </div>
