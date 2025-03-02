@@ -34,7 +34,7 @@ const Checkout = () => {
     {
       id: 1,
       name: 'Basic',
-      price: '$29',
+      price: 'GH₵29',
       period: '/month',
       jobPostings: 10,
       featuredJobs: 2,
@@ -45,7 +45,7 @@ const Checkout = () => {
     {
       id: 2,
       name: 'Pro',
-      price: '$79',
+      price: 'GH₵79',
       period: '/month',
       jobPostings: 25,
       featuredJobs: 5,
@@ -57,7 +57,7 @@ const Checkout = () => {
     {
       id: 3,
       name: 'Enterprise',
-      price: '$199',
+      price: 'GH₵199',
       period: '/month',
       jobPostings: 'Unlimited',
       featuredJobs: 15,

@@ -1,18 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Header_one.css';
 
 const JobPortal = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [heroAnimation, setHeroAnimation] = useState(false);
+
+  // Handle scroll effects
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    // Start hero animation after component mount
+    setTimeout(() => {
+      setHeroAnimation(true);
+    }, 300);
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
+    // Prevent scrolling when mobile menu is open
+    if (!showMobileMenu) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'visible';
+    }
   };
 
   return (
     <div className="job-portal">
       {/* Header */}
-      <header className="main-header">
+      <header className={`main-header ${scrolled ? 'scrolled' : ''}`}>
         <div className="header-container">
           <div className="logo-container">
             <Link to="/" className="logo-link">
@@ -21,11 +48,19 @@ const JobPortal = () => {
                   <path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM9 4h6v2H9V4zm11 15H4V8h16v11z" />
                 </svg>
               </div>
-              <span>Job Portal</span>
+              <span className="logo-text">Job Portal</span>
             </Link>
-            
           </div>
 
+          {/* Desktop Navigation */}
+          <nav className="desktop-nav">
+            <ul className="nav-links">
+              <li><Link to="/" className="active">Home</Link></li>
+              <li><Link to="/jobs">Jobs</Link></li>
+              <li><Link to="/about-us">About Us</Link></li>
+              <li><Link to="/contact-us">Contact Us</Link></li>
+            </ul>
+          </nav>
 
           <div className="auth-buttons desktop-auth">
             <Link to="/login" className="login-btn">Login</Link>
@@ -39,31 +74,53 @@ const JobPortal = () => {
           </div>
         </div>
         
+        {/* Mobile Side Menu */}
         <div className={`mobile-menu ${showMobileMenu ? 'show' : ''}`}>
+          <div className="mobile-menu-header">
+            <div className="logo-container">
+              <Link to="/" className="logo-link">
+                <div className="briefcase-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM9 4h6v2H9V4zm11 15H4V8h16v11z" />
+                  </svg>
+                </div>
+                <span>Job Portal</span>
+              </Link>
+            </div>
+            <div className="close-menu" onClick={toggleMobileMenu}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </div>
+          </div>
+          
           <nav className="main-nav">
             <ul className="nav-links">
-              <li><Link to="/" className="active">Home</Link></li>
-              <li><Link to="/jobs">Jobs</Link></li>
-              <li><Link to="/about-us">About Us</Link></li>
-              <li><Link to="/contact-us">Contact Us</Link></li>
+              <li><Link to="/" className="active" onClick={toggleMobileMenu}>Home</Link></li>
+              <li><Link to="/jobs" onClick={toggleMobileMenu}>Jobs</Link></li>
+              <li><Link to="/about-us" onClick={toggleMobileMenu}>About Us</Link></li>
+              <li><Link to="/contact-us" onClick={toggleMobileMenu}>Contact Us</Link></li>
             </ul>
           </nav>
 
           <div className="auth-buttons mobile-auth">
-            <Link to="/login" className="login-btn">Login</Link>
-            <Link to="/register" className="register-btn">Register</Link>
+            <Link to="/login" className="login-btn" onClick={toggleMobileMenu}>Login</Link>
+            <Link to="/register" className="register-btn" onClick={toggleMobileMenu}>Register</Link>
           </div>
         </div>
+        
+        {/* Dark overlay when mobile menu is open */}
+        {showMobileMenu && <div className="menu-overlay" onClick={toggleMobileMenu}></div>}
       </header>
 
       {/* Hero Section */}
-      <section className="hero-section">
+      <section className={`hero-section ${heroAnimation ? 'animate' : ''}`}>
         <div className="hero-content">
-          <h1>Find Your Dream Job Today!</h1>
-          <p>Connecting Talent with Opportunity: Your Gateway to Career Success</p>
+          <h1 className="slide-in-right">Find Your Dream Job Today!</h1>
+          <p className="fade-in">Connecting Talent with Opportunity: Your Gateway to Career Success</p>
           
           {/* Search Form */}
-          <div className="search-container">
+          <div className="search-container slide-up">
             <div className="search-form">
               <div className="search-input">
                 <input type="text" placeholder="Job Title or Company" />
@@ -108,6 +165,13 @@ const JobPortal = () => {
             </div>
           </div>
         </div>
+        
+        {/* Animated background elements */}
+        <div className="animated-circles">
+          <div className="circle circle-1"></div>
+          <div className="circle circle-2"></div>
+          <div className="circle circle-3"></div>
+        </div>
       </section>
 
       {/* Stats Section */}
@@ -120,7 +184,7 @@ const JobPortal = () => {
               </svg>
             </div>
             <div className="stat-content">
-              <h3>25,850</h3>
+              <h3 className="counter" data-count="25850">0</h3>
               <p>Jobs</p>
             </div>
           </div>
@@ -132,7 +196,7 @@ const JobPortal = () => {
               </svg>
             </div>
             <div className="stat-content">
-              <h3>10,250</h3>
+              <h3 className="counter" data-count="10250">0</h3>
               <p>Candidates</p>
             </div>
           </div>
@@ -144,12 +208,47 @@ const JobPortal = () => {
               </svg>
             </div>
             <div className="stat-content">
-              <h3>18,400</h3>
+              <h3 className="counter" data-count="18400">0</h3>
               <p>Companies</p>
             </div>
           </div>
         </div>
       </section>
+      
+      {/* Animation & stats counter JS */}
+      <script type="text/javascript" dangerouslySetInnerHTML={{
+        __html: `
+          // Counter animation for stats
+          document.addEventListener('DOMContentLoaded', function() {
+            const counterElements = document.querySelectorAll('.counter');
+            
+            const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                  const target = entry.target;
+                  const count = parseInt(target.getAttribute('data-count'));
+                  let current = 0;
+                  const increment = count > 1000 ? Math.ceil(count / 50) : Math.ceil(count / 25);
+                  const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= count) {
+                      target.textContent = count.toLocaleString();
+                      clearInterval(timer);
+                    } else {
+                      target.textContent = current.toLocaleString();
+                    }
+                  }, 30);
+                  observer.unobserve(target);
+                }
+              });
+            }, { threshold: 0.25 });
+            
+            counterElements.forEach(counter => {
+              observer.observe(counter);
+            });
+          });
+        `
+      }}></script>
     </div>
   );
 };
