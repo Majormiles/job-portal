@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './css/JobListings.css'; // Assuming you have this external CSS file
 
 const JobListings = () => {
@@ -280,7 +281,8 @@ const JobListings = () => {
                 </div>
                 <div className="job-card-right">
                   <button className="bookmark-btn">🔖</button>
-                  <button className="job-details-btn" onClick={handleJobDetailsClick}>Job Details</button>
+                  
+                  <Link to='/job-detail'><button className="job-details-btn" onClick={handleJobDetailsClick}>Job Details</button></Link>
                 </div>
               </div>
             ))}
