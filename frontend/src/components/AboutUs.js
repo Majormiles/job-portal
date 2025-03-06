@@ -304,16 +304,16 @@ const JobPortal = () => {
                     <div className="partners-grid">
                         <div className="partners-image-grid">
                             <div className="partner-image">
-                                <img src="/images/partner1.jpg" alt="Partner company" />
+                                <img src={jobsearchImage} alt="Company hero" className="hero-image" />
                             </div>
                             <div className="partner-image">
-                                <img src="/images/partner2.jpg" alt="Partner company" />
+                                <img src={jobsearchImage} alt="Company hero" className="hero-image" />
                             </div>
                             <div className="partner-image">
-                                <img src="/images/partner3.jpg" alt="Partner company" />
+                                <img src={jobsearchImage} alt="Company hero" className="hero-image" />
                             </div>
                             <div className="partner-image">
-                                <img src="/images/partner4.jpg" alt="Partner company" />
+                                <img src={jobsearchImage} alt="Company hero" className="hero-image" />
                             </div>
                         </div>
                         <div className="partners-content">
