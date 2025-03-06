@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Header from './components/Header-one';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
-import About from './pages/About';
+import About from './pages/AboutUs';
 import Contact from './pages/Contact';
 import Companies from './pages/Companies';
 import Login from './pages/Login';
@@ -14,6 +14,7 @@ import PricingPlan from './pages/PricingPlan';
 import CheckoutPage from './pages/CheckoutPage';
 import JobDetail from './pages/JobDetails';
 import './App.css';
+import AboutUs from './components/AboutUs';
 
 // This wrapper component checks if we're on the home route
 const AppContent = () => {

@@ -57,7 +57,7 @@ const JobPortal = () => {
             <ul className="nav-links">
               <li><Link to="/" className="active">Home</Link></li>
               <li><Link to="/jobs">Jobs</Link></li>
-              <li><Link to="/about-us">About Us</Link></li>
+              <li><Link to="/about">About Us</Link></li>
               <li><Link to="/contact-us">Contact Us</Link></li>
             </ul>
           </nav>
