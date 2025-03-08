@@ -3,6 +3,12 @@ import { useLocation } from 'react-router-dom';
 import { Phone, Mail, Clock, MapPin } from 'react-feather';
 import './css/Contact.css';
 
+
+import zoomLogo from '../assets/logo/adobe.png';
+import asanaLogo from '../assets/logo/asana.jpeg';
+import tinderLogo from '../assets/logo/linear.png';
+import dribbleLogo from '../assets/logo/spotify.png';
+
 const ContactPage = () => {
     const location = useLocation();
     const formRef = useRef(null);
@@ -162,16 +168,16 @@ const ContactPage = () => {
             <div className="partners-section">
                 <div className="partners-container">
                     <div className="partner animate-on-mount">
-                        <img src="/images/zoom-logo.png" alt="Zoom" />
+                        <img src={zoomLogo} alt="Company hero" className="hero-image" />
                     </div>
                     <div className="partner animate-on-mount">
-                        <img src="/images/tinder-logo.png" alt="Tinder" />
+                    <img src={asanaLogo} alt="Company hero" className="hero-image" />
                     </div>
                     <div className="partner animate-on-mount">
-                        <img src="/images/dribbble-logo.png" alt="Dribbble" />
+                    <img src={tinderLogo} alt="Company hero" className="hero-image" />
                     </div>
                     <div className="partner animate-on-mount">
-                        <img src="/images/asana-logo.png" alt="Asana" />
+                    <img src={dribbleLogo} alt="Company hero" className="hero-image" />
                     </div>
                 </div>
             </div>
