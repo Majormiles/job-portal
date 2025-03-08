@@ -27,9 +27,8 @@
 
 .auth-container {
   display: flex;
-  width: 100%;
-  max-width: 1200px;
-  min-height: 600px;
+  width: 80%;
+  max-width: 800px;
   background-color: var(--bg-white);
   border-radius: 16px;
   overflow: hidden;
@@ -96,7 +95,7 @@
 /* Right Side - Form */
 .auth-right {
   width: 55%;
-  padding: 40px;
+  padding: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,12 +141,11 @@
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
   font-weight: 500;
   color: var(--text-dark);
   font-size: 14px;
@@ -249,7 +247,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
-  margin-bottom: 24px;
+  margin-bottom: 5px;
 }
 
 .submit-button:hover {
@@ -264,13 +262,13 @@
 
 /* Social Login */
 .social-login {
-  margin-top: 20px;
+  margin-top: 5px;
 }
 
 .divider {
   display: flex;
   align-items: center;
-  margin: 20px 0;
+  margin: 5px 0;
   color: var(--text-light);
 }
 

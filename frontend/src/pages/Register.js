@@ -159,10 +159,10 @@ const Register = () => {
                     <i className="icon-google"></i>
                     <span>Continue with Google</span>
                   </button>
-                  <button type="button" className="social-button linkedin">
+                  {/* <button type="button" className="social-button linkedin">
                     <i className="icon-linkedin"></i>
                     <span>Continue with LinkedIn</span>
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </form>
