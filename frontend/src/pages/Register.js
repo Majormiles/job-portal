@@ -85,22 +85,6 @@ const Register = () => {
             
             <form className="auth-form" onSubmit={handleSignupSubmit}>
               <div className="form-group">
-                <label htmlFor="signup-name">Full Name</label>
-                <div className="input-with-icon">
-                  <i className="icon-user"></i>
-                  <input
-                    id="signup-name"
-                    type="text"
-                    name="name"
-                    placeholder="Enter your full name"
-                    value={signupForm.name}
-                    onChange={handleSignupChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
                 <label htmlFor="signup-email">Email Address</label>
                 <div className="input-with-icon">
                   <i className="icon-email"></i>
