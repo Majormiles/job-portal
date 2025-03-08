@@ -1,42 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Link, NavLink } from 'react-router-dom';
-import '../components/css/Login.css'; // We'll create this CSS file for additional styling
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import '../components/css/Register.css';
 
-// Main Auth component that handles both login and signup
-const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+const Register = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
   const [popupType, setPopupType] = useState('success');
   const navigate = useNavigate();
-
-  // Form states
-  const [loginForm, setLoginForm] = useState({
-    email: '',
-    password: '',
-    rememberMe: false
-  });
 
   const [signupForm, setSignupForm] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    jobRole: '',
     agreeToTerms: false
   });
 
-  // Handle login form changes
-  const handleLoginChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setLoginForm({
-      ...loginForm,
-      [name]: type === 'checkbox' ? checked : value
-    });
-  };
-
-  // Handle signup form changes
   const handleSignupChange = (e) => {
     const { name, value, type, checked } = e.target;
     setSignupForm({
@@ -45,32 +24,9 @@ const Auth = () => {
     });
   };
 
-  // Handle login submission
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    // Here you would typically connect to your authentication API
-    
-    // Validate form
-    if (!loginForm.email || !loginForm.password) {
-      triggerPopup('Please fill in all required fields', 'error');
-      return;
-    }
-    
-    // Simulate login success
-    console.log('Login form submitted:', loginForm);
-    triggerPopup('Login successful! Redirecting...', 'success');
-    
-    // Redirect after a delay
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 2000);
-  };
-
-  // Handle signup submission
   const handleSignupSubmit = (e) => {
     e.preventDefault();
     
-    // Validate form
     if (!signupForm.name || !signupForm.email || !signupForm.password || !signupForm.confirmPassword) {
       triggerPopup('Please fill in all required fields', 'error');
       return;
@@ -86,137 +42,52 @@ const Auth = () => {
       return;
     }
     
-    // Simulate signup success
     console.log('Signup form submitted:', signupForm);
-    triggerPopup('Account created successfully! You can now log in.', 'success');
+    triggerPopup('Account created successfully! Redirecting to login...', 'success');
     
-    // Switch to login after successful signup
     setTimeout(() => {
-      setIsLogin(true);
+      navigate('/login');
     }, 2000);
   };
 
-  // Trigger popup with message
   const triggerPopup = (message, type = 'success') => {
     setPopupMessage(message);
     setPopupType(type);
     setShowPopup(true);
     
-    // Auto hide popup after 4 seconds
     setTimeout(() => {
       setShowPopup(false);
     }, 4000);
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-background">
-        <div className="bg-gradient"></div>
-        <div className="bg-pattern"></div>
-      </div>
-      
-      <div className="auth-card">
-        <Link to='/'>
-        <div className="auth-header">
-          <h1 className="auth-title">Job Portal</h1>
-          <p className="auth-subtitle">
-            {isLogin ? 'Sign in to access your account' : 'Create a new account to get started'}
-          </p>
-        </div>
-        </Link>
-        
-        <div className="auth-tabs">
-          <button 
-            className={`auth-tab ${isLogin ? 'active' : ''}`} 
-            onClick={() => setIsLogin(true)}
-          >
-            Login
-          </button>
-          <button 
-            className={`auth-tab ${!isLogin ? 'active' : ''}`} 
-            onClick={() => setIsLogin(false)}
-          >
-            Sign Up
-          </button>
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-left">
+          <div className="auth-brand">
+            <Link to="/">
+              <h2>Job Portal</h2>
+            </Link>
+          </div>
+          <div className="auth-welcome">
+            <h1>Join Our Community</h1>
+            <p>Create an account to access personalized job recommendations and career opportunities</p>
+          </div>
+          <div className="auth-image register-image"></div>
         </div>
         
-        <div className="auth-form-container">
-          {isLogin ? (
-            <form 
-              className="auth-form fade-in" 
-              onSubmit={handleLoginSubmit}
-            >
-              <div className="form-group">
-                <label htmlFor="login-email">Email Address</label>
-                <div className="input-with-icon">
-                  <i className="icon-email"></i>
-                  <input
-                    id="login-email"
-                    type="email"
-                    name="email"
-                    placeholder="Enter your email"
-                    value={loginForm.email}
-                    onChange={handleLoginChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="login-password">Password</label>
-                <div className="input-with-icon">
-                  <i className="icon-lock"></i>
-                  <input
-                    id="login-password"
-                    type="password"
-                    name="password"
-                    placeholder="Enter your password"
-                    value={loginForm.password}
-                    onChange={handleLoginChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group form-options">
-                <div className="remember-me">
-                  <input
-                    id="remember-me"
-                    type="checkbox"
-                    name="rememberMe"
-                    checked={loginForm.rememberMe}
-                    onChange={handleLoginChange}
-                  />
-                  <label htmlFor="remember-me">Remember me</label>
-                </div>
-                <a href="#" className="forgot-password">Forgot Password?</a>
-              </div>
-              
-              <button type="submit" className="submit-button">
-                <span>Login</span>
-                <i className="icon-arrow-right"></i>
-              </button>
-              
-              <div className="social-login">
-                <p>Or continue with</p>
-                <div className="social-buttons">
-                  <button type="button" className="social-button google">
-                    <i className="icon-google"></i>
-                  </button>
-                  <button type="button" className="social-button linkedin">
-                    <i className="icon-linkedin"></i>
-                  </button>
-                </div>
-              </div>
-            </form>
-          ) : (
-            <form 
-              className="auth-form fade-in" 
-              onSubmit={handleSignupSubmit}
-            >
+        <div className="auth-right">
+          <div className="auth-form-wrapper">
+            <div className="auth-header">
+              <h2>Create Account</h2>
+              <p>Already have an account? <Link to="/login" className="auth-link">Sign In</Link></p>
+            </div>
+            
+            <form className="auth-form" onSubmit={handleSignupSubmit}>
               <div className="form-group">
                 <label htmlFor="signup-name">Full Name</label>
                 <div className="input-with-icon">
+                  <i className="icon-user"></i>
                   <input
                     id="signup-name"
                     type="text"
@@ -232,6 +103,7 @@ const Auth = () => {
               <div className="form-group">
                 <label htmlFor="signup-email">Email Address</label>
                 <div className="input-with-icon">
+                  <i className="icon-email"></i>
                   <input
                     id="signup-email"
                     type="email"
@@ -244,11 +116,10 @@ const Auth = () => {
                 </div>
               </div>
               
-       
-              
               <div className="form-group">
                 <label htmlFor="signup-password">Password</label>
                 <div className="input-with-icon">
+                  <i className="icon-lock"></i>
                   <input
                     id="signup-password"
                     type="password"
@@ -264,6 +135,7 @@ const Auth = () => {
               <div className="form-group">
                 <label htmlFor="signup-confirm-password">Confirm Password</label>
                 <div className="input-with-icon">
+                  <i className="icon-lock"></i>
                   <input
                     id="signup-confirm-password"
                     type="password"
@@ -291,15 +163,29 @@ const Auth = () => {
               </div>
               
               <button type="submit" className="submit-button">
-                <span>Create Account</span>
-                <i className="icon-arrow-right"></i>
+                Create Account
               </button>
+              
+              <div className="social-login">
+                <div className="divider">
+                  <span>OR</span>
+                </div>
+                <div className="social-buttons">
+                  <button type="button" className="social-button google">
+                    <i className="icon-google"></i>
+                    <span>Continue with Google</span>
+                  </button>
+                  <button type="button" className="social-button linkedin">
+                    <i className="icon-linkedin"></i>
+                    <span>Continue with LinkedIn</span>
+                  </button>
+                </div>
+              </div>
             </form>
-          )}
+          </div>
         </div>
       </div>
       
-      {/* Popup notification */}
       {showPopup && (
         <div className={`popup ${popupType} popup-animation`}>
           <div className="popup-icon">
@@ -321,4 +207,4 @@ const Auth = () => {
   );
 };
 
-export default Auth;
+export default Register;
