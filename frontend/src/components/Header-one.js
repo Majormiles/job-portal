@@ -98,7 +98,7 @@ const JobPortal = () => {
             <ul className="nav-links">
               <li><Link to="/" className="active" onClick={toggleMobileMenu}>Home</Link></li>
               <li><Link to="/jobs" onClick={toggleMobileMenu}>Jobs</Link></li>
-              <li><Link to="/about-us" onClick={toggleMobileMenu}>About Us</Link></li>
+              <li><Link to="/about" onClick={toggleMobileMenu}>About Us</Link></li>
               <li><Link to="/contact-us" onClick={toggleMobileMenu}>Contact Us</Link></li>
             </ul>
           </nav>
