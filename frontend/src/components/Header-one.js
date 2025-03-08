@@ -58,7 +58,7 @@ const JobPortal = () => {
               <li><Link to="/" className="active">Home</Link></li>
               <li><Link to="/jobs">Jobs</Link></li>
               <li><Link to="/about">About Us</Link></li>
-              <li><Link to="/contact-us">Contact Us</Link></li>
+              <li><Link to="/contact">Contact Us</Link></li>
             </ul>
           </nav>
 
@@ -99,7 +99,7 @@ const JobPortal = () => {
               <li><Link to="/" className="active" onClick={toggleMobileMenu}>Home</Link></li>
               <li><Link to="/jobs" onClick={toggleMobileMenu}>Jobs</Link></li>
               <li><Link to="/about" onClick={toggleMobileMenu}>About Us</Link></li>
-              <li><Link to="/contact-us" onClick={toggleMobileMenu}>Contact Us</Link></li>
+              <li><Link to="/contact" onClick={toggleMobileMenu}>Contact Us</Link></li>
             </ul>
           </nav>
 
