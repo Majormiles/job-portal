@@ -160,7 +160,7 @@ const JobListings = () => {
           className={`filters-sidebar ${showFilters ? 'show' : ''} ${isSticky ? 'sticky' : ''}`}
           style={{
             position: isSticky ? 'sticky' : 'static',
-            top: isSticky ? '30px' : 'auto',
+            top: isSticky ? '25px' : 'auto',
             transition: 'all 0.3s ease',
             maxHeight: isSticky ? 'calc(100vh - 40px)' : 'none',
             overflowY: isSticky ? 'auto' : 'visible'
