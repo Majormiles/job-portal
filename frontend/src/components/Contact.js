@@ -45,10 +45,9 @@ const ContactPage = () => {
             <div className="contact-content-wrapper">
                 <div className="contact-content">
                     <div className="contact-left animate-on-mount">
-                        <h1>You Will Grow, You Will Succeed. We Promise That</h1>
+                        <h1>Launch Your Potential. Elevate Your Career.</h1>
                         <p>
-                            Pellentesque arcu facilisis nunc mi proin. Dignissim mattis in lectus tincidunt tincidunt
-                            ultrices. Diam convallis morbi pellentesque adipiscing
+                            Connect with opportunities that match your ambition. We don't just find you jobs—we build pathways to professional growth and lasting success.
                         </p>
 
                         <div className="contact-info-container">
@@ -68,7 +67,7 @@ const ContactPage = () => {
                                 </div>
                                 <div className="info-content">
                                     <h3>Send us email</h3>
-                                    <p>majormyles20@gmail.cp</p>
+                                    <p>majormyles20@gmail.com</p>
                                 </div>
                             </div>
 
@@ -106,7 +105,7 @@ const ContactPage = () => {
                                         <input
                                             type="text"
                                             id="firstName"
-                                            placeholder="Your name"
+                                            placeholder=""
                                             required
                                         />
                                     </div>
@@ -116,7 +115,7 @@ const ContactPage = () => {
                                         <input
                                             type="text"
                                             id="lastName"
-                                            placeholder="Your last name"
+                                            placeholder=""
                                             required
                                         />
                                     </div>
@@ -127,13 +126,13 @@ const ContactPage = () => {
                                     <input
                                         type="email"
                                         id="email"
-                                        placeholder="Your E-mail address"
+                                        placeholder=""
                                         required
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="message">Message</label>
+                                    <label htmlFor="message"></label>
                                     <textarea
                                         id="message"
                                         placeholder="Your message..."
@@ -171,13 +170,13 @@ const ContactPage = () => {
                         <img src={zoomLogo} alt="Company hero" className="hero-image" />
                     </div>
                     <div className="partner animate-on-mount">
-                    <img src={asanaLogo} alt="Company hero" className="hero-image" />
+                        <img src={asanaLogo} alt="Company hero" className="hero-image" />
                     </div>
                     <div className="partner animate-on-mount">
-                    <img src={tinderLogo} alt="Company hero" className="hero-image" />
+                        <img src={tinderLogo} alt="Company hero" className="hero-image" />
                     </div>
                     <div className="partner animate-on-mount">
-                    <img src={dribbleLogo} alt="Company hero" className="hero-image" />
+                        <img src={dribbleLogo} alt="Company hero" className="hero-image" />
                     </div>
                 </div>
             </div>
