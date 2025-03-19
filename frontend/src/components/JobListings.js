@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import './css/JobListings.css'; // Assuming you have this external CSS file
+import { Search, MapPin } from 'lucide-react';
+import './css/JobListings.css';
+
 
 const JobListings = () => {
   // Sample job data based on the image
@@ -109,6 +111,8 @@ const JobListings = () => {
     });
   };
 
+  const [isSticky, setIsSticky] = useState(false);
+
   // Effect to scroll to top when page changes
   useEffect(() => {
     scrollToTop();
@@ -118,7 +122,7 @@ const JobListings = () => {
   const handleJobDetailsClick = () => {
     // You can add navigation logic here if needed
     // For example: navigate(`/job-details/${jobId}`);
-    
+
     // Scroll to top
     scrollToTop();
   };
@@ -129,6 +133,20 @@ const JobListings = () => {
     // The useEffect above will handle scrolling to the top
   };
 
+  // Handle sticky behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      const offset = window.scrollY;
+      setIsSticky(offset > 100); // Start sticking after scrolling 100px
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
     <div className="job-listings-container">
       {/* Mobile filter toggle button */}
@@ -138,17 +156,26 @@ const JobListings = () => {
 
       <div className="job-listings-content">
         {/* Left sidebar with filters */}
-        <div className={`filters-sidebar ${showFilters ? 'show' : ''}`}>
+        <div
+          className={`filters-sidebar ${showFilters ? 'show' : ''} ${isSticky ? 'sticky' : ''}`}
+          style={{
+            position: isSticky ? 'sticky' : 'static',
+            top: isSticky ? '20px' : 'auto',
+            transition: 'all 0.3s ease',
+            maxHeight: isSticky ? 'calc(100vh - 40px)' : 'none',
+            overflowY: isSticky ? 'auto' : 'visible'
+          }}
+        >
           {/* Search by job title */}
           <div className="filter-section">
             <h3 className="filter-title">Search by Job Title</h3>
             <div className="search-input-container">
-              <input 
-                type="text" 
-                placeholder="Job title or company" 
-                className="search-input" 
+              <input
+                type="text"
+                placeholder="Job title or company"
+                className="search-input"
               />
-              <span className="search-icon">🔍</span>
+              <Search className="search-icon" size={18} color="#666" />
             </div>
           </div>
 
@@ -162,7 +189,7 @@ const JobListings = () => {
                 <option value="kumasi">Kumasi</option>
                 <option value="tamale">Tamale</option>
               </select>
-              <span className="location-icon">📍</span>
+              <MapPin className="location-icon" size={18} color="#666" />
             </div>
           </div>
 
@@ -194,18 +221,18 @@ const JobListings = () => {
               ))}
             </div>
           </div>
-   
+
           {/* Salary Range */}
           <div className="filter-section">
             <h3 className="filter-title">Salary</h3>
             <div className="salary-slider-container">
-              <input 
-                type="range" 
-                min="0" 
-                max="9999" 
-                value={salaryRange[1]} 
-                onChange={(e) => setSalaryRange([salaryRange[0], parseInt(e.target.value)])} 
-                className="salary-slider" 
+              <input
+                type="range"
+                min="0"
+                max="9999"
+                value={salaryRange[1]}
+                onChange={(e) => setSalaryRange([salaryRange[0], parseInt(e.target.value)])}
+                className="salary-slider"
               />
             </div>
             <div className="salary-range-display">
@@ -281,7 +308,7 @@ const JobListings = () => {
                 </div>
                 <div className="job-card-right">
                   <button className="bookmark-btn">🔖</button>
-                  
+
                   <Link to='/job-detail'><button className="job-details-btn" onClick={handleJobDetailsClick}>Job Details</button></Link>
                 </div>
               </div>
@@ -290,13 +317,13 @@ const JobListings = () => {
 
           {/* Pagination */}
           <div className="pagination">
-            <button 
+            <button
               className={`page-btn ${currentPage === 1 ? 'active' : ''}`}
               onClick={() => handlePageChange(1)}
             >
               1
             </button>
-            <button 
+            <button
               className={`page-btn ${currentPage === 2 ? 'active' : ''}`}
               onClick={() => handlePageChange(2)}
             >

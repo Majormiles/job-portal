@@ -73,6 +73,7 @@
   .location-select {
     width: 100%;
     padding: 10px;
+    padding-left: 30px;
     border: 1px solid #ddd;
     border-radius: 4px;
     appearance: none;
