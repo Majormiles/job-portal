@@ -15,7 +15,7 @@ const Dashboard = () => {
       logo: 'upwork-logo.png',
       location: 'Washington',
       salary: '$50k-80k/month',
-      date: 'Feb 2, 2019 19:28',
+      date: 'Feb 2, 2025 19:28',
       status: 'Active',
       type: 'Remote'
     },
@@ -26,7 +26,7 @@ const Dashboard = () => {
       logo: 'design-logo.png',
       location: 'Dhaka',
       salary: '$50k-80k/month',
-      date: 'Dec 7, 2019 23:26',
+      date: 'Dec 7, 2024 23:26',
       status: 'Active',
       type: 'Full Time'
     },
@@ -37,7 +37,7 @@ const Dashboard = () => {
       logo: 'apple-logo.png',
       location: 'Brazil',
       salary: '$50k-80k/month',
-      date: 'Feb 2, 2019 19:28',
+      date: 'Feb 2, 2025 19:28',
       status: 'Active',
       type: 'Temporary'
     },
@@ -48,7 +48,7 @@ const Dashboard = () => {
       logo: 'microsoft-logo.png',
       location: 'Wisconsin',
       salary: '$50k-80k/month',
-      date: 'Dec 7, 2019 23:26',
+      date: 'Dec 7, 2024 23:26',
       status: 'Active',
       type: 'Contract Base'
     }
