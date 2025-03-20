@@ -1,9 +1,12 @@
 // pages/Dashboard.js
-import React from 'react';
+import React, { useState } from 'react'; // Import useState hook
 import { Link } from 'react-router-dom';
-import './css/Dashboard.css'; // Import the dedicated Dashboard CSS file
+import './css/Dashboard.css';
 
 const Dashboard = () => {
+  // Add state to track selected job
+  const [selectedJobId, setSelectedJobId] = useState(4); // Default to the 4th job which was highlighted
+
   const recentApplications = [
     {
       id: 1,
@@ -51,15 +54,31 @@ const Dashboard = () => {
     }
   ];
 
+  // Function to handle job selection
+  const handleJobSelect = (jobId) => {
+    setSelectedJobId(jobId);
+  };
+
+  // Function to handle view details click
+  const handleViewDetails = (jobId) => {
+    // Here you would typically navigate to a job details page
+    // For now, we'll just log the action
+    console.log(`View details for job ${jobId}`);
+    // You could add navigation logic here, e.g.:
+    // history.push(`/job-details/${jobId}`);
+  };
+
   return (
     <div className="content-area">
       <div className="dashboard-container">
+        {/* Other components remain unchanged */}
         <div className="dashboard-header">
           <h1>Hello, Esther Howard</h1>
           <p>Here is your daily activities and job alerts</p>
         </div>
 
         <div className="stats-container">
+          {/* Stats cards remain unchanged */}
           <div className="stat-card blue">
             <div className="stat-info">
               <h2>589</h2>
@@ -92,6 +111,7 @@ const Dashboard = () => {
         </div>
 
         <div className="profile-alert">
+          {/* Profile alert remains unchanged */}
           <div className="profile-alert-content">
             <div className="profile-image">
               <img src="/profile-placeholder.jpg" alt="Profile" />
@@ -123,7 +143,12 @@ const Dashboard = () => {
             </div>
 
             {recentApplications.map((job) => (
-              <div className={`table-row ${job.id === 4 ? 'highlighted' : ''}`} key={job.id}>
+              <div 
+                className={`table-row ${job.id === selectedJobId ? 'highlighted' : ''}`} 
+                key={job.id}
+                onClick={() => handleJobSelect(job.id)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="column-job">
                   <div className="job-info">
                     <div className="company-logo">
@@ -148,7 +173,15 @@ const Dashboard = () => {
                   </span>
                 </div>
                 <div className="column-action">
-                  <button className="view-details-btn">View Details</button>
+                  <button 
+                    className="view-details-btn"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering the row click
+                      handleViewDetails(job.id);
+                    }}
+                  >
+                    View Details
+                  </button>
                 </div>
               </div>
             ))}
