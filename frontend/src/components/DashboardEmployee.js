@@ -156,7 +156,7 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-footer">
-          <p>© 2021 Jobpilot - Job Board. All rights Reserved</p>
+          <p>© {new Date().getFullYear()} Job Portal &copy; Major Myles. All rights Reserved</p>
         </div>
       </div>
     </div>
