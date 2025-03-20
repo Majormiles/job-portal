@@ -44,7 +44,7 @@
   margin-bottom: 24px;
 }
 
-.stat-card {
+.dashboard-container .stat-card {
   padding: 24px;
   border-radius: 8px;
   display: flex;
@@ -52,29 +52,29 @@
   align-items: center;
 }
 
-.stat-card.blue {
+.dashboard-container .stat-card.blue {
   background-color: #eff6ff;
 }
 
-.stat-card.yellow {
+.dashboard-container .stat-card.yellow {
   background-color: #fff9e6;
 }
 
-.stat-card.green {
+.dashboard-container .stat-card.green {
   background-color: #ecfdf3;
 }
 
-.stat-info h2 {
+.dashboard-container .stat-info h2 {
   font-size: 32px;
   font-weight: 600;
   margin-bottom: 4px;
 }
 
-.stat-info p {
+.dashboard-container .stat-info p {
   color: #667085;
 }
 
-.stat-icon {
+.dashboard-container .stat-icon {
   width: 45px;
   height: 45px;
   border-radius: 50%;
