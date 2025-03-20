@@ -2,6 +2,7 @@
 import React, { useState } from 'react'; // Import useState hook
 import { Link } from 'react-router-dom';
 import './css/Dashboard.css';
+import userImage from '../assets/images/woman.png';
 
 const Dashboard = () => {
   // Add state to track selected job
@@ -114,12 +115,13 @@ const Dashboard = () => {
           {/* Profile alert remains unchanged */}
           <div className="profile-alert-content">
             <div className="profile-image">
-              <img src="/profile-placeholder.jpg" alt="Profile" />
+            <img src={userImage} alt="Profile"  />
             </div>
             <div className="alert-message">
               <h3>Your profile editing is not completed.</h3>
               <p>Complete your profile editing & build your custom Resume</p>
             </div>
+             
           </div>
           <button className="edit-profile-btn">
             Edit Profile <i className="fas fa-arrow-right"></i>
