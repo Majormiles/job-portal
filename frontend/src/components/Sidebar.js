@@ -9,7 +9,7 @@ const Sidebar = () => {
     <div className="sidebar">
       <div className="sidebar-header">CANDIDATE DASHBOARD</div>
       <nav className="sidebar-nav">
-        <NavLink to="/" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+        <NavLink to="/dashboard_employee" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
           <div className="nav-icon">
             <i className="far fa-layer-group"></i>
           </div>
