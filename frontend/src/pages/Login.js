@@ -118,9 +118,9 @@ const Login = () => {
                 <Link to="/forgot-password" className="forgot-password">Forgot Password?</Link>
               </div>
               
-              <button type="submit" className="submit-button">
+              <Link to="/dashboard_employee"><button type="submit" className="submit-button">
                 Sign In
-              </button>
+              </button></Link>
               
               <div className="social-login">
                 <div className="divider">
