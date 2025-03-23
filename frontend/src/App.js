@@ -14,6 +14,7 @@ import PricingPlan from './pages/PricingPlan';
 import CheckoutPage from './pages/CheckoutPage';
 import JobDetail from './pages/JobDetails';
 import Dashboard from './pages/Dashboard';
+import JobsApplied from './pages/JobsApplied';
 import './App.css';
 import AboutUs from './components/AboutUs';
 
@@ -38,6 +39,7 @@ const AppContent = () => {
         <Route path="/pricing-plan" element={<PricingPlan />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/dashboard_employee" element={<Dashboard />} />
+        <Route path="/applied-jobs" element={<JobsApplied />} />
       </Routes>
     </div>
   );

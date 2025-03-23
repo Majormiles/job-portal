@@ -441,7 +441,7 @@ body {
 
 .search-input input {
   width: 100%;
-  padding: 15px 20px;
+  padding: 15px 10px;
   border: none;
   outline: none;
   font-size: 0.9rem;
@@ -455,7 +455,7 @@ body {
 
 .search-select select {
   width: 100%;
-  padding: 15px 40px 15px 20px;
+  padding: 25px 40px 15px 20px;
   border: none;
   outline: none;
   appearance: none;
