@@ -17,7 +17,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       
       {/* Sidebar with conditional classes based on isOpen state */}
       <div className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
-        <div className="sidebar-header">CANDIDATE DASHBOARD</div>
+        <div className="sidebar-header">EMPLOYEE DASHBOARD</div>
         <nav className="sidebar-nav">
           <NavLink to="/dashboard_employee" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
             <div className="nav-icon">

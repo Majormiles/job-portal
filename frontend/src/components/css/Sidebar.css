@@ -91,9 +91,9 @@
 }
 
 .sidebar-toggle {
-  position: fixed;
+  position: absolute;
   top: 15px;
-  left: 15px;
+  left: 10px;
   z-index: 1001;
   background: white;
   border: 1px solid #eaedf2;
@@ -167,6 +167,17 @@
   .main-content {
     margin-left: 0;
   }
+
+
+  .sidebar-header {
+    padding: 20px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #667085;
+    margin-left: 35px;
+    border-bottom: 1px solid #eaedf2;
+  }
+  
 }
 
 @media (max-width: 480px) {

@@ -10,7 +10,6 @@
 
 .dashboard-content {
   flex: 1;
-  padding: 20px;
   transition: margin-left 0.3s ease;
 }
 
@@ -386,4 +385,10 @@
     justify-content: center;
     margin-top: 16px;
   }
+
+  .dashboard-container {
+    padding-top: 50px;
+   
+  }
 }
+
