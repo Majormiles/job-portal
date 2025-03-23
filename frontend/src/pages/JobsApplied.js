@@ -12,7 +12,7 @@ const JobListingsPage = () => {
       <Header />
       <div className="hero"></div>
       <Sidebar className="sidebar" />
-      <div className="content-section">
+      <div className="content-section-appliedjobs">
         <JobsApplied />
       </div>
       {/* <Footer /> */}

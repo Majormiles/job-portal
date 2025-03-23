@@ -163,7 +163,9 @@ const JobListings = () => {
             top: isSticky ? '25px' : 'auto',
             transition: 'all 0.3s ease',
             maxHeight: isSticky ? 'calc(100vh - 40px)' : 'none',
-            overflowY: isSticky ? 'auto' : 'visible'
+            overflowY: isSticky ? 'auto' : 'visible',
+            scrollbarWidth: 'thin', 
+            scrollbarColor: '#D3D3D3 transparent' 
           }}
         >
           {/* Search by job title */}

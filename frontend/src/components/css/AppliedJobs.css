@@ -6,7 +6,7 @@
   background-color: white;
 }
 
-.recent-applications {
+.applied-jobs-container .recent-applications {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -124,13 +124,13 @@ header, .header {
 }
 
 /* Sidebar styling */
-.sidebar {
+.page-container-appliedjobs  .sidebar {
   grid-area: sidebar;
   height: 100%;
 }
 
 /* Content section - full width with white background */
-.content-section {
+.content-section-appliedjobs {
   grid-area: content;
   padding: 20px 80px;
   background-color: white;
