@@ -1,5 +1,4 @@
 /* AppliedJobs.css - Component specific styles */
-
 .applied-jobs-container {
   width: 100%;
   margin: 0;
@@ -38,6 +37,7 @@
 
 .applications-table {
   width: 100%;
+  overflow-x: auto; /* Add horizontal scroll for small screens */
 }
 
 .table-header {
@@ -55,6 +55,11 @@
   padding: 16px 20px;
   align-items: center;
   border-bottom: 1px solid #eaedf2;
+  transition: background-color 0.2s ease;
+}
+
+.table-row:hover {
+  background-color: #f9f9fb;
 }
 
 .table-row:last-child {
@@ -67,21 +72,150 @@
   border-radius: 8px;
 }
 
-/* All other styles remain unchanged */
+.job-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+.company-logo {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: bold;
+  color: white;
+}
+
+.logo.upwork {
+  background-color: #14a800;
+}
+
+.logo.design {
+  background-color: #ff5722;
+}
+
+.logo.apple {
+  background-color: #000000;
+}
+
+.logo.microsoft {
+  background-color: #0078d4;
+}
+
+.job-details h4 {
+  font-size: 15px;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.job-type {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: normal;
+  background-color: #e5e7eb;
+}
+
+.job-type.remote {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.job-type.full-time {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.job-type.temporary {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.job-type.contract-base {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+.job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #667085;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.status-badge.active {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.view-details-btn {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.view-details-btn:hover {
+  background-color: #e0e7ff;
+}
+
+.dashboard-footer {
+  text-align: center;
+  padding: 16px;
+  color: #667085;
+  font-size: 13px;
+}
+
+/* Responsive styles */
+@media (max-width: 992px) {
   .table-header, .table-row {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-header {
+    display: none;
+  }
+  
+  .table-row {
     grid-template-columns: 1fr;
     gap: 12px;
+    padding: 16px;
   }
   
   .column-date, .column-status, .column-action {
-    padding-left: 64px;
-  }
-  
-  .table-header {
-    display: none;
+    padding-left: 52px;
   }
   
   .column-date:before {
@@ -93,122 +227,26 @@
     content: "Status: ";
     font-weight: 500;
   }
-}
-
-/* Layout CSS fixes */
-
-/* Main page container */
-.page-container-appliedjobs {
-  display: grid;
-  grid-template-columns: auto 1fr; /* Sidebar auto width, content takes remaining */
-  grid-template-rows: auto auto 1fr; /* Header, hero, content */
-  grid-template-areas:
-    "header header"
-    "hero hero"
-    "sidebar content";
-  min-height: 100vh;
-  width: 100%;
-  background-color: #f5f5f8; /* This should be your site's background color */
-}
-
-/* Header styling */
-header, .header {
-  grid-area: header;
-  width: 100%;
-}
-
-/* Hero section */
-.hero {
-  grid-area: hero;
-  width: 100%;
-}
-
-/* Sidebar styling */
-.page-container-appliedjobs  .sidebar {
-  grid-area: sidebar;
-  height: 100%;
-}
-
-/* Content section - full width with white background */
-.content-section-appliedjobs {
-  grid-area: content;
-  padding: 20px 80px;
-  background-color: white;
-  overflow-y: auto;
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  border: none;
-  box-shadow: none;
-}
-
-/* Applied jobs container */
-.applied-jobs-container {
-  padding-top: 0;
-  margin-top: 0;
-  width: 100%;
-  max-width: 100%;
-  background-color: white;
-}
-
-/* Table container */
-.recent-applications {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
-  width: 100%;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .page-container {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "header"
-      "hero"
-      "content"
-      "sidebar";
+  
+  .job-meta {
+    flex-direction: column;
+    gap: 6px;
   }
   
-  .sidebar {
+  .recent-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .view-details-btn {
     width: 100%;
   }
-  
-  .content-section {
-    padding: 15px;
-  }
 }
 
-
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .page-container {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "header"
-      "hero"
-      "content"
-      "sidebar";
-  }
-  
-  .sidebar {
-    width: 100%;
-  }
-  
-  .content-section {
-    padding: 15px;
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .content-area {
-    padding: 15px;
-  }
-  
-  .applied-jobs-container {
-    padding-top: 0;
+@media (max-width: 480px) {
+  .job-info {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

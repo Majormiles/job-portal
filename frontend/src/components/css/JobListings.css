@@ -45,6 +45,21 @@
     font-weight: bold;
     margin-bottom: 12px;
   }
+
+
+  /* Add this to your CSS file */
+.filters-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filters-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.filters-sidebar::-webkit-scrollbar-thumb {
+  background-color: #D3D3D3; /* Light grey color */
+  border-radius: 4px;
+}
   
   /* Search input */
   .search-input-container {

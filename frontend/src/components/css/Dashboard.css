@@ -156,14 +156,14 @@
   gap: 8px;
 }
 
-.recent-applications {
+.dashboard-layout .recent-applications {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 24px;
 }
 
-.recent-header {
+.dashboard-layout .recent-header {
   padding: 20px;
   display: flex;
   justify-content: space-between;
@@ -171,12 +171,12 @@
   border-bottom: 1px solid #eaedf2;
 }
 
-.recent-header h3 {
+.dashboard-layout .recent-header h3 {
   font-size: 18px;
   font-weight: 600;
 }
 
-.view-all {
+.dashboard-layout .view-all {
   color: #667085;
   text-decoration: none;
   display: flex;

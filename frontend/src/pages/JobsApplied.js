@@ -1,23 +1,42 @@
-// src/pages/JobListingsPage.js
-import React from 'react';
+// src/pages/JobAppliedPage.js
+import React, { useState, useEffect } from 'react';
 import JobsApplied from '../components/AppliedJobs';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
-import '../components/css/AppliedJobs.css'; // Make sure to create this CSS file with the styles from above
+import '../components/css/AppliedJobs.css';
 
-const JobListingsPage = () => {
+const JobAppliedPage = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+  
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setSidebarOpen(window.innerWidth > 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+  
   return (
-    <div className="page-container-appliedjobs">
+    <div className="page-container">
       <Header />
       <div className="hero"></div>
-      <Sidebar className="sidebar" />
-      <div className="content-section-appliedjobs">
-        <JobsApplied />
+      
+      <div className="dashboard-layout">
+        <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+        <main className={`dashboard-content ${!sidebarOpen ? 'sidebar-closed' : ''}`}>
+          <JobsApplied />
+        </main>
       </div>
+      
       {/* <Footer /> */}
     </div>
   );
 };
 
-export default JobListingsPage;
+export default JobAppliedPage;
