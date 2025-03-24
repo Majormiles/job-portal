@@ -209,7 +209,7 @@ const RegisterPage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
         <div className="relative h-full flex items-center justify-center p-8">
           {/* Image container - Replace src with your custom image */}
-          <img src={jobsearchImage} alt="Registration illustration" className="w-full h-full object-cover" />
+          {/* <img src={jobsearchImage} alt="Registration illustration" className="w-full h-full object-cover" /> */}
         </div>
       </div>
     </div>

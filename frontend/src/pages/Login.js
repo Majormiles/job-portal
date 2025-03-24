@@ -100,8 +100,6 @@ const LoginPage = () => {
                 Forgot your password?
               </a>
             </div>
-            dashboard_employee
-
             <Link to="/dashboard_employee">
               <button
                 type="submit"
@@ -165,7 +163,7 @@ const LoginPage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
         <div className="relative h-full flex items-center justify-center p-8">
           {/* Image container - Replace src with your custom image */}
-          <img src={jobsearchImage} alt="Login illustration" className="w-full h-full object-cover" />
+          {/* <img src={jobsearchImage} alt="Login illustration" className="w-full h-full object-cover" /> */}
         </div>
       </div>
     </div>
