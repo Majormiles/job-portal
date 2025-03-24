@@ -105,14 +105,14 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="dashboard-container p-4 space-y-6 bg-gray-50 min-h-screen">
+    <div className="section-body">
       <div className="page-header mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
         <p className="text-gray-500">Overview of your business metrics</p>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Jobs */}
         <div className="bg-white shadow-md rounded-lg p-4 flex items-center hover:shadow-lg transition-shadow">
           <div className="bg-blue-100 p-3 rounded-full mr-4">
@@ -159,9 +159,9 @@ const Dashboard = () => {
       </div>
 
       {/* Revenue Overview and Recent Payments */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Overview (2/3 width) */}
-        <div className="lg:col-span-2 bg-white shadow-md rounded-lg">
+        <div className="lg:col-span-2 bg-white shadow-md rounded-lg mb-6">
           <div className="p-4 border-b flex justify-between items-center">
             <h3 className="text-lg font-semibold">Revenue Overview</h3>
             <select className="text-sm text-gray-600 border rounded px-2 py-1">
