@@ -146,6 +146,7 @@ const RegisterPage = () => {
               </div>
             </div>
 
+            <Link to="/dashboard">   
             <button
               type="submit"
               className="w-full py-2.5 sm:py-3 px-4 text-sm sm:text-base text-white rounded-md font-medium focus:outline-none"
@@ -153,6 +154,7 @@ const RegisterPage = () => {
             >
               Create Account
             </button>
+            </Link>
           </form>
 
           <div className="mt-6 text-center">
