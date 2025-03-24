@@ -145,9 +145,9 @@ const JobPortal = () => {
             {/* How it Works Section */}
             <section className="how-it-works" ref={featuresRef}>
                 <div className="container">
-                    <h2>How it works</h2>
+                    <h2>How It Works</h2>
                     <p className="section-subtitle">
-                        At eu laboris pretium tincidunt amet lacus ut semper aliquet. Eripuit a massa elementum id scelerisque rhoncus.
+                        We simplify the process of finding and applying for jobs, ensuring a seamless experience for you.
                     </p>
 
                     <div className="features">
@@ -156,7 +156,7 @@ const JobPortal = () => {
                                 <UserIcon />
                             </div>
                             <h3>Create Account</h3>
-                            <p>Nunc sed a vel purus. Nish mi faucibus proin lacus tristique.</p>
+                            <p>Start by creating your account. It's quick, easy, and free to get started.</p>
                         </div>
 
                         <div className="feature">
@@ -164,7 +164,7 @@ const JobPortal = () => {
                                 <DocumentIcon />
                             </div>
                             <h3>Upload Resume</h3>
-                            <p>Felis eu eifices a sed massa. Commodo fridigila sed tempor.</p>
+                            <p>Upload your resume to showcase your skills and experience to potential employers.</p>
                         </div>
 
                         <div className="feature">
@@ -172,15 +172,15 @@ const JobPortal = () => {
                                 <BriefcaseIcon />
                             </div>
                             <h3>Find Jobs</h3>
-                            <p>Commodo fridigila sed tempor mass tempest eifisteus sarum.</p>
+                            <p>Browse through a wide range of job opportunities tailored to your profile.</p>
                         </div>
 
                         <div className="feature">
                             <div className="feature-icon-wrapper">
                                 <CheckIcon />
                             </div>
-                            <h3>Apply Job</h3>
-                            <p>Nisi enim feugiat enim volutpat. Sem quis viverra.</p>
+                            <h3>Apply for Jobs</h3>
+                            <p>Submit your application with just a few clicks and track your progress easily.</p>
                         </div>
                     </div>
                 </div>
@@ -200,28 +200,27 @@ const JobPortal = () => {
                             <div className="steps-container">
                                 <div className="step">
                                     <div className="step-number">1</div>
-                                    <p>Est gravida lorem amet porta risus vitae et.</p>
+                                    <p>Start by exploring opportunities that align with your skills and passions.</p>
                                 </div>
                                 <div className="step">
                                     <div className="step-number">2</div>
-                                    <p>Volutpat dui lacus mattis urna porta... lacus lorem.</p>
+                                    <p>Join a team that values collaboration, innovation, and growth.</p>
                                 </div>
                                 <div className="step">
                                     <div className="step-number">3</div>
-                                    <p>Elementum faucibus netus gravida lacus lorem.</p>
+                                    <p>Build a fulfilling career and enjoy a balanced, rewarding life.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
-
             {/* FAQ Section */}
             <section className="about-faq-section" ref={faqRef}>
                 <div className="container">
                     <h2>Frequently Asked Questions</h2>
                     <p className="section-subtitle">
-                        At eu laboris pretium tincidunt amet lacus ut semper aliquet.
+                        We provide clear answers to common questions about our services and processes.
                     </p>
 
                     <div className="About-faq-container">
@@ -235,7 +234,7 @@ const JobPortal = () => {
                                 </button>
                             </div>
                             <div className="faq-answer">
-                                <p>Nunc sed a vel purus. Nish mi faucibus proin lacus tristique. Sit congue non vitae odio ut erat in. Felis eu eifices a sed massa. Commodo fridigila sed tempor mass tempest eifisteus sarum. Habitasse molls faucibus in ducus lectus. Nisi enim feugiat enim volutpat. Sem quis viverra eretna odio mauris nunc.</p>
+                                <p>Yes, you can upload your CV. We recommend ensuring it is up-to-date and includes all relevant information about your skills and experience.</p>
                             </div>
                         </div>
 
@@ -249,21 +248,21 @@ const JobPortal = () => {
                                 </button>
                             </div>
                             <div className="faq-answer">
-                                <p>Nunc sed a vel purus. Nish mi faucibus proin lacus tristique. Sit congue non vitae odio ut erat in. Felis eu eifices a sed massa.</p>
+                                <p>The recruitment process typically takes between 2 to 4 weeks, depending on the role and the number of applicants. We strive to keep you informed at every stage.</p>
                             </div>
                         </div>
 
                         <div id="faq-4" className="faq-item">
                             <div className="faq-question" onClick={() => toggleFaq(4)}>
                                 <div className="faq-number">04</div>
-                                <h3>Do you recruit for Graduates, Apprentices and Students?</h3>
+                                <h3>Do you recruit for Graduates, Apprentices, and Students?</h3>
                                 <button className="faq-toggle">
                                     <PlusIcon />
                                     <MinusIcon />
                                 </button>
                             </div>
                             <div className="faq-answer">
-                                <p>Commodo fridigila sed tempor mass tempest eifisteus sarum. Habitasse molls faucibus in ducus lectus. Nisi enim feugiat enim volutpat.</p>
+                                <p>Yes, we offer opportunities for graduates, apprentices, and students. Check our careers page for current openings and programs tailored to your level of experience.</p>
                             </div>
                         </div>
 
@@ -277,7 +276,7 @@ const JobPortal = () => {
                                 </button>
                             </div>
                             <div className="faq-answer">
-                                <p>Felis eu eifices a sed massa. Commodo fridigila sed tempor mass tempest eifisteus sarum. Habitasse molls faucibus in ducus lectus.</p>
+                                <p>Our recruitment process includes application review, interviews, and assessments. We aim to ensure a fair and transparent selection process for all candidates.</p>
                             </div>
                         </div>
 
@@ -291,7 +290,7 @@ const JobPortal = () => {
                                 </button>
                             </div>
                             <div className="faq-answer">
-                                <p>Sem quis viverra eretna odio mauris nunc. Nunc sed a vel purus. Nish mi faucibus proin lacus tristique.</p>
+                                <p>Yes, you can opt to receive notifications about future job openings that match your profile. Simply enable notifications in your account settings.</p>
                             </div>
                         </div>
                     </div>
