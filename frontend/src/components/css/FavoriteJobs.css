@@ -58,33 +58,32 @@
     margin-bottom: 32px;
   }
   
-  .job-card {
+  .favorite-jobs-container .job-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    border: 1px solid #e2e8f0;
     border-radius: 8px;
     background-color: white;
     transition: all 0.2s ease;
   }
   
-  .job-card:hover {
+  .favorite-jobs-container .job-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
   
-  .job-card.highlighted {
+  .favorite-jobs-container .job-card.highlighted {
     border: 1px solid #2563eb;
     background-color: #f8fafc;
   }
   
-  .job-card-left {
+  .favorite-jobs-container  .job-card-left {
     display: flex;
     align-items: center;
     gap: 16px;
   }
   
-  .company-logo {
+  .favorite-jobs-container  .company-logo {
     width: 48px;
     height: 48px;
     border-radius: 6px;
@@ -109,20 +108,20 @@
     color: white;
   }
   
-  .job-details {
+  .favorite-jobs-container  .job-details {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
   
-  .job-title {
+  .favorite-jobs-container  .job-title {
     font-size: 16px;
     font-weight: 600;
     color: #1e293b;
     margin: 0;
   }
   
-  .job-meta {
+  .favorite-jobs-container  .job-meta {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -131,49 +130,49 @@
     color: #64748b;
   }
   
-  .job-meta > div {
+  .favorite-jobs-container  .job-meta > div {
     display: flex;
     align-items: center;
     gap: 6px;
   }
   
-  .job-type {
+  .favorite-jobs-container  .job-type {
     font-size: 12px;
     padding: 3px 10px;
     border-radius: 4px;
     font-weight: 500;
   }
   
-  .job-type.full-time {
+  .favorite-jobs-container  .job-type.full-time {
     background-color: #dbeafe;
     color: #2563eb;
   }
   
-  .job-type.part-time {
+  .favorite-jobs-container  .job-type.part-time {
     background-color: #e0f2fe;
     color: #0ea5e9;
   }
   
-  .job-type.remote {
+  .favorite-jobs-container  .job-type.remote {
     background-color: #dcfce7;
     color: #16a34a;
   }
   
-  .job-type.contract-base {
+  .favorite-jobs-container .job-type.contract-base {
     background-color: #f3e8ff;
     color: #9333ea;
   }
   
-  .job-type.temporary {
+  .favorite-jobs-container .job-type.temporary {
     background-color: #fef3c7;
     color: #d97706;
   }
   
-  .job-time.expired {
+  .favorite-jobs-container .job-time.expired {
     color: #ef4444;
   }
   
-  .job-card-right {
+  .favorite-jobs-container .job-card-right {
     display: flex;
     align-items: center;
     gap: 16px;

@@ -208,6 +208,7 @@
     border-radius: 4px;
   }
   
+  
   /* Job cards */
   .jobs-container {
     display: flex;
@@ -215,7 +216,7 @@
     gap: 15px;
   }
   
-  .job-card {
+  .jobs-container .job-card {
     display: flex;
     max-width: 1024px;
     align-items: center;
@@ -226,77 +227,77 @@
     background-color: white;
   }
   
-  .job-card-left {
+  .jobs-container .job-card-left {
     flex: 1;
   }
   
-  .job-posted-time {
+  .jobs-container .job-posted-time {
     font-size: 12px;
     color: #888;
     margin-bottom: 10px;
   }
   
-  .job-header {
+  .jobs-container .job-header {
     display: flex;
     margin-bottom: 15px;
   }
   
-  .job-logo {
+  .jobs-container  .job-logo {
     margin-right: 15px;
   }
   
-  .logo-placeholder {
+  .jobs-container .logo-placeholder {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     background-color: #f0f0f0;
   }
   
-  .job-title {
+  .jobs-container  .job-title {
     margin: 0 0 5px 0;
     font-size: 18px;
   }
   
-  .company-name {
+  .jobs-container .company-name {
     margin: 0;
     font-size: 14px;
     color: #666;
   }
   
-  .job-details {
+  .jobs-container .job-details {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
   }
   
-  .job-detail-item {
+  .jobs-container .job-detail-item {
     display: flex;
     align-items: center;
   }
   
-  .detail-icon {
+  .jobs-container .detail-icon {
     margin-right: 5px;
   }
   
-  .detail-text {
+  .jobs-container  .detail-text {
     font-size: 14px;
   }
   
-  .job-card-right {
+  .jobs-container .job-card-right {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: flex-end;
   }
   
-  .bookmark-btn {
+  .jobs-container .bookmark-btn {
     background: none;
     border: none;
     cursor: pointer;
     font-size: 20px;
   }
   
-  .job-details-btn {
+  .jobs-container  .job-details-btn {
     background-color: #36b37e;
     color: white;
     border: none;
