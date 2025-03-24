@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import './css/Header_one.css';
+import '../css/Header_one.css';
 
 const JobPortal = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);

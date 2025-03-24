@@ -1,8 +1,8 @@
 // src/pages/JobListingsPage.js
 import React from 'react';
-import Checkout from '../components/Checkout';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import Checkout from '../components/ui/Checkout';
+import Header from '../components/ui/Header';
+import Footer from '../components/ui/Footer';
 
 const JobListingsPage = () => {
   return (

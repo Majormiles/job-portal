@@ -1,12 +1,12 @@
 // src/pages/HomePage.js
 import React from 'react';
-import Companies from '../components/Companies';
-import RecentJobs from '../components/RecentJobs';
-import JobCategories from '../components/JobCategories';
-import CompanySection from '../components/CompanySection';
-import CallToAction from '../components/CallToAction';
-import FaqDropdown from '../components/FaqDropdown';
-import Footer from '../components/Footer';
+import Companies from '../components/ui/Companies';
+import RecentJobs from '../components/ui/RecentJobs';
+import JobCategories from '../components/ui/JobCategories';
+import CompanySection from '../components/ui/CompanySection';
+import CallToAction from '../components/ui/CallToAction';
+import FaqDropdown from '../components/ui/FaqDropdown';
+import Footer from '../components/ui/Footer';
 
 const HomePage = () => {
 

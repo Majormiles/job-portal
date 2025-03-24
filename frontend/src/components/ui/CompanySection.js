@@ -1,7 +1,7 @@
 import React from 'react';
-import jobsearchImage from '../assets/images/jobsearch.png';
+import jobsearchImage from '../../assets/images/jobsearch.png';
 import { Link, NavLink } from 'react-router-dom';
-import './css/CompanySection.css'; // We'll define this CSS file separately
+import '../css/CompanySection.css'; // We'll define this CSS file separately
 
 const CompanySection = () => {
   return (

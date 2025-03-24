@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Phone, Mail, Clock, MapPin } from 'react-feather';
-import './css/Contact.css';
+import '../css/Contact.css';
 
 
-import zoomLogo from '../assets/logo/adobe.png';
-import asanaLogo from '../assets/logo/asana.jpeg';
-import tinderLogo from '../assets/logo/linear.png';
-import dribbleLogo from '../assets/logo/spotify.png';
+import zoomLogo from '../../assets/logo/adobe.png';
+import asanaLogo from '../../assets/logo/asana.jpeg';
+import tinderLogo from '../../assets/logo/linear.png';
+import dribbleLogo from '../../assets/logo/spotify.png';
 
 const ContactPage = () => {
     const location = useLocation();

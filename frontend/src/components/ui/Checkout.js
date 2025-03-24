@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, CheckCircle, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import './css/Checkout.css';
+import '../css/Checkout.css';
 
 // ScrollToTop component to handle scrolling on route change
 const ScrollToTop = () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import './css/JobCategories.css';
+import '../css/JobCategories.css';
 
 const BrowseCategories = () => {
   const categories = [

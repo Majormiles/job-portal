@@ -1,10 +1,12 @@
+// src/pages/JobAppliedPage.js
 import React, { useState, useEffect } from 'react';
-import Dashboard from '../components/ui/DashboardEmployee';
+import FavoriteJobs from '../components/ui/FavoriteJobs';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
 import Sidebar from '../components/ui/Sidebar';
+import '../components/css/AppliedJobs.css';
 
-const DashboardEmployee = () => {
+const FavoriteJobsPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   
   // Handle window resize
@@ -24,11 +26,11 @@ const DashboardEmployee = () => {
     <div className="page-container">
       <Header />
       <div className="hero"></div>
-
+      
       <div className="dashboard-layout">
         <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
         <main className={`dashboard-content ${!sidebarOpen ? 'sidebar-closed' : ''}`}>
-          <Dashboard />
+          <FavoriteJobs />
         </main>
       </div>
       
@@ -37,4 +39,4 @@ const DashboardEmployee = () => {
   );
 };
 
-export default DashboardEmployee;
+export default FavoriteJobsPage;

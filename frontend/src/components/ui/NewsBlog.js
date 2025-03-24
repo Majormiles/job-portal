@@ -1,7 +1,7 @@
 import React from 'react';
-import './css/NewsBlog.css';
-import blog1 from '../assets/images/blog-1.jpg';
-import blog2 from '../assets/images/blog-2.jpg';
+import '../css/NewsBlog.css';
+import blog1 from '../../assets/images/blog-1.jpg';
+import blog2 from '../../assets/images/blog-2.jpg';
 
 const NewsBlog = () => {
   const articles = [

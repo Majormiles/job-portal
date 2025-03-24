@@ -18,7 +18,7 @@
   height: 100vh;
   position: sticky;
   top: 0;
-  left: 0;
+  left: 20px;
   z-index: 1000;
   transition: all 0.3s ease;
   flex-shrink: 0; /* Prevent sidebar from shrinking */
@@ -152,6 +152,7 @@
   .sidebar {
     position: absolute; 
     width: 260px;
+    left: 0;
     height: calc(100vh - 60px - 50px); 
     top: auto; 
   }

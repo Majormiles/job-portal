@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import './css/DetailPage.css';
+import '../css/DetailPage.css';
 
 // Create a ScrollToTop component to handle route changes
 const ScrollToTop = () => {

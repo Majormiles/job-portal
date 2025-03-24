@@ -1,5 +1,5 @@
 import React from 'react';
-import './css/JobStats.css';
+import '../css/JobStats.css';
 
 const JobStats = ({ isBottom = false }) => {
   const stats = isBottom 

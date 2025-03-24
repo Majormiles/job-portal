@@ -1,10 +1,10 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import Header from './components/Header-one';
+import Header from './components/ui/Header-one';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
-import About from './pages/AboutUs';
+import About from './pages/AboutPage';
 import Contact from './pages/Contact';
 import Companies from './pages/Companies';
 import Login from './pages/Login';
@@ -15,8 +15,10 @@ import CheckoutPage from './pages/CheckoutPage';
 import JobDetail from './pages/JobDetails';
 import Dashboard from './pages/Dashboard';
 import JobsApplied from './pages/JobsApplied';
+import FavoriteJobs from './pages/FavoriteJobs';
+import SettingsPage from './pages/SettingsPage';
 import './App.css';
-import AboutUs from './components/AboutUs';
+
 
 // This wrapper component checks if we're on the home route
 const AppContent = () => {
@@ -40,6 +42,8 @@ const AppContent = () => {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/dashboard_employee" element={<Dashboard />} />
         <Route path="/applied-jobs" element={<JobsApplied />} />
+        <Route path="/favorite-jobs" element={<FavoriteJobs />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </div>
   );

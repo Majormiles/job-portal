@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, Bookmark } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import './css/PricingPlans.css';
+import '../css/PricingPlans.css';
 
 // ScrollToTop component to handle scrolling on route change
 const ScrollToTop = () => {

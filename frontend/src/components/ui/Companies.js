@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import './css/Companies.css';
+import '../css/Companies.css';
 
-import adobeLogo from '../assets/logo/adobe.png';
-import asanaLogo from '../assets/logo/asana.jpeg';
-import linearLogo from '../assets/logo/linear.png';
-import spotifyLogo from '../assets/logo/spotify.png';
-import slackLogo from '../assets/logo/slack.png';
+import adobeLogo from '../../assets/logo/adobe.png';
+import asanaLogo from '../../assets/logo/asana.jpeg';
+import linearLogo from '../../assets/logo/linear.png';
+import spotifyLogo from '../../assets/logo/spotify.png';
+import slackLogo from '../../assets/logo/slack.png';
 
 const Partners = ({ partners }) => {
   const [position, setPosition] = useState(0);

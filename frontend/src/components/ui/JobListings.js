@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin } from 'lucide-react';
-import './css/JobListings.css';
+import '../css/JobListings.css';
 
 
 const JobListings = () => {

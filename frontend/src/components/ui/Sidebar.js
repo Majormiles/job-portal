@@ -1,7 +1,7 @@
 // components/Sidebar.js
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import './css/Sidebar.css';
+import '../css/Sidebar.css';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   return (

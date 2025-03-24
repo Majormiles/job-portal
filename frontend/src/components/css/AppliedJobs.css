@@ -1,7 +1,8 @@
 /* AppliedJobs.css - Component specific styles */
 .applied-jobs-container {
-  width: 100%;
-  margin: 0;
+  max-width:1200px;
+  margin: 0 auto ;
+  padding: 2px 45px;
   background-color: white;
 }
 

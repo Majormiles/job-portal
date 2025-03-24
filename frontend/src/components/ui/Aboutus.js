@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import jobsearchImage from '../assets/images/woman.jpg';
-import './css/About.css';
+import jobsearchImage from '../../assets/images/woman.jpg';
+import '../css/About.css';
 
 // Icon components
 const UserIcon = () => (

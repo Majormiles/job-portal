@@ -1,7 +1,7 @@
 import React from 'react';
 import { BookmarkIcon, BriefcaseIcon, ClockIcon, DollarSignIcon, MapPinIcon } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
-import './css/RecentJobs.css'; // We'll define this CSS file below
+import '../css/RecentJobs.css'; // We'll define this CSS file below
 
 const RecentJobs = () => {
   const jobs = [

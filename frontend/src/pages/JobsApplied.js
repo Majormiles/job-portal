@@ -1,9 +1,9 @@
 // src/pages/JobAppliedPage.js
 import React, { useState, useEffect } from 'react';
-import JobsApplied from '../components/AppliedJobs';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import Sidebar from '../components/Sidebar';
+import JobsApplied from '../components/ui/AppliedJobs';
+import Header from '../components/ui/Header';
+import Footer from '../components/ui/Footer';
+import Sidebar from '../components/ui/Sidebar';
 import '../components/css/AppliedJobs.css';
 
 const JobAppliedPage = () => {

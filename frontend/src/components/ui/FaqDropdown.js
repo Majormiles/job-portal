@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './css/FaqDropdown.css';
+import '../css/FaqDropdown.css';
 
 const FaqItem = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);

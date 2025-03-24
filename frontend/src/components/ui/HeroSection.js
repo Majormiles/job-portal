@@ -1,10 +1,10 @@
 import React from 'react';
-import './css/HeroSection.css';
-import companyLogoSpotify from '../assets/logo/Screenshot_20.png';
-import companyLogoSlack from '../assets/logo/slack.png';
-import companyLogoAdobe from '../assets/logo/adobe.png';
-import companyLogoLinear from '../assets/logo/linear.png';
-import companyLogoAsana from '../assets/logo/asana.jpeg';
+import '../css/HeroSection.css';
+import companyLogoSpotify from '../../assets/logo/Screenshot_20.png';
+import companyLogoSlack from '../../assets/logo/slack.png';
+import companyLogoAdobe from '../../assets/logo/adobe.png';
+import companyLogoLinear from '../../assets/logo/linear.png';
+import companyLogoAsana from '../../assets/logo/asana.jpeg';
 
 const HeroSection = () => {
   return (

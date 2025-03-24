@@ -1,8 +1,8 @@
 // pages/Dashboard.js
 import React, { useState } from 'react'; // Import useState hook
 import { Link } from 'react-router-dom';
-import './css/Dashboard.css';
-import userImage from '../assets/images/woman.png';
+import '.././css/Dashboard.css';
+import userImage from '../../assets/images/woman.png';
 
 const Dashboard = () => {
   // Add state to track selected job
