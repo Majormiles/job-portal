@@ -110,6 +110,7 @@ const AppliedJobs = () => {
   };
 
   return (
+    <div className="content-area">
     <div className="applied-jobs-container">
       <div className="recent-applications">
         <div className="recent-header">
@@ -177,6 +178,7 @@ const AppliedJobs = () => {
       <div className="dashboard-footer">
         <p>© {new Date().getFullYear()} Job Portal &copy; Major Myles. All rights Reserved</p>
       </div>
+    </div>
     </div>
   );
 };
