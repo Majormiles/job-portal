@@ -98,10 +98,10 @@ const Sidebar = () => {
       </div>
 
       <nav className="p-2 space-y-1">
-        {renderMenuItem(Monitor, 'Dashboard', '/')}
+        {renderMenuItem(Monitor, 'Admin Dashboard', 'admin-dashboard')}
         
         {renderMenuItem(Command, 'Manage Resumes', '/resumes', [
-          { text: 'Resumes', path: '/resume' },
+          { text: 'Resumes', path: 'resume' },
           { text: 'Calendar', path: '/calendar' }
         ])}
         
@@ -118,13 +118,13 @@ const Sidebar = () => {
           { text: 'Invoice', path: '/invoice' }
         ])}
         
-        {renderMenuItem(Users, 'Job Seekers', '/job-seekers')}
+        {renderMenuItem(Users, 'Job Seekers', 'job-seekers')}
         
         {renderMenuItem(Clipboard, 'Manage Applications', '/manage-applications')}
         
         {renderMenuItem(Settings, 'Settings', '/settings')}
         
-        {renderMenuItem(LogOut, 'Logout', '/logout')}
+        {renderMenuItem(LogOut, 'Logout', 'logout')}
       </nav>
     </div>
   );

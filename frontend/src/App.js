@@ -72,7 +72,7 @@ const AppContent = () => {
           
           {/* Protected Admin Routes */}
           <Route element={<AdminMainLayout />}>
-            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="admin-dashboard" element={<AdminDashboard />} />
             <Route path="resume" element={<AdminResume />} />
             <Route path="calendar" element={<AdminCalendar />} />
             <Route path="categories" element={<AdminCategories />} />

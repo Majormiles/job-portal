@@ -11,7 +11,7 @@ import {
 
 const Navbar = ({ toggleSidebar }) => {
   return (
-    <nav className="navbar navbar-expand-lg main-navbar sticky">
+    <nav className="navbar navbar-expand-lg main-navbar sticky bg-white shadow-md">
       <div className="form-inline mr-auto">
         <ul className="navbar-nav mr-3">
           <li>
@@ -58,6 +58,10 @@ const Navbar = ({ toggleSidebar }) => {
           </div>
         </li>
         <li className="dropdown dropdown-list-toggle">
+          <a href="#" data-toggle="dropdown" className="nav-link nav-link-lg notification-toggle">
+            <Bell />
+            <span className="badge headerBadge1">3</span>
+          </a>
           <div className="dropdown-menu dropdown-list dropdown-menu-right pullDown">
             <div className="dropdown-header">
               Notifications
@@ -73,6 +77,7 @@ const Navbar = ({ toggleSidebar }) => {
             </div>
           </div>
         </li>
+        <li><Link to="/"><a href="#">Visit site</a></Link></li>
         <li className="dropdown">
           <a href="#" data-toggle="dropdown" className="nav-link dropdown-toggle nav-link-lg nav-link-user">
             <img alt="image" src="/assets/img/user.png" className="user-img-radious-style" />
@@ -100,4 +105,4 @@ const Navbar = ({ toggleSidebar }) => {
   );
 };
 
-export default Navbar; 
+export default Navbar;

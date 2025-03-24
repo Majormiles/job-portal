@@ -34,7 +34,7 @@ const Login = () => {
       
       // For demo purposes, accept any email/password
       if (formData.email && formData.password) {
-        navigate('/admin/dashboard');
+        navigate('/admin/admin-dashboard');
       } else {
         throw new Error('Invalid credentials');
       }
