@@ -100,14 +100,17 @@ const LoginPage = () => {
                 Forgot your password?
               </a>
             </div>
+            dashboard_employee
 
-            <button
-              type="submit"
-              className="w-full py-2.5 sm:py-3 px-4 text-sm sm:text-base text-white rounded-md font-medium focus:outline-none"
-              style={{ background: 'linear-gradient(135deg, #3a9b8e 0%, #2c8276 100%)' }}
-            >
-              Log In
-            </button>
+            <Link to="/dashboard_employee">
+              <button
+                type="submit"
+                className="w-full py-2.5 sm:py-3 px-4 text-sm sm:text-base text-white rounded-md font-medium focus:outline-none"
+                style={{ background: 'linear-gradient(135deg, #3a9b8e 0%, #2c8276 100%)' }}
+              >
+                Log In
+              </button>
+            </Link>
           </form>
 
           <div className="mt-6 text-center">
