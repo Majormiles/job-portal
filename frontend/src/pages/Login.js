@@ -19,14 +19,14 @@ const LoginPage = () => {
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-sm sm:max-w-md">
           {/* Logo */}
-          <div className="mb-6 sm:mb-8">
+          <Link to="/"> <div className="mb-6 sm:mb-8">
             <svg className="w-10 h-10 sm:w-12 sm:h-12 text-purple-700" viewBox="0 0 100 100" fill="currentColor">
               <path d="M50 10 L90 30 L50 50 L10 30 Z" />
               <path d="M50 50 L50 90 L10 70 L10 30 Z" />
               <path d="M50 50 L50 90 L90 70 L90 30 Z" />
             </svg>
           </div>
-
+          </Link>
           {/* Welcome Text */}
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back!</h1>
           <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Enter to get unlimited access to data & information.</p>

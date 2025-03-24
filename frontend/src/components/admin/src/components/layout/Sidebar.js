@@ -18,7 +18,7 @@ import {
   User
 } from 'react-feather';
 
-const Sidebar = () => {
+function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openMenus, setOpenMenus] = useState({
@@ -42,7 +42,7 @@ const Sidebar = () => {
     return location.pathname === path ? 'bg-blue-100 text-blue-600' : '';
   };
 
-  const renderMenuItem = (icon, text, path, subItems = []) => {
+  const renderMenuItem = (Icon, text, path, subItems = []) => {
     const hasSubItems = subItems.length > 0;
     const isMenuOpen = openMenus[text.replace(/\s+/g, '').toLowerCase()];
 
@@ -51,12 +51,15 @@ const Sidebar = () => {
         <Link 
           to={path} 
           className={`flex items-center p-2 hover:bg-gray-100 ${isActive(path)} ${isCollapsed ? 'justify-center' : ''}`}
-          onClick={hasSubItems ? (e) => {
-            e.preventDefault();
-            toggleMenu(text.replace(/\s+/g, '').toLowerCase());
-          } : undefined}
+          onClick={(e) => {
+            if (hasSubItems) {
+              e.preventDefault();
+              toggleMenu(text.replace(/\s+/g, '').toLowerCase());
+            }
+            onClose?.();
+          }}
         >
-          {React.createElement(icon, { className: 'w-5 h-5' })}
+          <Icon className="w-5 h-5" />
           {!isCollapsed && (
             <span className="ml-3 flex-1">
               {text}
@@ -76,6 +79,7 @@ const Sidebar = () => {
                 key={index}
                 to={item.path} 
                 className={`block py-1 hover:text-blue-600 ${isActive(item.path)}`}
+                onClick={onClose}
               >
                 {item.text}
               </Link>
@@ -88,7 +92,10 @@ const Sidebar = () => {
 
   return (
     <div 
-      className={`bg-white h-screen border-r transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}
+      className={`bg-white h-screen border-r transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'} ${
+        // Always show on large screens, show/hide based on isOpen prop on small screens
+        isOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden lg:block'
+      }`}
     >
       <div className="flex items-center justify-between p-4 border-b">
         {!isCollapsed && <span className="font-bold text-lg">Job Portal</span>}
@@ -98,36 +105,36 @@ const Sidebar = () => {
       </div>
 
       <nav className="p-2 space-y-1">
-        {renderMenuItem(Monitor, 'Admin Dashboard', 'admin-dashboard')}
+        {renderMenuItem(Monitor, 'Admin Dashboard', '/admin/admin-dashboard')}
         
-        {renderMenuItem(Command, 'Manage Resumes', '/resumes', [
-          { text: 'Resumes', path: 'resume' },
-          { text: 'Calendar', path: '/calendar' }
+        {renderMenuItem(Command, 'Manage Resumes', '/admin/resume', [
+          { text: 'Resumes', path: '/admin/resume' },
+          { text: 'Calendar', path: '/admin/calendar' }
         ])}
         
-        {renderMenuItem(Mail, 'Manage Categories', '/categories', [
-          { text: 'Create Category', path: '/categories/create' },
-          { text: 'Categories', path: '/categories' },
-          { text: 'Read', path: '/categories/read' }
+        {renderMenuItem(Mail, 'Manage Categories', '/admin/categories', [
+          { text: 'Create Category', path: '/admin/categories/create' },
+          { text: 'Categories', path: '/admin/categories' },
+          { text: 'Read', path: '/admin/categories/read' }
         ])}
         
-        {renderMenuItem(Anchor, 'Manage Jobs', '/jobs', [
-          { text: 'Create Jobs', path: '/jobs/create' },
-          { text: 'Jobs', path: '/jobs' },
-          { text: 'Profile', path: '/profile' },
-          { text: 'Invoice', path: '/invoice' }
+        {renderMenuItem(Anchor, 'Manage Jobs', '/admin/jobs', [
+          { text: 'Create Jobs', path: '/admin/jobs/create' },
+          { text: 'Jobs', path: '/admin/jobs' },
+          { text: 'Profile', path: '/admin/profile' },
+          { text: 'Invoice', path: '/admin/invoice' }
         ])}
         
-        {renderMenuItem(Users, 'Job Seekers', 'job-seekers')}
+        {renderMenuItem(Users, 'Job Seekers', '/admin/job-seekers')}
         
-        {renderMenuItem(Clipboard, 'Manage Applications', '/manage-applications')}
+        {renderMenuItem(Clipboard, 'Manage Applications', '/admin/manage-applications')}
         
-        {renderMenuItem(Settings, 'Settings', '/settings')}
+        {renderMenuItem(Settings, 'Settings', '/admin/settings')}
         
-        {renderMenuItem(LogOut, 'Logout', 'logout')}
+        {renderMenuItem(LogOut, 'Logout', '/admin/logout')}
       </nav>
     </div>
   );
-};
+}
 
 export default Sidebar;

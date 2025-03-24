@@ -18,8 +18,15 @@ import JobsApplied from './pages/JobsApplied';
 import FavoriteJobs from './pages/FavoriteJobs';
 import SettingsPage from './pages/SettingsPage';
 
+// Onboarding Components
+import PersonalInfo from './pages/onboarding/PersonalInfo';
+import ProfessionalInfo from './pages/onboarding/ProfessionalInfo';
+import Skills from './pages/onboarding/Skills';
+import Preferences from './pages/onboarding/Preferences';
+import Complete from './pages/onboarding/Complete';
+
 // Admin Components
-import AdminMainLayout from './components/admin/src/components/layout/MainLayout';
+import MainLayout from './components/admin/src/components/layout/MainLayout';
 import AdminLogin from './components/admin/src/pages/auth/Login';
 import AdminDashboard from './components/admin/src/pages/Dashboard';
 import AdminResume from './components/admin/src/pages/Resume';
@@ -39,14 +46,15 @@ import AdminJobApplicants from './components/admin/src/pages/JobApplicants';
 import './App.css';
 
 // This wrapper component checks if we're on the home route
-const AppContent = () => {
+function AppContent() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isOnboardingRoute = location.pathname.startsWith('/onboarding');
   
   return (
     <div className="App">
-      {isHomePage && <Header />}
+      {isHomePage && !isOnboardingRoute && <Header />}
       <Routes>
         {/* Frontend Routes */}
         <Route path="/" element={<Home />} />
@@ -65,13 +73,22 @@ const AppContent = () => {
         <Route path="/favorite-jobs" element={<FavoriteJobs />} />
         <Route path="/settings" element={<SettingsPage />} />
 
+        {/* Onboarding Routes */}
+        <Route path="/onboarding">
+          <Route path="personal-info" element={<PersonalInfo />} />
+          <Route path="professional-info" element={<ProfessionalInfo />} />
+          <Route path="skills" element={<Skills />} />
+          <Route path="preferences" element={<Preferences />} />
+          <Route path="complete" element={<Complete />} />
+        </Route>
+
         {/* Admin Routes */}
         <Route path="/admin">
           <Route index element={<Navigate to="login" replace />} />
           <Route path="login" element={<AdminLogin />} />
           
           {/* Protected Admin Routes */}
-          <Route element={<AdminMainLayout />}>
+          <Route element={<MainLayout />}>
             <Route path="admin-dashboard" element={<AdminDashboard />} />
             <Route path="resume" element={<AdminResume />} />
             <Route path="calendar" element={<AdminCalendar />} />
@@ -91,7 +108,7 @@ const AppContent = () => {
       </Routes>
     </div>
   );
-};
+}
 
 function App() {
   return (

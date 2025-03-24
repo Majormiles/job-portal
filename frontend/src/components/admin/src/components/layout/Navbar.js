@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  AlignJustify, 
   Maximize, 
   Mail, 
   Bell, 
@@ -9,12 +8,12 @@ import {
   Menu
 } from 'react-feather';
 
-const Navbar = ({ toggleSidebar }) => {
+function Navbar({ toggleSidebar }) {
   return (
     <nav className="navbar navbar-expand-lg main-navbar sticky bg-white shadow-md">
       <div className="form-inline mr-auto">
         <ul className="navbar-nav mr-3">
-          <li>
+          <li className="d-block d-sm-none">
             <button className="menu-toggle" onClick={toggleSidebar}>
               <Menu size={24} />
             </button>
@@ -77,7 +76,9 @@ const Navbar = ({ toggleSidebar }) => {
             </div>
           </div>
         </li>
-        <li><Link to="/"><a href="#">Visit site</a></Link></li>
+        <li>
+          <Link to="/" className="nav-link">Visit site</Link>
+        </li>
         <li className="dropdown">
           <a href="#" data-toggle="dropdown" className="nav-link dropdown-toggle nav-link-lg nav-link-user">
             <img alt="image" src="/assets/img/user.png" className="user-img-radious-style" />
@@ -103,6 +104,6 @@ const Navbar = ({ toggleSidebar }) => {
       </ul>
     </nav>
   );
-};
+}
 
 export default Navbar;

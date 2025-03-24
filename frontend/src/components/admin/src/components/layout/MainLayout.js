@@ -4,7 +4,7 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import '../../styles/admin.css';
 
-const MainLayout = () => {
+function MainLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -94,7 +94,7 @@ const MainLayout = () => {
       <div className="navbar-bg"></div>
       <Navbar toggleSidebar={toggleSidebar} />
       <div className={`main-sidebar ${isSidebarOpen ? 'show' : ''}`}>
-        <Sidebar />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       </div>
       {isSidebarOpen && window.innerWidth <= 991.98 && (
         <div className="sidebar-overlay" onClick={toggleSidebar} />
@@ -106,6 +106,6 @@ const MainLayout = () => {
       </div>
     </div>
   );
-};
+}
 
 export default MainLayout; 
