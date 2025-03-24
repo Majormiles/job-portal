@@ -315,22 +315,24 @@ const JobPortal = () => {
                                 <img src={jobsearchImage} alt="Company hero" className="hero-image" />
                             </div>
                         </div>
+
+
                         <div className="partners-content">
                             <h2>We're Only Working With The Best</h2>
-                            <p>Ultricies ipsum dolor vitae mi tempest et turpis justo. Ultricies ipsum dolor sagittis amet faucibus tempor viverra.</p>
+                            <p>We partner with leading companies and top talent to deliver exceptional opportunities and results.</p>
 
                             <div className="benefits">
                                 <div className="benefit">
                                     <div className="benefit-icon">
                                         <CheckIcon />
                                     </div>
-                                    <span>Quality Job</span>
+                                    <span>Quality Jobs</span>
                                 </div>
                                 <div className="benefit">
                                     <div className="benefit-icon">
                                         <DocumentIcon />
                                     </div>
-                                    <span>Resume builder</span>
+                                    <span>Resume Builder</span>
                                 </div>
                                 <div className="benefit">
                                     <div className="benefit-icon">
@@ -346,6 +348,8 @@ const JobPortal = () => {
                                 </div>
                             </div>
                         </div>
+
+
                     </div>
                 </div>
             </section>
