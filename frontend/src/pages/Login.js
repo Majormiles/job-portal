@@ -1,16 +1,43 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import jobsearchImage from '../assets/images/login.png';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ email, password, rememberMe });
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/login', {
+        email,
+        password
+      });
+
+      // Store token and user data
+      localStorage.setItem('token', response.data.token);
+      if (rememberMe) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      } else {
+        sessionStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+
+      // Redirect to dashboard
+      navigate('/dashboard_employee');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error logging in');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,6 +57,13 @@ const LoginPage = () => {
           {/* Welcome Text */}
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back!</h1>
           <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Enter to get unlimited access to data & information.</p>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
@@ -96,19 +130,19 @@ const LoginPage = () => {
                   Remember me
                 </label>
               </div>
-              <a href="#" className="text-sm text-purple-600 hover:text-purple-800">
+              <Link to="/forgot-password" className="text-sm text-purple-600 hover:text-purple-800">
                 Forgot your password?
-              </a>
+              </Link>
             </div>
-            <Link to="/dashboard_employee">
-              <button
-                type="submit"
-                className="w-full py-2.5 sm:py-3 px-4 text-sm sm:text-base text-white rounded-md font-medium focus:outline-none"
-                style={{ background: 'linear-gradient(135deg, #3a9b8e 0%, #2c8276 100%)' }}
-              >
-                Log In
-              </button>
-            </Link>
+
+            <button
+              type="submit"
+              className="w-full py-2.5 sm:py-3 px-4 text-sm sm:text-base text-white rounded-md font-medium focus:outline-none"
+              style={{ background: 'linear-gradient(135deg, #3a9b8e 0%, #2c8276 100%)' }}
+              disabled={loading}
+            >
+              {loading ? 'Logging in...' : 'Log In'}
+            </button>
           </form>
 
           <div className="mt-6 text-center">
@@ -144,7 +178,7 @@ const LoginPage = () => {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Sign up with google
+                Sign in with Google
               </button>
             </div>
           </div>
@@ -162,7 +196,6 @@ const LoginPage = () => {
       <div className="hidden md:block w-1/2 relative">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
         <div className="relative h-full flex items-center justify-center">
-          {/* Image container - Replace src with your custom image */}
           <img src={jobsearchImage} alt="Login illustration" className="w-full h-full object-cover" />
         </div>
       </div>

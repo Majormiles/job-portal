@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import jobsearchImage from '../assets/images/login.png';
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,6 +13,8 @@ const RegisterPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,10 +24,36 @@ const RegisterPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
-    // Handle registration logic here
+    setError('');
+    setLoading(true);
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/register', {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
+
+      // Store token and user data
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+
+      // Redirect to dashboard
+      navigate('/dashboard_employee');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error registering user');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,18 +62,26 @@ const RegisterPage = () => {
       <div className="w-full md:w-2/3 flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-sm sm:max-w-md">
           {/* Logo */}
-         <Link to="/"> <div className="mb-6 sm:mb-8">
-            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-purple-700" viewBox="0 0 100 100" fill="currentColor">
-              <path d="M50 10 L90 30 L50 50 L10 30 Z" />
-              <path d="M50 50 L50 90 L10 70 L10 30 Z" />
-              <path d="M50 50 L50 90 L90 70 L90 30 Z" />
-            </svg>
-          </div>
+          <Link to="/"> 
+            <div className="mb-6 sm:mb-8">
+              <svg className="w-10 h-10 sm:w-12 sm:h-12 text-purple-700" viewBox="0 0 100 100" fill="currentColor">
+                <path d="M50 10 L90 30 L50 50 L10 30 Z" />
+                <path d="M50 50 L50 90 L10 70 L10 30 Z" />
+                <path d="M50 50 L50 90 L90 70 L90 30 Z" />
+              </svg>
+            </div>
           </Link>
 
           {/* Welcome Text */}
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">Create Account</h1>
           <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Register to get unlimited access to data & information.</p>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
 
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
@@ -147,15 +185,14 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            <Link to="/dashboard">   
             <button
               type="submit"
               className="w-full py-2.5 sm:py-3 px-4 text-sm sm:text-base text-white rounded-md font-medium focus:outline-none"
               style={{ background: 'linear-gradient(135deg, #3a9b8e 0%, #2c8276 100%)' }}
+              disabled={loading}
             >
-              Create Account
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
-            </Link>
           </form>
 
           <div className="mt-6 text-center">
@@ -191,7 +228,7 @@ const RegisterPage = () => {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Sign up with google
+                Sign up with Google
               </button>
             </div>
           </div>
@@ -209,7 +246,6 @@ const RegisterPage = () => {
       <div className="hidden md:block w-1/2 relative">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
         <div className="relative h-full flex items-center justify-center">
-          {/* Image container - Replace src with your custom image */}
           <img src={jobsearchImage} alt="Registration illustration" className="w-full h-full object-cover" />
         </div>
       </div>
