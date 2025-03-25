@@ -105,7 +105,7 @@ function Sidebar({ isOpen, onClose }) {
       </div>
 
       <nav className="p-2 space-y-1">
-        {renderMenuItem(Monitor, 'Admin Dashboard', '/admin/admin-dashboard')}
+        {renderMenuItem(Monitor, 'Admin Dashboard', '/admin/dashboard')}
         
         {renderMenuItem(Command, 'Manage Resumes', '/admin/resume', [
           { text: 'Resumes', path: '/admin/resume' },

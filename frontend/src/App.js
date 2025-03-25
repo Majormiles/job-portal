@@ -27,22 +27,22 @@ import Preferences from './pages/onboarding/Preferences';
 import Complete from './pages/onboarding/Complete';
 
 // Admin Components
-import MainLayout from './components/admin/src/components/layout/MainLayout';
-import AdminLogin from './components/admin/src/pages/auth/Login';
-import AdminDashboard from './components/admin/src/pages/Dashboard';
-import AdminResume from './components/admin/src/pages/Resume';
-import AdminCalendar from './components/admin/src/pages/Calendar';
-import AdminCategories from './components/admin/src/pages/categories/Categories';
-import AdminCreateCategory from './components/admin/src/pages/categories/CreateCategory';
-import AdminReadCategory from './components/admin/src/pages/categories/ReadCategory';
-import AdminJobs from './components/admin/src/pages/jobs/Jobs';
-import AdminCreateJob from './components/admin/src/pages/jobs/CreateJob';
-import AdminProfile from './components/admin/src/pages/Profile';
-import AdminInvoice from './components/admin/src/pages/Invoice';
-import AdminTimeline from './components/admin/src/pages/Timeline';
-import AdminJobSeekers from './components/admin/src/pages/JobSeekers';
-import AdminManageApplications from './components/admin/src/pages/ManageApplications';
-import AdminJobApplicants from './components/admin/src/pages/JobApplicants';
+import MainLayout from './components/admin/components/layout/MainLayout';
+import AdminLogin from './components/admin/pages/auth/Login';
+import AdminDashboard from './components/admin/pages/Dashboard';
+import AdminResume from './components/admin/pages/Resume';
+import AdminCalendar from './components/admin/pages/Calendar';
+import AdminCategories from './components/admin/pages/categories/Categories';
+import AdminCreateCategory from './components/admin/pages/categories/CreateCategory';
+import AdminReadCategory from './components/admin/pages/categories/ReadCategory';
+import AdminJobs from './components/admin/pages/jobs/Jobs';
+import AdminCreateJob from './components/admin/pages/jobs/CreateJob';
+import AdminProfile from './components/admin/pages/Profile';
+import AdminInvoice from './components/admin/pages/Invoice';
+import AdminTimeline from './components/admin/pages/Timeline';
+import AdminJobSeekers from './components/admin/pages/JobSeekers';
+import AdminManageApplications from './components/admin/pages/ManageApplications';
+import AdminJobApplicants from './components/admin/pages/JobApplicants';
 
 import './App.css';
 
