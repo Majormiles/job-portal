@@ -16,7 +16,7 @@ const LoginPage = () => {
   return (
     <div className="flex bg-[#fff] flex-col md:flex-row min-h-screen">
       {/* Left Section - Login Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <div className="w-full md:w-2/3 flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-sm sm:max-w-md">
           {/* Logo */}
           <Link to="/"> <div className="mb-6 sm:mb-8">
@@ -161,9 +161,9 @@ const LoginPage = () => {
       {/* Right Section - Image */}
       <div className="hidden md:block w-1/2 relative">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
-        <div className="relative h-full flex items-center justify-center p-8">
+        <div className="relative h-full flex items-center justify-center">
           {/* Image container - Replace src with your custom image */}
-          {/* <img src={jobsearchImage} alt="Login illustration" className="w-full h-full object-cover" /> */}
+          <img src={jobsearchImage} alt="Login illustration" className="w-full h-full object-cover" />
         </div>
       </div>
     </div>
