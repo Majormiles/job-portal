@@ -122,13 +122,24 @@ function Preferences() {
       });
 
       if (response.success) {
-        navigate('/dashboard_employee');
+        navigate('/onboarding/complete');
       } else {
         setError('Failed to save preferences. Please try again.');
       }
     } catch (err) {
       console.error('Error saving preferences:', err);
-      setError(err.response?.data?.message || 'Failed to save preferences. Please try again.');
+      if (err.message === 'No authentication token found' || err.response?.status === 401) {
+        // Authentication error - redirect to login
+        navigate('/login', { 
+          state: { 
+            from: '/onboarding/preferences',
+            message: 'Please log in to continue with your preferences setup.'
+          },
+          replace: true // Replace the current history entry
+        });
+      } else {
+        setError(err.response?.data?.message || 'Failed to save preferences. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

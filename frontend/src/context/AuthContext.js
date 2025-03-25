@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuthStatus = async () => {
       try {
         const token = localStorage.getItem('token');
-        const userData = localStorage.getItem('user');
+        const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
 
         if (token && userData) {
           // Check if token is valid
@@ -137,6 +137,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     checkAuthStatus();
+
+    // Set up an interval to check token expiration every 5 minutes
+    const interval = setInterval(checkAuthStatus, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const login = async (email, password, rememberMe = false) => {
@@ -250,11 +254,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear all auth data
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     sessionStorage.removeItem('user');
 
+    // Reset auth state
     setAuthState({
       isAuthenticated: false,
       user: null,
@@ -273,11 +279,40 @@ export const AuthProvider = ({ children }) => {
 
   const updateOnboardingStatus = async (step, data) => {
     try {
+      // Get token from localStorage
       const token = localStorage.getItem('token');
+      
+      // If no token in localStorage, try to get from sessionStorage
+      if (!token) {
+        const sessionToken = sessionStorage.getItem('token');
+        if (sessionToken) {
+          localStorage.setItem('token', sessionToken);
+        } else {
+          throw new Error('No authentication token found');
+        }
+      }
+
+      // Verify token is valid
+      const isValid = await checkTokenExpiration(token);
+      if (!isValid) {
+        const newToken = await refreshToken();
+        if (!newToken) {
+          throw new Error('Token refresh failed');
+        }
+      }
+
+      // Get the current token (either original or refreshed)
+      const currentToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+
       const response = await axios.put(
         `http://localhost:5000/api/users/onboarding/${step}`,
         data,
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        {
+          headers: { 
+            'Authorization': `Bearer ${currentToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
       const updatedStatus = response.data.data;
@@ -294,20 +329,21 @@ export const AuthProvider = ({ children }) => {
 
       setAuthState(prev => ({
         ...prev,
-        onboardingStatus: {
-          isComplete: updatedStatus.isComplete,
-          personalInfo: updatedStatus.personalInfo.completed,
-          education: updatedStatus.professionalInfo.completed,
-          experience: updatedStatus.professionalInfo.completed,
-          skills: updatedStatus.skills.completed,
-          preferences: updatedStatus.preferences.completed
-        },
+        onboardingStatus: updatedStatus,
         currentOnboardingStep: currentStep
       }));
 
-      return { success: true, updatedStatus };
+      return { success: true, onboardingStatus: updatedStatus };
     } catch (error) {
       console.error('Error updating onboarding status:', error);
+      if (error.response?.status === 401) {
+        // Token expired or invalid, try to refresh
+        const newToken = await refreshToken();
+        if (newToken) {
+          // Retry the request with new token
+          return updateOnboardingStatus(step, data);
+        }
+      }
       throw error;
     }
   };

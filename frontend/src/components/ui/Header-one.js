@@ -5,7 +5,7 @@ import '../css/Header_one.css';
 
 const JobPortal = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user, onboardingStatus, currentOnboardingStep, logout } = useAuth();
+  const { isAuthenticated, user, onboardingStatus, currentOnboardingStep, logout, loading } = useAuth();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [heroAnimation, setHeroAnimation] = useState(false);
@@ -68,6 +68,11 @@ const JobPortal = () => {
     }
     navigate('/');
   };
+
+  // Show loading state while auth is being checked
+  if (loading) {
+    return null; // Or a loading spinner if you prefer
+  }
 
   return (
     <div className="job-portal">
