@@ -1,6 +1,7 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Header from './components/ui/Header-one';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
@@ -45,8 +46,30 @@ import AdminJobApplicants from './components/admin/src/pages/JobApplicants';
 
 import './App.css';
 
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading, onboardingStatus, currentOnboardingStep } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Check if user needs to complete onboarding
+  if (!onboardingStatus?.isComplete) {
+    const onboardingPath = `/onboarding/${currentOnboardingStep}`;
+    return <Navigate to={onboardingPath} replace />;
+  }
+
+  return children;
+};
+
 // This wrapper component checks if we're on the home route
-function AppContent() {
+const AppContent = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const isAdminRoute = location.pathname.startsWith('/admin');
@@ -56,7 +79,7 @@ function AppContent() {
     <div className="App">
       {isHomePage && !isOnboardingRoute && <Header />}
       <Routes>
-        {/* Frontend Routes */}
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/companies" element={<Companies />} />
@@ -68,10 +91,40 @@ function AppContent() {
         <Route path="/job-detail" element={<JobDetail />} />
         <Route path="/pricing-plan" element={<PricingPlan />} />
         <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/dashboard_employee" element={<Dashboard />} />
-        <Route path="/applied-jobs" element={<JobsApplied />} />
-        <Route path="/favorite-jobs" element={<FavoriteJobs />} />
-        <Route path="/settings" element={<SettingsPage />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard_employee"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/applied-jobs"
+          element={
+            <ProtectedRoute>
+              <JobsApplied />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/favorite-jobs"
+          element={
+            <ProtectedRoute>
+              <FavoriteJobs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Onboarding Routes */}
         <Route path="/onboarding">
@@ -89,7 +142,7 @@ function AppContent() {
           
           {/* Protected Admin Routes */}
           <Route element={<MainLayout />}>
-            <Route path="admin-dashboard" element={<AdminDashboard />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="resume" element={<AdminResume />} />
             <Route path="calendar" element={<AdminCalendar />} />
             <Route path="categories" element={<AdminCategories />} />
@@ -108,14 +161,16 @@ function AppContent() {
       </Routes>
     </div>
   );
-}
+};
 
-function App() {
+const App = () => {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
-}
+};
 
 export default App;

@@ -139,4 +139,68 @@ exports.deleteAccount = asyncHandler(async (req, res, next) => {
     success: true,
     message: 'Account deleted successfully'
   });
+});
+
+// @desc    Get user onboarding status
+// @route   GET /api/users/onboarding-status
+// @access  Private
+exports.getOnboardingStatus = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  const onboardingStatus = {
+    isComplete: false,
+    personalInfo: false,
+    education: false,
+    experience: false,
+    skills: false,
+    preferences: false
+  };
+
+  // Check personal info
+  if (user.name && user.email && user.phone && user.address) {
+    onboardingStatus.personalInfo = true;
+  }
+
+  // Check professional info
+  if (user.professionalInfo && 
+      user.professionalInfo.currentTitle && 
+      user.professionalInfo.yearsOfExperience && 
+      user.professionalInfo.desiredTitle) {
+    onboardingStatus.education = true;
+  }
+
+  // Check experience
+  if (user.professionalInfo && 
+      user.professionalInfo.currentCompany && 
+      user.professionalInfo.employmentType) {
+    onboardingStatus.experience = true;
+  }
+
+  // Check skills
+  if (user.skills && 
+      (user.skills.technical?.length > 0 || 
+       user.skills.soft?.length > 0 || 
+       user.skills.languages?.length > 0)) {
+    onboardingStatus.skills = true;
+  }
+
+  // Check preferences
+  if (user.preferences && 
+      user.preferences.jobPreferences && 
+      user.preferences.industryPreferences?.length > 0) {
+    onboardingStatus.preferences = true;
+  }
+
+  // Set overall completion status
+  onboardingStatus.isComplete = 
+    onboardingStatus.personalInfo && 
+    onboardingStatus.education && 
+    onboardingStatus.experience && 
+    onboardingStatus.skills && 
+    onboardingStatus.preferences;
+
+  res.status(200).json({
+    success: true,
+    data: onboardingStatus
+  });
 }); 

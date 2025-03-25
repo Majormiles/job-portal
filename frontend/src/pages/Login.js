@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import jobsearchImage from '../assets/images/login.png';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -18,23 +19,41 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
-        email,
-        password
-      });
-
-      // Store token and user data
-      localStorage.setItem('token', response.data.token);
-      if (rememberMe) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      } else {
-        sessionStorage.setItem('user', JSON.stringify(response.data.user));
+      console.log('Attempting login with:', { email });
+      const { success, onboardingStatus } = await login(email, password, rememberMe);
+      
+      if (success) {
+        console.log('Login successful, onboarding status:', onboardingStatus);
+        if (!onboardingStatus.isComplete) {
+          // Redirect to the first incomplete onboarding step
+          if (!onboardingStatus.personalInfo) {
+            navigate('/onboarding/personal-info');
+          } else if (!onboardingStatus.education) {
+            navigate('/onboarding/education');
+          } else if (!onboardingStatus.experience) {
+            navigate('/onboarding/experience');
+          } else if (!onboardingStatus.skills) {
+            navigate('/onboarding/skills');
+          } else if (!onboardingStatus.preferences) {
+            navigate('/onboarding/preferences');
+          }
+        } else {
+          navigate('/dashboard_employee');
+        }
       }
-
-      // Redirect to dashboard
-      navigate('/dashboard_employee');
     } catch (err) {
-      setError(err.response?.data?.message || 'Error logging in');
+      console.error('Login error:', err);
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        setError(err.response.data.message || 'Invalid email or password');
+      } else if (err.request) {
+        // The request was made but no response was received
+        setError('No response from server. Please check if the server is running.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        setError('Error setting up the request. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

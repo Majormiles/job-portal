@@ -47,10 +47,10 @@ const RegisterPage = () => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      // Redirect to dashboard
-      navigate('/dashboard_employee');
+      // Redirect to onboarding
+      navigate('/onboarding/personal-info');
     } catch (err) {
-      setError(err.response?.data?.message || 'Error registering user');
+      setError(err.response?.data?.message || 'Error registering');
     } finally {
       setLoading(false);
     }

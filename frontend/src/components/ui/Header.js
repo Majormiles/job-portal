@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import '../css/Header.css';
 
@@ -10,6 +10,8 @@ const Header = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const dropdownRef = useRef(null);
+  const profileBtnRef = useRef(null);
 
   useEffect(() => {
     // Check for token and user data
@@ -20,17 +22,35 @@ const Header = () => {
       setIsLoggedIn(true);
       setUser(JSON.parse(userData));
     }
+
+    // Add click outside handler
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        profileBtnRef.current &&
+        !profileBtnRef.current.contains(event.target)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+    if (dropdownOpen) setDropdownOpen(false);
   };
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
+    setDropdownOpen(false);
   };
 
-  const toggleDropdown = () => {
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
     setDropdownOpen(!dropdownOpen);
   };
 
@@ -81,7 +101,7 @@ const Header = () => {
               </>
             ) : (
               <div className="user-profile">
-                <div className="profile-btn" onClick={toggleDropdown}>
+                <div className="profile-btn" onClick={toggleDropdown} ref={profileBtnRef}>
                   <img 
                     src={user?.profilePicture || defaultAvatar} 
                     alt="User" 
@@ -105,7 +125,7 @@ const Header = () => {
                 </div>
                 
                 {dropdownOpen && (
-                  <div className="dropdown-menu">
+                  <div className="dropdown-menu" ref={dropdownRef}>
                     <Link to="/profile" className="dropdown-item" onClick={() => {closeMobileMenu(); setDropdownOpen(false);}}>
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 

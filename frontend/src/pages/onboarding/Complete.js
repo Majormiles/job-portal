@@ -7,7 +7,7 @@ function Complete() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/dashboard');
+    navigate('/dashboard_employee');
   };
 
   return (

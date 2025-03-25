@@ -6,8 +6,14 @@ const {
   updatePassword,
   forgotPassword,
   resetPassword,
-  deleteAccount
+  deleteAccount,
+  getOnboardingStatus
 } = require('../controllers/user.controller');
+const {
+  getOnboardingStatus: getOnboardingStatusFromDB,
+  updateOnboardingSection,
+  getOnboardingData
+} = require('../controllers/onboarding.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 // Public routes
@@ -21,5 +27,10 @@ router.get('/me', getMe);
 router.put('/me', updateProfile);
 router.put('/me/password', updatePassword);
 router.delete('/me', deleteAccount);
+
+// Onboarding routes
+router.get('/onboarding-status', getOnboardingStatusFromDB);
+router.get('/onboarding', getOnboardingData);
+router.put('/onboarding/:section', updateOnboardingSection);
 
 module.exports = router; 
