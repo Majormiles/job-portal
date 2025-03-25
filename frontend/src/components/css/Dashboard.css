@@ -23,10 +23,10 @@
   background-color: #f8f9fa;
 }
 
-.content-area {
+.dashboard-layout .content-area {
   flex: 1;
   background-color: white;
-  padding: 24px;
+  padding: 24px 45px;
   overflow-y: auto;
 }
 

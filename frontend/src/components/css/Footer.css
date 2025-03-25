@@ -5,7 +5,7 @@
   padding: 50px 0;
 }
 
-.container {
+.footer .container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -18,17 +18,17 @@
   gap: 32px;
 }
 
-.footer-section {
+.footer .footer-section {
   max-width: 100%;
 }
 
-.logo-container {
+.footer .logo-container {
   display: flex;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.logo {
+.footer .logo {
   width: 24px;
   height: 24px;
   background-color: #fff;
@@ -38,54 +38,55 @@
   justify-content: center;
 }
 
-.logo-text {
+.footer .logo-text {
   font-size: 20px;
   font-weight: 600;
   margin-left: 8px;
 }
 
-.description {
+.footer .description {
   color: #ccc;
   margin-bottom: 24px;
   max-width: 300px;
 }
 
-.section-title {
+.footer .section-title {
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 16px;
 }
 
-.footer-links {
+.footer .footer-links {
   list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
-.footer-links li {
+.footer .footer-links li {
+ list-style: none;
   margin-bottom: 8px;
 }
 
-.footer-links a {
+.footer .footer-links a {
   color: #ccc;
   text-decoration: none;
   transition: color 0.3s;
 }
 
-.footer-links a:hover {
+.footer .footer-links a:hover {
   color: #fff;
 }
 
-.newsletter-text {
+.footer .newsletter-text {
   color: #ccc;
   margin-bottom: 16px;
 }
 
-.newsletter-form {
+.footer .newsletter-form {
   width: 100%;
 }
 
-.email-input {
+.footer .email-input {
   width: 100%;
   padding: 12px;
   margin-bottom: 12px;
@@ -96,7 +97,7 @@
   box-sizing: border-box;
 }
 
-.subscribe-button {
+.footer .subscribe-button {
   width: 100%;
   padding: 12px;
   background-color: #2a9d8f;
@@ -107,11 +108,11 @@
   transition: background-color 0.3s;
 }
 
-.subscribe-button:hover {
+.footer .subscribe-button:hover {
   background-color: #218578;
 }
 
-.footer-bottom {
+ .footer-bottom {
   margin-top: 48px;
   padding-top: 24px;
   border-top: 1px solid #333;
@@ -119,24 +120,24 @@
   flex-direction: column;
 }
 
-.copyright {
+.footer .copyright {
   margin-bottom: 16px;
   color: #999;
   font-size: 14px;
 }
 
-.legal-links {
+.footer .legal-links {
   display: flex;
   gap: 24px;
 }
 
-.legal-links a {
+.footer .legal-links a {
   color: #ccc;
   text-decoration: none;
   transition: color 0.3s;
 }
 
-.legal-links a:hover {
+.footer .legal-links a:hover {
   color: #fff;
 }
 
