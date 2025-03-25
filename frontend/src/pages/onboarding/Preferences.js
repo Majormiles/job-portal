@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
+import { useAuth } from '../../context/AuthContext';
 
 function Preferences() {
   const navigate = useNavigate();
+  const { updateOnboardingStatus } = useAuth();
   const [formData, setFormData] = useState({
     jobPreferences: {
       remoteWork: false,
@@ -22,66 +24,136 @@ function Preferences() {
       hoursPerWeek: ''
     }
   });
+  const [newIndustry, setNewIndustry] = useState('');
+  const [newCulture, setNewCulture] = useState('');
+  const [newBenefit, setNewBenefit] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
-      setFormData(prev => ({
-        ...prev,
-        jobPreferences: {
-          ...prev.jobPreferences,
-          [name]: checked
-        }
-      }));
-    } else if (name.startsWith('availability.')) {
-      const field = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        availability: {
-          ...prev.availability,
-          [field]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
-
-  const handleMultiSelect = (e) => {
-    const { name, value, checked } = e.target;
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: checked
-        ? [...prev[name], value]
-        : prev[name].filter(item => item !== value)
+      jobPreferences: {
+        ...prev.jobPreferences,
+        [name]: checked
+      }
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleAvailabilityChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        [name]: value
+      }
+    }));
+  };
+
+  const handleAddIndustry = () => {
+    if (newIndustry.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        industryPreferences: [...prev.industryPreferences, newIndustry.trim()]
+      }));
+      setNewIndustry('');
+    }
+  };
+
+  const handleRemoveIndustry = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      industryPreferences: prev.industryPreferences.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAddCulture = () => {
+    if (newCulture.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        workCulture: [...prev.workCulture, newCulture.trim()]
+      }));
+      setNewCulture('');
+    }
+  };
+
+  const handleRemoveCulture = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      workCulture: prev.workCulture.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAddBenefit = () => {
+    if (newBenefit.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        benefits: [...prev.benefits, newBenefit.trim()]
+      }));
+      setNewBenefit('');
+    }
+  };
+
+  const handleRemoveBenefit = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      benefits: prev.benefits.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically save the data to your backend
-    console.log('Preferences:', formData);
-    navigate('/onboarding/complete');
+    setError('');
+    setLoading(true);
+
+    try {
+      // Validate required fields
+      if (!formData.availability.startDate || !formData.availability.hoursPerWeek) {
+        setError('Please fill in all required fields.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await updateOnboardingStatus('preferences', {
+        completed: true,
+        data: formData
+      });
+
+      if (response.success) {
+        navigate('/dashboard_employee');
+      } else {
+        setError('Failed to save preferences. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error saving preferences:', err);
+      setError(err.response?.data?.message || 'Failed to save preferences. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <OnboardingLayout>
       <div className="max-w-2xl mx-auto">
         <h2 className="text-2xl font-bold mb-6">Job Preferences</h2>
-        <form onSubmit={handleSubmit} className="space-y-8">
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Work Arrangement */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Work Arrangement</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Work Arrangement</label>
             <div className="space-y-2">
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   name="remoteWork"
                   checked={formData.jobPreferences.remoteWork}
-                  onChange={handleChange}
+                  onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="ml-2">Remote Work</span>
@@ -91,7 +163,7 @@ function Preferences() {
                   type="checkbox"
                   name="hybridWork"
                   checked={formData.jobPreferences.hybridWork}
-                  onChange={handleChange}
+                  onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="ml-2">Hybrid Work</span>
@@ -101,7 +173,7 @@ function Preferences() {
                   type="checkbox"
                   name="onsiteWork"
                   checked={formData.jobPreferences.onsiteWork}
-                  onChange={handleChange}
+                  onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="ml-2">On-site Work</span>
@@ -110,15 +182,15 @@ function Preferences() {
           </div>
 
           {/* Work Schedule */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Work Schedule</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Work Schedule</label>
             <div className="space-y-2">
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   name="flexibleHours"
                   checked={formData.jobPreferences.flexibleHours}
-                  onChange={handleChange}
+                  onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="ml-2">Flexible Hours</span>
@@ -128,7 +200,7 @@ function Preferences() {
                   type="checkbox"
                   name="fixedHours"
                   checked={formData.jobPreferences.fixedHours}
-                  onChange={handleChange}
+                  onChange={handleCheckboxChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="ml-2">Fixed Hours</span>
@@ -137,32 +209,49 @@ function Preferences() {
           </div>
 
           {/* Industry Preferences */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Industry Preferences</h3>
-            <div className="space-y-2">
-              {['Technology', 'Healthcare', 'Finance', 'Education', 'Manufacturing', 'Retail'].map(industry => (
-                <label key={industry} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="industryPreferences"
-                    value={industry}
-                    checked={formData.industryPreferences.includes(industry)}
-                    onChange={handleMultiSelect}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2">{industry}</span>
-                </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Industry Preferences</label>
+            <div className="mt-1 flex space-x-2">
+              <input
+                type="text"
+                value={newIndustry}
+                onChange={(e) => setNewIndustry(e.target.value)}
+                placeholder="e.g., Technology, Healthcare"
+                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleAddIndustry}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Add
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {formData.industryPreferences.map((industry, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                >
+                  {industry}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveIndustry(index)}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
               ))}
             </div>
           </div>
 
           {/* Company Size */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Preferred Company Size</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Preferred Company Size</label>
             <select
-              name="companySize"
               value={formData.companySize}
-              onChange={handleChange}
+              onChange={(e) => setFormData(prev => ({ ...prev, companySize: e.target.value }))}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="">Select company size</option>
@@ -176,82 +265,118 @@ function Preferences() {
           </div>
 
           {/* Work Culture */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Work Culture Preferences</h3>
-            <div className="space-y-2">
-              {['Fast-paced', 'Collaborative', 'Innovative', 'Traditional', 'Startup-like'].map(culture => (
-                <label key={culture} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="workCulture"
-                    value={culture}
-                    checked={formData.workCulture.includes(culture)}
-                    onChange={handleMultiSelect}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2">{culture}</span>
-                </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Work Culture</label>
+            <div className="mt-1 flex space-x-2">
+              <input
+                type="text"
+                value={newCulture}
+                onChange={(e) => setNewCulture(e.target.value)}
+                placeholder="e.g., Collaborative, Innovative"
+                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleAddCulture}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Add
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {formData.workCulture.map((culture, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
+                >
+                  {culture}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCulture(index)}
+                    className="ml-2 text-green-600 hover:text-green-800"
+                  >
+                    ×
+                  </button>
+                </span>
               ))}
             </div>
           </div>
 
           {/* Benefits */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Desired Benefits</h3>
-            <div className="space-y-2">
-              {['Health Insurance', 'Dental Insurance', '401(k)', 'Paid Time Off', 'Professional Development', 'Remote Work Allowance'].map(benefit => (
-                <label key={benefit} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="benefits"
-                    value={benefit}
-                    checked={formData.benefits.includes(benefit)}
-                    onChange={handleMultiSelect}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2">{benefit}</span>
-                </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Desired Benefits</label>
+            <div className="mt-1 flex space-x-2">
+              <input
+                type="text"
+                value={newBenefit}
+                onChange={(e) => setNewBenefit(e.target.value)}
+                placeholder="e.g., Health Insurance, Paid Leave"
+                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleAddBenefit}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Add
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {formData.benefits.map((benefit, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800"
+                >
+                  {benefit}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveBenefit(index)}
+                    className="ml-2 text-purple-600 hover:text-purple-800"
+                  >
+                    ×
+                  </button>
+                </span>
               ))}
             </div>
           </div>
 
           {/* Availability */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Availability</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                <input
-                  type="date"
-                  name="availability.startDate"
-                  value={formData.availability.startDate}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Notice Period (weeks)</label>
-                <input
-                  type="number"
-                  name="availability.noticePeriod"
-                  value={formData.availability.noticePeriod}
-                  onChange={handleChange}
-                  min="0"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Hours per Week</label>
-                <input
-                  type="number"
-                  name="availability.hoursPerWeek"
-                  value={formData.availability.hoursPerWeek}
-                  onChange={handleChange}
-                  min="0"
-                  max="168"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Earliest Start Date</label>
+              <input
+                type="date"
+                name="startDate"
+                value={formData.availability.startDate}
+                onChange={handleAvailabilityChange}
+                required
+                min={new Date().toISOString().split('T')[0]}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Notice Period (days)</label>
+              <input
+                type="number"
+                name="noticePeriod"
+                value={formData.availability.noticePeriod}
+                onChange={handleAvailabilityChange}
+                min="0"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Preferred Hours per Week</label>
+              <input
+                type="number"
+                name="hoursPerWeek"
+                value={formData.availability.hoursPerWeek}
+                onChange={handleAvailabilityChange}
+                required
+                min="1"
+                max="168"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
             </div>
           </div>
 
@@ -266,9 +391,10 @@ function Preferences() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              Next
+              {loading ? 'Saving...' : 'Complete'}
             </button>
           </div>
         </form>

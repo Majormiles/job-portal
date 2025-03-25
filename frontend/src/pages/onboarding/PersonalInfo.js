@@ -1,28 +1,59 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
+import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 
 function PersonalInfo() {
   const navigate = useNavigate();
+  const { updateOnboardingStatus } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: ''
+    },
     dateOfBirth: '',
     profilePicture: null
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const calculateAge = (birthDate) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    if (name in formData.address) {
+      setFormData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          [name]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleFileChange = (e) => {
@@ -32,17 +63,51 @@ function PersonalInfo() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically save the data to your backend
-    console.log('Personal Info:', formData);
-    navigate('/onboarding/professional-info');
+    setError('');
+    setLoading(true);
+
+    try {
+      // Validate age
+      const age = calculateAge(formData.dateOfBirth);
+      if (age < 18) {
+        setError('You must be at least 18 years old to register.');
+        setLoading(false);
+        return;
+      }
+
+      // Prepare data without the profile picture
+      const { profilePicture, ...personalData } = formData;
+
+      // Update onboarding status with personal data
+      const response = await updateOnboardingStatus('personalInfo', {
+        completed: true,
+        data: personalData
+      });
+
+      if (response.success) {
+        navigate('/onboarding/professional-info');
+      } else {
+        setError('Failed to save personal information. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error saving personal info:', err);
+      setError(err.response?.data?.message || 'Failed to save personal information. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <OnboardingLayout>
       <div className="max-w-2xl mx-auto">
         <h2 className="text-2xl font-bold mb-6">Personal Information</h2>
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Picture Upload */}
           <div className="flex items-center space-x-4">
@@ -128,11 +193,11 @@ function PersonalInfo() {
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Address</label>
+            <label className="block text-sm font-medium text-gray-700">Street Address</label>
             <input
               type="text"
-              name="address"
-              value={formData.address}
+              name="street"
+              value={formData.address.street}
               onChange={handleChange}
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -145,7 +210,7 @@ function PersonalInfo() {
               <input
                 type="text"
                 name="city"
-                value={formData.city}
+                value={formData.address.city}
                 onChange={handleChange}
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -156,7 +221,7 @@ function PersonalInfo() {
               <input
                 type="text"
                 name="state"
-                value={formData.state}
+                value={formData.address.state}
                 onChange={handleChange}
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -167,12 +232,24 @@ function PersonalInfo() {
               <input
                 type="text"
                 name="zipCode"
-                value={formData.zipCode}
+                value={formData.address.zipCode}
                 onChange={handleChange}
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Country</label>
+            <input
+              type="text"
+              name="country"
+              value={formData.address.country}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
           </div>
 
           <div>
@@ -183,6 +260,7 @@ function PersonalInfo() {
               value={formData.dateOfBirth}
               onChange={handleChange}
               required
+              max={new Date().toISOString().split('T')[0]}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
@@ -198,9 +276,10 @@ function PersonalInfo() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              Next
+              {loading ? 'Saving...' : 'Next'}
             </button>
           </div>
         </form>

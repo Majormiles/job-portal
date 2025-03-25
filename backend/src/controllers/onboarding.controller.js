@@ -49,9 +49,16 @@ exports.updateOnboardingSection = asyncHandler(async (req, res, next) => {
 
   // Update the section data and mark it as completed
   onboarding[section] = {
-    completed: true,
-    data: req.body
+    completed: req.body.completed,
+    data: req.body.data
   };
+
+  // Update isComplete status
+  onboarding.isComplete = 
+    onboarding.personalInfo.completed && 
+    onboarding.professionalInfo.completed && 
+    onboarding.skills.completed && 
+    onboarding.preferences.completed;
 
   await onboarding.save();
 

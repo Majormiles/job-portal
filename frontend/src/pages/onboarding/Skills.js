@@ -1,118 +1,252 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
+import { useAuth } from '../../context/AuthContext';
 
 function Skills() {
   const navigate = useNavigate();
+  const { updateOnboardingStatus } = useAuth();
   const [formData, setFormData] = useState({
-    technicalSkills: [],
-    softSkills: [],
+    technical: [],
+    soft: [],
     languages: [],
     certifications: []
   });
-
   const [newSkill, setNewSkill] = useState({
     technical: '',
     soft: '',
-    language: '',
-    certification: ''
+    languages: '',
+    certifications: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleAddSkill = (type) => {
-    const value = newSkill[type];
-    if (value.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        [type]: [...prev[type], value.trim()]
-      }));
-      setNewSkill(prev => ({
-        ...prev,
-        [type]: ''
-      }));
-    }
-  };
+  const handleAddSkill = (category) => {
+    const skillValue = newSkill[category]?.trim();
+    if (!skillValue) return;
 
-  const handleRemoveSkill = (type, index) => {
     setFormData(prev => ({
       ...prev,
-      [type]: prev[type].filter((_, i) => i !== index)
+      [category]: [...prev[category], skillValue]
+    }));
+    setNewSkill(prev => ({
+      ...prev,
+      [category]: ''
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Here you would typically save the data to your backend
-    console.log('Skills:', formData);
-    navigate('/onboarding/preferences');
+  const handleRemoveSkill = (category, index) => {
+    setFormData(prev => ({
+      ...prev,
+      [category]: prev[category].filter((_, i) => i !== index)
+    }));
   };
 
-  const renderSkillSection = (type, title, placeholder) => (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-      <div className="flex space-x-2">
-        <input
-          type="text"
-          value={newSkill[type]}
-          onChange={(e) => setNewSkill(prev => ({ ...prev, [type]: e.target.value }))}
-          placeholder={placeholder}
-          className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
-        <button
-          type="button"
-          onClick={() => handleAddSkill(type)}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Add
-        </button>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {formData[type].map((skill, index) => (
-          <span
-            key={index}
-            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-          >
-            {skill}
-            <button
-              type="button"
-              onClick={() => handleRemoveSkill(type, index)}
-              className="ml-2 text-blue-600 hover:text-blue-800"
-            >
-              ×
-            </button>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setNewSkill(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      // Check if at least one skill is added in each category
+      const hasSkills = Object.values(formData).some(skills => skills.length > 0);
+      if (!hasSkills) {
+        setError('Please add at least one skill in any category.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await updateOnboardingStatus('skills', {
+        completed: true,
+        data: formData
+      });
+
+      if (response.success) {
+        navigate('/onboarding/preferences');
+      } else {
+        setError('Failed to save skills. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error saving skills:', err);
+      setError(err.response?.data?.message || 'Failed to save skills. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <OnboardingLayout>
       <div className="max-w-2xl mx-auto">
         <h2 className="text-2xl font-bold mb-6">Skills & Qualifications</h2>
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {renderSkillSection(
-            'technicalSkills',
-            'Technical Skills',
-            'Add technical skill (e.g., JavaScript, Python)'
-          )}
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Technical Skills */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Technical Skills</label>
+            <div className="mt-1 flex space-x-2">
+              <input
+                type="text"
+                name="technical"
+                value={newSkill.technical}
+                onChange={handleChange}
+                placeholder="e.g., JavaScript, Python"
+                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddSkill('technical')}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Add
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {formData.technical.map((skill, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                >
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill('technical', index)}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
 
-          {renderSkillSection(
-            'softSkills',
-            'Soft Skills',
-            'Add soft skill (e.g., Leadership, Communication)'
-          )}
+          {/* Soft Skills */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Soft Skills</label>
+            <div className="mt-1 flex space-x-2">
+              <input
+                type="text"
+                name="soft"
+                value={newSkill.soft}
+                onChange={handleChange}
+                placeholder="e.g., Communication, Leadership"
+                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddSkill('soft')}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Add
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {formData.soft.map((skill, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
+                >
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill('soft', index)}
+                    className="ml-2 text-green-600 hover:text-green-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
 
-          {renderSkillSection(
-            'languages',
-            'Languages',
-            'Add language (e.g., English, Spanish)'
-          )}
+          {/* Languages */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Languages</label>
+            <div className="mt-1 flex space-x-2">
+              <input
+                type="text"
+                name="languages"
+                value={newSkill.languages}
+                onChange={handleChange}
+                placeholder="e.g., English, French"
+                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddSkill('languages')}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Add
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {formData.languages.map((skill, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800"
+                >
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill('languages', index)}
+                    className="ml-2 text-purple-600 hover:text-purple-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
 
-          {renderSkillSection(
-            'certifications',
-            'Certifications',
-            'Add certification (e.g., AWS Certified)'
-          )}
+          {/* Certifications */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Certifications</label>
+            <div className="mt-1 flex space-x-2">
+              <input
+                type="text"
+                name="certifications"
+                value={newSkill.certifications}
+                onChange={handleChange}
+                placeholder="e.g., AWS Certified, PMP"
+                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddSkill('certifications')}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Add
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {formData.certifications.map((skill, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800"
+                >
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill('certifications', index)}
+                    className="ml-2 text-yellow-600 hover:text-yellow-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
 
           {/* Navigation Buttons */}
           <div className="flex justify-end space-x-4">
@@ -125,9 +259,10 @@ function Skills() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              Next
+              {loading ? 'Saving...' : 'Next'}
             </button>
           </div>
         </form>

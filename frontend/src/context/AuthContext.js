@@ -111,6 +111,22 @@ export const AuthProvider = ({ children }) => {
               currentOnboardingStep: 'personal-info'
             });
           }
+        } else {
+          // Clear any partial state if no valid auth data
+          setAuthState({
+            isAuthenticated: false,
+            user: null,
+            userType: null,
+            onboardingStatus: {
+              isComplete: false,
+              personalInfo: false,
+              education: false,
+              experience: false,
+              skills: false,
+              preferences: false
+            },
+            currentOnboardingStep: null
+          });
         }
       } catch (error) {
         console.error('Auth status check failed:', error);
@@ -255,16 +271,16 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const updateOnboardingStatus = async (step, completed) => {
+  const updateOnboardingStatus = async (step, data) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `http://localhost:5000/api/users/onboarding-status/${step}`,
-        { completed },
+        `http://localhost:5000/api/users/onboarding/${step}`,
+        data,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
 
-      const updatedStatus = response.data;
+      const updatedStatus = response.data.data;
       
       // Determine current onboarding step
       let currentStep = null;
@@ -278,12 +294,20 @@ export const AuthProvider = ({ children }) => {
 
       setAuthState(prev => ({
         ...prev,
-        onboardingStatus: updatedStatus,
+        onboardingStatus: {
+          isComplete: updatedStatus.isComplete,
+          personalInfo: updatedStatus.personalInfo.completed,
+          education: updatedStatus.professionalInfo.completed,
+          experience: updatedStatus.professionalInfo.completed,
+          skills: updatedStatus.skills.completed,
+          preferences: updatedStatus.preferences.completed
+        },
         currentOnboardingStep: currentStep
       }));
 
       return { success: true, updatedStatus };
     } catch (error) {
+      console.error('Error updating onboarding status:', error);
       throw error;
     }
   };

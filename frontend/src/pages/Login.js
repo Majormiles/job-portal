@@ -24,6 +24,7 @@ const LoginPage = () => {
       
       if (success) {
         console.log('Login successful, onboarding status:', onboardingStatus);
+        // For new users or incomplete onboarding, redirect to onboarding
         if (!onboardingStatus.isComplete) {
           // Redirect to the first incomplete onboarding step
           if (!onboardingStatus.personalInfo) {
@@ -38,6 +39,7 @@ const LoginPage = () => {
             navigate('/onboarding/preferences');
           }
         } else {
+          // For existing users with complete onboarding, go to dashboard
           navigate('/dashboard_employee');
         }
       }
