@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import jobsearchImage from '../assets/images/login.png';
+import registerImage1 from '../assets/images/login.png';
+import registerImage2 from '../assets/images/happybusiness-woman2.jpg';
+import registerImage3 from '../assets/images/pexels.jpg';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -15,6 +17,22 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // New state for image rotation
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [nextImageIndex, setNextImageIndex] = useState(1);
+  const images = [registerImage1, registerImage2, registerImage3];
+
+  useEffect(() => {
+    // Set up interval to change image every 5 seconds
+    const imageInterval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+      setNextImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 5000);
+
+    // Clean up interval on component unmount
+    return () => clearInterval(imageInterval);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,7 +80,7 @@ const RegisterPage = () => {
       <div className="w-full md:w-2/3 flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-sm sm:max-w-md">
           {/* Logo */}
-          <Link to="/"> 
+          <Link to="/">
             <div className="mb-6 sm:mb-8">
               <svg className="w-10 h-10 sm:w-12 sm:h-12 text-purple-700" viewBox="0 0 100 100" fill="currentColor">
                 <path d="M50 10 L90 30 L50 50 L10 30 Z" />
@@ -243,12 +261,40 @@ const RegisterPage = () => {
       </div>
 
       {/* Right Section - Image */}
-      <div className="hidden md:block w-1/2 relative">
+      <div className="hidden md:block w-1/2 relative overflow-hidden pl-2">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
-        <div className="relative h-full flex items-center justify-center">
-          <img src={jobsearchImage} alt="Registration illustration" className="w-full h-full object-cover" />
+        <div className="relative h-full">
+          <div className="relative w-full h-full">
+            {images.map((image, index) => (
+              <div
+                key={index}
+                className={`absolute inset-0 transition-transform duration-30000 ease-in-out ${index === currentImageIndex
+                    ? 'translate-x-0'
+                    : index === nextImageIndex
+                      ? 'translate-x-full'
+                      : '-translate-x-full'
+                  }`}
+              >
+                <img
+                  src={image}
+                  alt={`Registration illustration ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Text Overlay */}
+        <div className="absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-white px-4 max-w-md">
+          <h2 className="text-3xl font-bold mb-4">Discover Your Perfect Career Path</h2>
+          <p className="text-lg opacity-80">
+            Unlock opportunities, connect with top employers, and take the next step in your professional journey.
+          </p>
         </div>
       </div>
+
+      
     </div>
   );
 };

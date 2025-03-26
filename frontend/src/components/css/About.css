@@ -46,7 +46,7 @@
 .about-hero-section .container {
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 50px;
 }
 
 .about-hero-content {
@@ -98,10 +98,19 @@
 }
 
 .about-hero-section img {
-  max-width: 100%;
+  max-width: 80%;
   height: auto;
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
+}
+
+@media (max-width: 480px) {
+  .about-hero-section img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+  }
 }
 
 /* How it Works Section */

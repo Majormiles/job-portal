@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import jobsearchImage from '../assets/images/login.png';
+import loginImage1 from '../assets/images/login.png';
+import loginImage2 from '../assets/images/happybusiness-woman2.jpg';
+import loginImage3 from '../assets/images/pexels.jpg'; 
+import loginImage4 from '../assets/images/happybusiness-woman.jpg';
+import loginImage5 from '../assets/images/business-woman3.jpg';
+import loginImage6 from '../assets/images/pexels.jpg'; 
+
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -13,6 +19,34 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // New state for image rotation with fade effect
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [nextImageIndex, setNextImageIndex] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const images = [loginImage1, loginImage2, loginImage3, loginImage4,loginImage5];
+
+  useEffect(() => {
+    // Set up interval to change image every 5 seconds
+    const imageInterval = setInterval(() => {
+      setIsTransitioning(true);
+
+      // After a short delay, update the indices
+      setTimeout(() => {
+        setCurrentImageIndex((prevIndex) =>
+          (prevIndex + 1) % images.length
+        );
+        setNextImageIndex((prevIndex) =>
+          (prevIndex + 1) % images.length
+        );
+        setIsTransitioning(false);
+      }, 500); // Half of the transition duration
+    }, 5000);
+
+    // Clean up interval on component unmount
+    return () => clearInterval(imageInterval);
+  }, []);
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -21,7 +55,7 @@ const LoginPage = () => {
     try {
       console.log('Attempting login with:', { email });
       const { success, onboardingStatus } = await login(email, password, rememberMe);
-      
+
       if (success) {
         console.log('Login successful, onboarding status:', onboardingStatus);
         // For new users or incomplete onboarding, redirect to onboarding
@@ -214,12 +248,39 @@ const LoginPage = () => {
       </div>
 
       {/* Right Section - Image */}
-      <div className="hidden md:block w-1/2 relative">
+      <div className="hidden md:block w-1/2 relative overflow-hidden pl-2">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
-        <div className="relative h-full flex items-center justify-center">
-          <img src={jobsearchImage} alt="Login illustration" className="w-full h-full object-cover" />
+        <div className="relative h-full">
+          <div className="relative w-full h-full">
+            {images.map((image, index) => (
+              <div
+                key={index}
+                className={`absolute inset-0 transition-transform duration-30000 ease-in-out ${index === currentImageIndex
+                    ? 'translate-x-0'
+                    : index === nextImageIndex
+                      ? 'translate-x-full'
+                      : '-translate-x-full'
+                  }`}
+              >
+                <img
+                  src={image}
+                  alt={`Login illustration ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Text Overlay */}
+        <div className="absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-white px-6 max-w-md">
+          <h2 className="text-3xl font-bold mb-4">Discover Your Perfect Career Path</h2>
+          <p className="text-lg opacity-80">
+            Unlock opportunities, connect with top employers, and take the next step in your professional journey.
+          </p>
         </div>
       </div>
+
     </div>
   );
 };
