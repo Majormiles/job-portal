@@ -58,6 +58,13 @@ const LoginPage = () => {
 
       if (success) {
         console.log('Login successful, onboarding status:', onboardingStatus);
+        
+        // Default to dashboard if no onboarding status is provided
+        if (!onboardingStatus) {
+          navigate('/dashboard_employee');
+          return;
+        }
+
         // For new users or incomplete onboarding, redirect to onboarding
         if (!onboardingStatus.isComplete) {
           // Redirect to the first incomplete onboarding step
@@ -79,17 +86,8 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error('Login error:', err);
-      if (err.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        setError(err.response.data.message || 'Invalid email or password');
-      } else if (err.request) {
-        // The request was made but no response was received
-        setError('No response from server. Please check if the server is running.');
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        setError('Error setting up the request. Please try again.');
-      }
+      // The error message is already set in the AuthContext
+      // We just need to handle the navigation
     } finally {
       setLoading(false);
     }

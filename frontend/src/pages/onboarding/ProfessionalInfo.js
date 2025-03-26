@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
 import { useAuth } from '../../context/AuthContext';
 
 function ProfessionalInfo() {
   const navigate = useNavigate();
-  const { updateOnboardingStatus } = useAuth();
+  const { updateOnboardingStatus, api } = useAuth();
   const [formData, setFormData] = useState({
     currentTitle: '',
     yearsOfExperience: '',
@@ -19,6 +19,30 @@ function ProfessionalInfo() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchExistingData = async () => {
+      try {
+        const response = await api.get('/users/onboarding');
+        if (response.data.success && response.data.data.professionalInfo?.data) {
+          const existingData = response.data.data.professionalInfo.data;
+          setFormData({
+            currentTitle: existingData.currentTitle || '',
+            yearsOfExperience: existingData.yearsOfExperience || '',
+            currentCompany: existingData.currentCompany || '',
+            desiredTitle: existingData.desiredTitle || '',
+            desiredSalary: existingData.desiredSalary || '',
+            employmentType: existingData.employmentType || '',
+            workAuthorization: existingData.workAuthorization || ''
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching existing data:', err);
+      }
+    };
+
+    fetchExistingData();
+  }, [api]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,27 +73,28 @@ function ProfessionalInfo() {
         return;
       }
 
-      // Create FormData for file uploads
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null) {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
+      // Create professional data object
+      const professionalData = {
+        currentTitle: formData.currentTitle,
+        yearsOfExperience: formData.yearsOfExperience,
+        currentCompany: formData.currentCompany,
+        desiredTitle: formData.desiredTitle,
+        desiredSalary: formData.desiredSalary,
+        employmentType: formData.employmentType,
+        workAuthorization: formData.workAuthorization
+      };
 
-      const response = await updateOnboardingStatus('professionalInfo', {
-        completed: true,
-        data: formDataToSend
-      });
+      console.log('Sending onboarding data:', { step: 'professional', data: professionalData });
 
-      if (response.success) {
-        navigate('/onboarding/skills');
-      } else {
-        setError('Failed to save professional information. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error saving professional info:', err);
-      setError(err.response?.data?.message || 'Failed to save professional information. Please try again.');
+      // Update onboarding status
+      const response = await updateOnboardingStatus(professionalData, 'professional');
+      console.log('Onboarding update response:', response);
+
+      // Navigate to next step
+      navigate('/onboarding/skills');
+    } catch (error) {
+      console.error('Error updating professional info:', error);
+      setError(error.response?.data?.message || 'Failed to update professional information');
     } finally {
       setLoading(false);
     }

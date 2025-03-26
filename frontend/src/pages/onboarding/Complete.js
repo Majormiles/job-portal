@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function Complete() {
   const navigate = useNavigate();
-  const { updateOnboardingStatus, user } = useAuth();
+  const { updateOnboardingStatus, user, api } = useAuth();
   const [onboardingData, setOnboardingData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -13,27 +13,35 @@ function Complete() {
   useEffect(() => {
     const fetchOnboardingData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/users/onboarding', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const data = await response.json();
-        if (data.success) {
-          setOnboardingData(data.data);
+        const response = await api.get('/users/onboarding');
+        console.log('Fetched onboarding data:', response.data);
+        
+        if (response.data.success) {
+          // Set the data directly from the response
+          setOnboardingData(response.data.data);
         } else {
           setError('Failed to fetch onboarding data');
         }
       } catch (err) {
         console.error('Error fetching onboarding data:', err);
-        setError('Failed to fetch onboarding data');
+        if (err.message === 'No authentication token found' || err.response?.status === 401) {
+          navigate('/login', { 
+            state: { 
+              from: '/onboarding/complete',
+              message: 'Please log in to view your profile.'
+            },
+            replace: true
+          });
+        } else {
+          setError('Failed to fetch onboarding data');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchOnboardingData();
-  }, []);
+  }, [navigate, api]);
 
   const handleEdit = (section) => {
     switch (section) {
@@ -56,13 +64,16 @@ function Complete() {
 
   const handleComplete = async () => {
     try {
-      const response = await updateOnboardingStatus('complete', {
+      // First, mark the onboarding as complete
+      const response = await api.put('/users/onboarding/complete', {
         completed: true,
         data: onboardingData
       });
 
-      if (response.success) {
-        navigate('/login');
+      if (response.data.success) {
+        // Update the user's onboarding status in the context
+        await updateOnboardingStatus({ completed: true }, 'complete');
+        navigate('/dashboard_employee');
       } else {
         setError('Failed to complete onboarding');
       }
@@ -118,20 +129,22 @@ function Complete() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-500">Name</p>
-              <p className="font-medium">{onboardingData?.personalInfo?.firstName} {onboardingData?.personalInfo?.lastName}</p>
+              <p className="font-medium">
+                {onboardingData?.personalInfo?.data?.firstName} {onboardingData?.personalInfo?.data?.lastName}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium">{onboardingData?.personalInfo?.email}</p>
+              <p className="font-medium">{onboardingData?.personalInfo?.data?.email}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Phone</p>
-              <p className="font-medium">{onboardingData?.personalInfo?.phone}</p>
+              <p className="font-medium">{onboardingData?.personalInfo?.data?.phone}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Address</p>
               <p className="font-medium">
-                {onboardingData?.personalInfo?.address?.street}, {onboardingData?.personalInfo?.address?.city}, {onboardingData?.personalInfo?.address?.state} {onboardingData?.personalInfo?.address?.zipCode}
+                {onboardingData?.personalInfo?.data?.address?.street}, {onboardingData?.personalInfo?.data?.address?.city}, {onboardingData?.personalInfo?.data?.address?.state} {onboardingData?.personalInfo?.data?.address?.zipCode}
               </p>
             </div>
           </div>
@@ -151,23 +164,23 @@ function Complete() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-500">Current Title</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.currentTitle}</p>
+              <p className="font-medium">{onboardingData?.professionalInfo?.data?.currentTitle}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Years of Experience</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.yearsOfExperience} years</p>
+              <p className="font-medium">{onboardingData?.professionalInfo?.data?.yearsOfExperience} years</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Desired Title</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.desiredTitle}</p>
+              <p className="font-medium">{onboardingData?.professionalInfo?.data?.desiredTitle}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Employment Type</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.employmentType}</p>
+              <p className="font-medium">{onboardingData?.professionalInfo?.data?.employmentType}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Work Authorization</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.workAuthorization}</p>
+              <p className="font-medium">{onboardingData?.professionalInfo?.data?.workAuthorization}</p>
             </div>
           </div>
         </div>
@@ -187,7 +200,7 @@ function Complete() {
             <div>
               <p className="text-sm text-gray-500 mb-2">Technical Skills</p>
               <div className="flex flex-wrap gap-2">
-                {onboardingData?.skills?.technical?.map((skill, index) => (
+                {onboardingData?.skills?.data?.technical?.map((skill, index) => (
                   <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                     {skill}
                   </span>
@@ -197,7 +210,7 @@ function Complete() {
             <div>
               <p className="text-sm text-gray-500 mb-2">Soft Skills</p>
               <div className="flex flex-wrap gap-2">
-                {onboardingData?.skills?.soft?.map((skill, index) => (
+                {onboardingData?.skills?.data?.soft?.map((skill, index) => (
                   <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                     {skill}
                   </span>
@@ -207,7 +220,7 @@ function Complete() {
             <div>
               <p className="text-sm text-gray-500 mb-2">Languages</p>
               <div className="flex flex-wrap gap-2">
-                {onboardingData?.skills?.languages?.map((skill, index) => (
+                {onboardingData?.skills?.data?.languages?.map((skill, index) => (
                   <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
                     {skill}
                   </span>
@@ -217,7 +230,7 @@ function Complete() {
             <div>
               <p className="text-sm text-gray-500 mb-2">Certifications</p>
               <div className="flex flex-wrap gap-2">
-                {onboardingData?.skills?.certifications?.map((skill, index) => (
+                {onboardingData?.skills?.data?.certifications?.map((skill, index) => (
                   <span key={index} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
                     {skill}
                   </span>
@@ -242,22 +255,33 @@ function Complete() {
             <div>
               <p className="text-sm text-gray-500 mb-2">Work Arrangement</p>
               <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.jobPreferences?.remoteWork && (
+                {onboardingData?.preferences?.data?.jobPreferences?.remoteWork && (
                   <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Remote Work</span>
                 )}
-                {onboardingData?.preferences?.jobPreferences?.hybridWork && (
+                {onboardingData?.preferences?.data?.jobPreferences?.hybridWork && (
                   <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Hybrid Work</span>
                 )}
-                {onboardingData?.preferences?.jobPreferences?.onsiteWork && (
+                {onboardingData?.preferences?.data?.jobPreferences?.onsiteWork && (
                   <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">On-site Work</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-2">Work Schedule</p>
+              <div className="flex flex-wrap gap-2">
+                {onboardingData?.preferences?.data?.jobPreferences?.flexibleHours && (
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">Flexible Hours</span>
+                )}
+                {onboardingData?.preferences?.data?.jobPreferences?.fixedHours && (
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">Fixed Hours</span>
                 )}
               </div>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-2">Industry Preferences</p>
               <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.industryPreferences?.map((industry, index) => (
-                  <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                {onboardingData?.preferences?.data?.industryPreferences?.map((industry, index) => (
+                  <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
                     {industry}
                   </span>
                 ))}
@@ -266,8 +290,8 @@ function Complete() {
             <div>
               <p className="text-sm text-gray-500 mb-2">Work Culture</p>
               <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.workCulture?.map((culture, index) => (
-                  <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                {onboardingData?.preferences?.data?.workCulture?.map((culture, index) => (
+                  <span key={index} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
                     {culture}
                   </span>
                 ))}
@@ -276,8 +300,8 @@ function Complete() {
             <div>
               <p className="text-sm text-gray-500 mb-2">Desired Benefits</p>
               <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.benefits?.map((benefit, index) => (
-                  <span key={index} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                {onboardingData?.preferences?.data?.benefits?.map((benefit, index) => (
+                  <span key={index} className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
                     {benefit}
                   </span>
                 ))}
@@ -285,27 +309,27 @@ function Complete() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Availability</p>
-              <div className="grid grid-cols-2 gap-4 mt-2">
+              <div className="mt-2 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Start Date</p>
-                  <p className="font-medium">{onboardingData?.preferences?.availability?.startDate}</p>
+                  <p className="font-medium">{onboardingData?.preferences?.data?.availability?.startDate}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Hours per Week</p>
-                  <p className="font-medium">{onboardingData?.preferences?.availability?.hoursPerWeek}</p>
+                  <p className="font-medium">{onboardingData?.preferences?.data?.availability?.hoursPerWeek}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-center space-x-4">
+        {/* Complete Button */}
+        <div className="flex justify-center">
           <button
             onClick={handleComplete}
             className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            Complete Onboarding
+            Complete Profile
           </button>
         </div>
       </div>

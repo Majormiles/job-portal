@@ -166,7 +166,7 @@ const AppContent = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <Router>
+      <Router future={{ v7_relativeSplatPath: true }}>
         <AppContent />
       </Router>
     </AuthProvider>

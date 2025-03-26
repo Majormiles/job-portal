@@ -33,7 +33,7 @@ exports.getOnboardingStatus = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.updateOnboardingSection = asyncHandler(async (req, res, next) => {
   const { section } = req.params;
-  const validSections = ['personalInfo', 'professionalInfo', 'skills', 'preferences'];
+  const validSections = ['personalInfo', 'professionalInfo', 'skills', 'preferences', 'complete'];
 
   if (!validSections.includes(section)) {
     return next(new AppError('Invalid section', 400));
@@ -47,18 +47,23 @@ exports.updateOnboardingSection = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Update the section data and mark it as completed
-  onboarding[section] = {
-    completed: req.body.completed,
-    data: req.body.data
-  };
+  if (section === 'complete') {
+    // For complete step, just mark the entire onboarding as complete
+    onboarding.isComplete = true;
+  } else {
+    // Update the section data and mark it as completed
+    onboarding[section] = {
+      completed: req.body.completed,
+      data: req.body.data
+    };
 
-  // Update isComplete status
-  onboarding.isComplete = 
-    onboarding.personalInfo.completed && 
-    onboarding.professionalInfo.completed && 
-    onboarding.skills.completed && 
-    onboarding.preferences.completed;
+    // Update isComplete status
+    onboarding.isComplete = 
+      onboarding.personalInfo.completed && 
+      onboarding.professionalInfo.completed && 
+      onboarding.skills.completed && 
+      onboarding.preferences.completed;
+  }
 
   await onboarding.save();
 

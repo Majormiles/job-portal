@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
 import { useAuth } from '../../context/AuthContext';
 
 function Preferences() {
   const navigate = useNavigate();
-  const { updateOnboardingStatus } = useAuth();
+  const { updateOnboardingStatus, api } = useAuth();
   const [formData, setFormData] = useState({
     jobPreferences: {
       remoteWork: false,
@@ -29,6 +29,28 @@ function Preferences() {
   const [newBenefit, setNewBenefit] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchExistingData = async () => {
+      try {
+        const response = await api.get('/users/onboarding');
+        if (response.data.success && response.data.data.preferences?.data) {
+          const existingData = response.data.data.preferences.data;
+          setFormData({
+            jobPreferences: existingData.jobPreferences || [],
+            industryPreferences: existingData.industryPreferences || [],
+            workCulture: existingData.workCulture || [],
+            benefits: existingData.benefits || [],
+            availability: existingData.availability || ''
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching existing data:', err);
+      }
+    };
+
+    fetchExistingData();
+  }, [api]);
 
   const handleCheckboxChange = (e) => {
     const { name, checked } = e.target;
@@ -116,19 +138,17 @@ function Preferences() {
         return;
       }
 
-      const response = await updateOnboardingStatus('preferences', {
-        completed: true,
-        data: formData
-      });
+      console.log('Sending onboarding data:', { step: 'preferences', data: formData });
 
-      if (response.success) {
-        navigate('/onboarding/complete');
-      } else {
-        setError('Failed to save preferences. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error saving preferences:', err);
-      if (err.message === 'No authentication token found' || err.response?.status === 401) {
+      // Update onboarding status
+      const response = await updateOnboardingStatus(formData, 'preferences');
+      console.log('Onboarding update response:', response);
+
+      // Navigate to next step
+      navigate('/onboarding/complete');
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      if (error.message === 'No authentication token found' || error.response?.status === 401) {
         // Authentication error - redirect to login
         navigate('/login', { 
           state: { 
@@ -138,7 +158,7 @@ function Preferences() {
           replace: true // Replace the current history entry
         });
       } else {
-        setError(err.response?.data?.message || 'Failed to save preferences. Please try again.');
+        setError(error.response?.data?.message || 'Failed to update preferences');
       }
     } finally {
       setLoading(false);

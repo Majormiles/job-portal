@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
 import axios from 'axios';
@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 
 function PersonalInfo() {
   const navigate = useNavigate();
-  const { updateOnboardingStatus } = useAuth();
+  const { updateOnboardingStatus, api } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -24,6 +24,26 @@ function PersonalInfo() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchExistingData = async () => {
+      try {
+        const response = await api.get('/users/onboarding');
+        if (response.data.success && response.data.data.personalInfo?.data) {
+          const existingData = response.data.data.personalInfo.data;
+          setFormData(prev => ({
+            ...prev,
+            ...existingData,
+            address: existingData.address || prev.address
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching existing data:', err);
+      }
+    };
+
+    fetchExistingData();
+  }, [api]);
 
   const calculateAge = (birthDate) => {
     const today = new Date();
@@ -70,30 +90,46 @@ function PersonalInfo() {
 
     try {
       // Validate age
-      const age = calculateAge(formData.dateOfBirth);
+      const age = calculateAge(new Date(formData.dateOfBirth));
       if (age < 18) {
-        setError('You must be at least 18 years old to register.');
+        setError('You must be at least 18 years old to use this service.');
         setLoading(false);
         return;
       }
 
-      // Prepare data without the profile picture
-      const { profilePicture, ...personalData } = formData;
-
-      // Update onboarding status with personal data
-      const response = await updateOnboardingStatus('personalInfo', {
-        completed: true,
-        data: personalData
-      });
-
-      if (response.success) {
-        navigate('/onboarding/professional-info');
-      } else {
-        setError('Failed to save personal information. Please try again.');
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      if (formData.profilePicture) {
+        formDataToSend.append('profilePicture', formData.profilePicture);
       }
-    } catch (err) {
-      console.error('Error saving personal info:', err);
-      setError(err.response?.data?.message || 'Failed to save personal information. Please try again.');
+
+      // Add personal data
+      const personalData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        zipCode: formData.zipCode
+      };
+
+      formDataToSend.append('data', JSON.stringify(personalData));
+
+      console.log('Sending onboarding data:', { step: 'personal', data: personalData });
+
+      // Update onboarding status
+      const response = await updateOnboardingStatus(personalData, 'personal');
+      console.log('Onboarding update response:', response);
+
+      // Navigate to next step
+      navigate('/onboarding/professional-info');
+    } catch (error) {
+      console.error('Error updating personal info:', error);
+      setError(error.response?.data?.message || 'Failed to update personal information');
     } finally {
       setLoading(false);
     }

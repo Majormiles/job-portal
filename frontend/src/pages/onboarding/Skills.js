@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
 import { useAuth } from '../../context/AuthContext';
 
 function Skills() {
   const navigate = useNavigate();
-  const { updateOnboardingStatus } = useAuth();
+  const { updateOnboardingStatus, api } = useAuth();
   const [formData, setFormData] = useState({
     technical: [],
     soft: [],
@@ -20,6 +20,10 @@ function Skills() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [technicalSkills, setTechnicalSkills] = useState([]);
+  const [softSkills, setSoftSkills] = useState([]);
+  const [languages, setLanguages] = useState([]);
+  const [certifications, setCertifications] = useState([]);
 
   const handleAddSkill = (category) => {
     const skillValue = newSkill[category]?.trim();
@@ -64,23 +68,40 @@ function Skills() {
         return;
       }
 
-      const response = await updateOnboardingStatus('skills', {
-        completed: true,
-        data: formData
-      });
+      console.log('Sending onboarding data:', { step: 'skills', data: formData });
 
-      if (response.success) {
-        navigate('/onboarding/preferences');
-      } else {
-        setError('Failed to save skills. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error saving skills:', err);
-      setError(err.response?.data?.message || 'Failed to save skills. Please try again.');
+      // Update onboarding status
+      const response = await updateOnboardingStatus(formData, 'skills');
+      console.log('Onboarding update response:', response);
+
+      // Navigate to next step
+      navigate('/onboarding/preferences');
+    } catch (error) {
+      console.error('Error updating skills:', error);
+      setError(error.response?.data?.message || 'Failed to update skills');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchExistingData = async () => {
+      try {
+        const response = await api.get('/users/onboarding');
+        if (response.data.success && response.data.data.skills?.data) {
+          const existingData = response.data.data.skills.data;
+          setTechnicalSkills(existingData.technicalSkills || []);
+          setSoftSkills(existingData.softSkills || []);
+          setLanguages(existingData.languages || []);
+          setCertifications(existingData.certifications || []);
+        }
+      } catch (err) {
+        console.error('Error fetching existing data:', err);
+      }
+    };
+
+    fetchExistingData();
+  }, [api]);
 
   return (
     <OnboardingLayout>
