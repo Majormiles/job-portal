@@ -1,18 +1,18 @@
-const Joi = require('joi');
+import Joi from 'joi';
 
 // User validation schemas
-const registerSchema = Joi.object({
+export const registerSchema = Joi.object({
   name: Joi.string().required().min(2).max(50),
   email: Joi.string().required().email(),
   password: Joi.string().required().min(6).max(30)
 });
 
-const loginSchema = Joi.object({
+export const loginSchema = Joi.object({
   email: Joi.string().required().email(),
   password: Joi.string().required()
 });
 
-const updateProfileSchema = Joi.object({
+export const updateProfileSchema = Joi.object({
   name: Joi.string().min(2).max(50),
   phone: Joi.string(),
   address: Joi.object({
@@ -62,7 +62,7 @@ const updateProfileSchema = Joi.object({
 });
 
 // Job validation schemas
-const createJobSchema = Joi.object({
+export const createJobSchema = Joi.object({
   title: Joi.string().required(),
   description: Joi.string().required(),
   requirements: Joi.string().required(),
@@ -81,7 +81,7 @@ const createJobSchema = Joi.object({
 });
 
 // Company validation schemas
-const createCompanySchema = Joi.object({
+export const createCompanySchema = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().required(),
   website: Joi.string().uri(),
@@ -105,12 +105,12 @@ const createCompanySchema = Joi.object({
 });
 
 // Application validation schemas
-const createApplicationSchema = Joi.object({
+export const createApplicationSchema = Joi.object({
   coverLetter: Joi.string().required(),
   notes: Joi.string()
 });
 
-const updateApplicationStatusSchema = Joi.object({
+export const updateApplicationStatusSchema = Joi.object({
   status: Joi.string()
     .valid('pending', 'reviewing', 'shortlisted', 'interviewed', 'rejected', 'accepted')
     .required(),
@@ -119,7 +119,7 @@ const updateApplicationStatusSchema = Joi.object({
 });
 
 // Validation middleware
-const validate = (schema) => {
+export const validate = (schema) => {
   return (req, res, next) => {
     const { error } = schema.validate(req.body);
     if (error) {
@@ -130,15 +130,4 @@ const validate = (schema) => {
     }
     next();
   };
-};
-
-module.exports = {
-  validate,
-  registerSchema,
-  loginSchema,
-  updateProfileSchema,
-  createJobSchema,
-  createCompanySchema,
-  createApplicationSchema,
-  updateApplicationStatusSchema
 }; 

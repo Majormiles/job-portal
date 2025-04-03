@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useOnboardingStatus } from '../../hooks/useOnboardingStatus';
 import '../css/Header_one.css';
+import { toast } from 'react-toastify';
 
 const JobPortal = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user, onboardingStatus, currentOnboardingStep, logout, loading } = useAuth();
+  const { isAuthenticated, user, logout, loading, checkOnboardingStatus } = useAuth();
+  const { isComplete, loading: onboardingLoading } = useOnboardingStatus();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [heroAnimation, setHeroAnimation] = useState(false);
+  const [logoAnimation, setLogoAnimation] = useState(false);
 
-  // Handle scroll effects
+  // Handle scroll effects and animations
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 50) {
@@ -20,10 +24,11 @@ const JobPortal = () => {
       }
     };
 
-    // Start hero animation after component mount
+    // Start animations after component mount
     setTimeout(() => {
+      setLogoAnimation(true);
       setHeroAnimation(true);
-    }, 300);
+    }, 100);
 
     window.addEventListener('scroll', handleScroll);
     
@@ -42,22 +47,29 @@ const JobPortal = () => {
     }
   };
 
-  const handleDashboardClick = () => {
-    if (!onboardingStatus?.isComplete) {
-      // Redirect to the first incomplete onboarding step
-      if (!onboardingStatus?.personalInfo) {
-        navigate('/onboarding/personal-info');
-      } else if (!onboardingStatus?.education) {
-        navigate('/onboarding/education');
-      } else if (!onboardingStatus?.experience) {
-        navigate('/onboarding/experience');
-      } else if (!onboardingStatus?.skills) {
-        navigate('/onboarding/skills');
-      } else if (!onboardingStatus?.preferences) {
-        navigate('/onboarding/preferences');
+  const handleDashboardClick = async () => {
+    if (onboardingLoading) {
+      return; // Wait for onboarding status to load
+    }
+
+    try {
+      // Force check onboarding status before redirecting
+      await checkOnboardingStatus(true);
+      
+      // Get the latest onboarding status
+      const onboardingStatus = user?.onboardingStatus;
+      const isOnboardingComplete = onboardingStatus?.isComplete;
+
+      if (isOnboardingComplete) {
+        // If onboarding is complete, go to dashboard
+        navigate('/dashboard_employee', { replace: true });
+      } else {
+        // If onboarding is not complete, go to first onboarding step
+        navigate('/onboarding/personal-info', { replace: true });
       }
-    } else {
-      navigate('/dashboard_employee');
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      toast.error('Failed to check onboarding status');
     }
   };
 
@@ -70,7 +82,7 @@ const JobPortal = () => {
   };
 
   // Show loading state while auth is being checked
-  if (loading) {
+  if (loading || onboardingLoading) {
     return null; // Or a loading spinner if you prefer
   }
 
@@ -86,7 +98,7 @@ const JobPortal = () => {
                   <path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM9 4h6v2H9V4zm11 15H4V8h16v11z" />
                 </svg>
               </div>
-              <span className="logo-text">Job Portal</span>
+              <span className={`logo-text ${logoAnimation ? 'animate' : ''}`}>Job Portal</span>
             </Link>
           </div>
 

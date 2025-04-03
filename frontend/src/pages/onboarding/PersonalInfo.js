@@ -1,167 +1,307 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import OnboardingLayout from './OnboardingLayout';
+import { useAuth } from '../../contexts/AuthContext';
+import OnboardingLayout from '../../components/onboarding/OnboardingLayout';
+import { toast } from 'react-toastify';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
 
-function PersonalInfo() {
+const PersonalInfo = () => {
   const navigate = useNavigate();
-  const { updateOnboardingStatus, api } = useAuth();
+  const { api, updateOnboardingStatus, checkOnboardingStatus } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
     phone: '',
     address: {
       street: '',
       city: '',
       state: '',
-      zipCode: '',
-      country: ''
+      zipCode: ''
     },
     dateOfBirth: '',
-    profilePicture: null
+    profilePicture: null,
+    profilePictureUrl: null
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    const fetchExistingData = async () => {
+    let isMounted = true;
+    let isFetching = false;
+
+    const fetchData = async () => {
+      if (isFetching || loading) return; // Prevent multiple requests
+      
       try {
-        const response = await api.get('/users/onboarding');
-        if (response.data.success && response.data.data.personalInfo?.data) {
-          const existingData = response.data.data.personalInfo.data;
-          setFormData(prev => ({
-            ...prev,
-            ...existingData,
-            address: existingData.address || prev.address
-          }));
+        isFetching = true;
+        setLoading(true);
+        
+        // Use a new axios instance to avoid header issues
+        const onboardingApi = axios.create({
+          baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        // Use the correct endpoint
+        const response = await onboardingApi.get('/users/onboarding-status');
+        
+        if (!isMounted) return; // Don't update state if component unmounted
+        
+        if (response.data.success && response.data.data.personalInfo) {
+          const existingData = response.data.data.personalInfo.data || response.data.data.personalInfo;
+          setFormData({
+            phone: existingData.phone || '',
+            address: {
+              street: existingData.address?.street || '',
+              city: existingData.address?.city || '',
+              state: existingData.address?.state || '',
+              zipCode: existingData.address?.zipCode || ''
+            },
+            dateOfBirth: existingData.dateOfBirth || '',
+            profilePicture: null,
+            profilePictureUrl: existingData.profilePicture || null
+          });
         }
-      } catch (err) {
-        console.error('Error fetching existing data:', err);
+      } catch (error) {
+        console.error('Error fetching personal info:', error);
+        if (isMounted) {
+          setError(error.response?.data?.message || 'Failed to load personal information');
+          toast.error(error.response?.data?.message || 'Failed to load personal information');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          isFetching = false;
+        }
       }
     };
 
-    fetchExistingData();
-  }, [api]);
+    fetchData();
 
-  const calculateAge = (birthDate) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    
-    return age;
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array since we only want to fetch once on mount
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name in formData.address) {
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
       setFormData(prev => ({
         ...prev,
-        address: {
-          ...prev.address,
-          [name]: value
+        [parent]: {
+          ...prev[parent],
+          [child]: value || ''
         }
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: value
+        [name]: value || ''
       }));
     }
   };
 
   const handleFileChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      profilePicture: e.target.files[0]
-    }));
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Only JPG, JPEG, and PNG files are allowed');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        profilePicture: file,
+        profilePictureUrl: URL.createObjectURL(file)
+      }));
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (formData.profilePictureUrl && formData.profilePicture instanceof File) {
+        URL.revokeObjectURL(formData.profilePictureUrl);
+      }
+    };
+  }, [formData.profilePictureUrl]);
+
+  const validateForm = (data) => {
+    console.log('Validating form data:', JSON.stringify(data, null, 2));
+    
+    const validationErrors = {};
+
+    // Validate phone number (10 digits starting with 0)
+    const phoneStr = data.phone?.trim().replace(/\s+/g, '') || '';
+    if (!phoneStr || !/^0\d{9}$/.test(phoneStr)) {
+      validationErrors.phone = 'Please enter a valid Ghana phone number (10 digits starting with 0)';
+    }
+
+    // Validate address
+    if (!data.address || typeof data.address !== 'object') {
+      validationErrors.address = 'Address information is required';
+    } else {
+      const requiredAddressFields = ['street', 'city', 'state', 'zipCode'];
+      const missingFields = requiredAddressFields.filter(field => 
+        !data.address[field]?.trim()
+      );
+
+      if (missingFields.length > 0) {
+        validationErrors.address = `Please complete all required address fields: ${missingFields.join(', ')}`;
+      }
+    }
+
+    // Validate date of birth if provided
+    if (data.dateOfBirth) {
+      const dob = new Date(data.dateOfBirth);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+
+      if (isNaN(dob.getTime()) || age < 18 || age > 100) {
+        validationErrors.dateOfBirth = 'Please enter a valid date of birth (must be 18 or older)';
+      }
+    }
+
+    return validationErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setIsSubmitting(true);
+    setError(null);
+    setErrors({});
 
     try {
-      // Validate age
-      const age = calculateAge(new Date(formData.dateOfBirth));
-      if (age < 18) {
-        setError('You must be at least 18 years old to use this service.');
-        setLoading(false);
+      console.log('=== FORM SUBMISSION DEBUG ===');
+      console.log('Form data:', formData);
+
+      // Validate form data
+      const validationErrors = validateForm(formData);
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        setIsSubmitting(false);
         return;
       }
 
       // Create FormData for file upload
-      const formDataToSend = new FormData();
-      if (formData.profilePicture) {
-        formDataToSend.append('profilePicture', formData.profilePicture);
-      }
-
-      // Add personal data
-      const personalData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender,
+      const formDataToSubmit = new FormData();
+      
+      // Prepare the data object
+      const dataToSend = {
         phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        zipCode: formData.zipCode
+        dateOfBirth: formData.dateOfBirth.split('T')[0], // Ensure date is in YYYY-MM-DD format
+        address: formData.address
       };
 
-      formDataToSend.append('data', JSON.stringify(personalData));
+      // Append the data as a JSON string
+      formDataToSubmit.append('data', JSON.stringify(dataToSend));
 
-      console.log('Sending onboarding data:', { step: 'personal', data: personalData });
+      // Add profile picture if exists and is a File
+      if (formData.profilePicture instanceof File) {
+        console.log('Adding profile picture to FormData:', formData.profilePicture);
+        formDataToSubmit.append('profilePicture', formData.profilePicture);
+      }
 
-      // Update onboarding status
-      const response = await updateOnboardingStatus(personalData, 'personal');
-      console.log('Onboarding update response:', response);
+      // Log FormData contents for debugging
+      console.log('FormData contents:');
+      for (let [key, value] of formDataToSubmit.entries()) {
+        console.log(key, ':', typeof value === 'string' ? value : 'File');
+      }
 
-      // Navigate to next step
-      navigate('/onboarding/professional-info');
+      // Create a new axios instance with the correct headers
+      const onboardingApi = axios.create({
+        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Submit form data
+      console.log('Submitting form data to API...');
+      const response = await onboardingApi.put('/users/onboarding/personal-info', formDataToSubmit);
+
+      console.log('API response:', response.data);
+
+      if (response.data.success) {
+        console.log('Form submitted successfully');
+        toast.success('Personal information saved successfully');
+
+        // Update local state with the response data
+        setFormData(prev => ({
+          ...prev,
+          profilePictureUrl: response.data.data.personalInfo?.data?.profilePicture || prev.profilePictureUrl
+        }));
+
+        // Navigate to next step
+        navigate('/onboarding/professional-info');
+      }
     } catch (error) {
-      console.error('Error updating personal info:', error);
-      setError(error.response?.data?.message || 'Failed to update personal information');
+      console.error('Error submitting form:', error);
+      setError(error.response?.data?.message || 'Failed to save personal information');
+      toast.error(error.response?.data?.message || 'Failed to save personal information');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  // Update the date input handler
+  const handleDateChange = (e) => {
+    const date = e.target.value;
+    if (date) {
+      // Ensure the date is in YYYY-MM-DD format
+      const formattedDate = new Date(date).toISOString().split('T')[0];
+      setFormData(prev => ({
+        ...prev,
+        dateOfBirth: formattedDate
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        dateOfBirth: ''
+      }));
     }
   };
 
   return (
     <OnboardingLayout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl font-bold mb-6">Personal Information</h2>
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Picture Upload */}
-          <div className="flex items-center space-x-4">
-            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-              {formData.profilePicture ? (
+          <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+              {formData.profilePictureUrl ? (
                 <img
-                  src={URL.createObjectURL(formData.profilePicture)}
+                  src={formData.profilePictureUrl}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Profile Picture</label>
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-medium text-gray-700">
+                Profile Picture
+              </label>
               <input
                 type="file"
                 accept="image/*"
@@ -176,152 +316,106 @@ function PersonalInfo() {
             </div>
           </div>
 
-          {/* Name Fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">First Name</label>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Last Name</label>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Contact Information */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Phone Number
+            </label>
             <input
               type="tel"
               name="phone"
-              value={formData.phone}
+              value={formData.phone || ''}
               onChange={handleChange}
-              required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Address */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Street Address</label>
-            <input
-              type="text"
-              name="street"
-              value={formData.address.street}
-              onChange={handleChange}
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">City</label>
-              <input
-                type="text"
-                name="city"
-                value={formData.address.city}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">State</label>
-              <input
-                type="text"
-                name="state"
-                value={formData.address.state}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
-              <input
-                type="text"
-                name="zipCode"
-                value={formData.address.zipCode}
-                onChange={handleChange}
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Country</label>
-            <input
-              type="text"
-              name="country"
-              value={formData.address.country}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Date of Birth
+            </label>
             <input
               type="date"
               name="dateOfBirth"
-              value={formData.dateOfBirth}
-              onChange={handleChange}
+              value={formData.dateOfBirth || ''}
+              onChange={handleDateChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
               max={new Date().toISOString().split('T')[0]}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={() => navigate('/register')}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Back
-            </button>
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Address</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Street Address
+              </label>
+              <input
+                type="text"
+                name="address.street"
+                value={formData.address.street || ''}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  City
+                </label>
+                <input
+                  type="text"
+                  name="address.city"
+                  value={formData.address.city || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  State
+                </label>
+                <input
+                  type="text"
+                  name="address.state"
+                  value={formData.address.state || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  ZIP Code
+                </label>
+                <input
+                  type="text"
+                  name="address.zipCode"
+                  value={formData.address.zipCode || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
             <button
               type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              disabled={isSubmitting}
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {loading ? 'Saving...' : 'Next'}
+              {isSubmitting ? 'Saving...' : 'Next'}
             </button>
           </div>
         </form>
       </div>
     </OnboardingLayout>
   );
-}
+};
 
 export default PersonalInfo; 

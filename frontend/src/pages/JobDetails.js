@@ -4,7 +4,7 @@ import JobDetails from '../components/ui/Details';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
 
-const JobListingsPage = () => {
+const JobdetailPage = () => {
   return (
     <div className="page-container">
       <Header />
@@ -17,4 +17,4 @@ const JobListingsPage = () => {
   );
 };
 
-export default JobListingsPage;
+export default JobdetailPage;

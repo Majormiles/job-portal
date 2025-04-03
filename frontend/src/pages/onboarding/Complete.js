@@ -1,340 +1,274 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import OnboardingLayout from './OnboardingLayout';
-import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../contexts/AuthContext';
 
-function Complete() {
-  const navigate = useNavigate();
-  const { updateOnboardingStatus, user, api } = useAuth();
-  const [onboardingData, setOnboardingData] = useState(null);
+const Complete = () => {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageUrl, setImageUrl] = useState(null);
+  const navigate = useNavigate();
+  const { api, user, checkOnboardingStatus, setUser } = useAuth();
+  const mountedRef = useRef(true);
+
+  // Default avatar URL - using a reliable external source
+  const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'User') + '&background=random';
 
   useEffect(() => {
-    const fetchOnboardingData = async () => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
       try {
-        const response = await api.get('/users/onboarding');
-        console.log('Fetched onboarding data:', response.data);
-        
+        const response = await api.get('/users/onboarding-status');
+        console.log('API Response:', response.data);
         if (response.data.success) {
-          // Set the data directly from the response
-          setOnboardingData(response.data.data);
-        } else {
-          setError('Failed to fetch onboarding data');
+          setUserData(response.data.data);
+          // Set initial image URL
+          const profilePic = response.data.data?.sections?.personalInfo?.data?.profilePicture;
+          console.log('Profile Picture Data:', profilePic);
+          
+          if (profilePic) {
+            let fullUrl;
+            if (profilePic.startsWith('http')) {
+              fullUrl = profilePic;
+            } else if (profilePic.startsWith('/')) {
+              fullUrl = `${api.defaults.baseURL}${profilePic}`;
+            } else {
+              fullUrl = `${api.defaults.baseURL}/${profilePic}`;
+            }
+            console.log('Full Image URL:', fullUrl);
+            setImageUrl(fullUrl);
+          } else {
+            console.log('No profile picture found, using default avatar');
+            setImageUrl(DEFAULT_AVATAR);
+          }
         }
-      } catch (err) {
-        console.error('Error fetching onboarding data:', err);
-        if (err.message === 'No authentication token found' || err.response?.status === 401) {
-          navigate('/login', { 
-            state: { 
-              from: '/onboarding/complete',
-              message: 'Please log in to view your profile.'
-            },
-            replace: true
-          });
-        } else {
-          setError('Failed to fetch onboarding data');
-        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Failed to load user data');
+        setImageUrl(DEFAULT_AVATAR);
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchOnboardingData();
-  }, [navigate, api]);
-
-  const handleEdit = (section) => {
-    switch (section) {
-      case 'personalInfo':
-        navigate('/onboarding/personal-info');
-        break;
-      case 'professionalInfo':
-        navigate('/onboarding/professional-info');
-        break;
-      case 'skills':
-        navigate('/onboarding/skills');
-        break;
-      case 'preferences':
-        navigate('/onboarding/preferences');
-        break;
-      default:
-        break;
-    }
-  };
+    fetchUserData();
+  }, [api, user?.name]);
 
   const handleComplete = async () => {
     try {
-      // First, mark the onboarding as complete
-      const response = await api.put('/users/onboarding/complete', {
-        completed: true,
-        data: onboardingData
+      setSubmitting(true);
+      
+      // First, fetch the latest onboarding status
+      const response = await api.get('/users/onboarding-status');
+      console.log('Latest onboarding status:', response.data);
+
+      if (!response.data.success) {
+        throw new Error('Failed to fetch onboarding status');
+      }
+
+      const onboardingData = response.data.data;
+      console.log('Full onboarding data:', onboardingData);
+
+      // Check each section's completion status
+      const sections = [
+        { key: 'personalInfo', name: 'Personal Information' },
+        { key: 'professionalInfo', name: 'Professional Information' },
+        { key: 'skills', name: 'Skills' },
+        { key: 'preferences', name: 'Preferences' }
+      ];
+
+      // Check if any section is incomplete
+      const incompleteSections = sections.filter(section => {
+        const sectionData = onboardingData.sections?.[section.key];
+        console.log(`Checking ${section.key}:`, sectionData);
+
+        // First check if the section exists and is marked as completed
+        if (!sectionData || !sectionData.completed) {
+          console.log(`${section.key} is incomplete: section not found or not completed`);
+          return true;
+        }
+
+        // Basic data presence check
+        if (!sectionData.data || Object.keys(sectionData.data).length === 0) {
+          console.log(`${section.key} is incomplete: no data`);
+          return true;
+        }
+
+        return false;
       });
 
-      if (response.data.success) {
-        // Update the user's onboarding status in the context
-        await updateOnboardingStatus({ completed: true }, 'complete');
-        navigate('/dashboard_employee');
-      } else {
-        setError('Failed to complete onboarding');
+      if (incompleteSections.length > 0) {
+        const incompleteNames = incompleteSections.map(s => s.name);
+        throw new Error(`Please complete all required sections: ${incompleteNames.join(', ')}`);
       }
-    } catch (err) {
-      console.error('Error completing onboarding:', err);
-      setError('Failed to complete onboarding');
+
+      // If all sections are complete, mark onboarding as complete
+      const completeResponse = await api.post('/users/onboarding/complete');
+      console.log('Complete response:', completeResponse.data);
+
+      if (!completeResponse.data.success) {
+        throw new Error('Failed to complete onboarding');
+      }
+
+      // Update user context with new onboarding status
+      await checkOnboardingStatus();
+      
+      // Navigate to dashboard
+      navigate('/dashboard_employee');
+      toast.success('Onboarding completed successfully!');
+
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      toast.error(error.message || 'Failed to complete onboarding');
+    } finally {
+      if (mountedRef.current) {
+        setSubmitting(false);
+      }
     }
+  };
+
+  const handleImageLoad = () => {
+    console.log('Image loaded successfully');
+    setImageLoading(false);
+  };
+
+  const handleImageError = (e) => {
+    console.log('Image failed to load, falling back to default avatar');
+    console.log('Failed URL:', e.target.src);
+    e.target.onerror = null; // Prevent infinite loop
+    setImageUrl(DEFAULT_AVATAR);
+    setImageLoading(false);
   };
 
   if (loading) {
     return (
-      <OnboardingLayout>
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
-      </OnboardingLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <OnboardingLayout>
-        <div className="max-w-2xl mx-auto">
-          <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        </div>
-      </OnboardingLayout>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-gray-600"></div>
+      </div>
     );
   }
 
   return (
-    <OnboardingLayout>
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Congratulations! 🎉</h2>
-          <p className="text-lg text-gray-600">
-            You've successfully completed your profile setup. Here's a summary of your information:
-          </p>
-        </div>
-
-        {/* Personal Information */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">Personal Information</h3>
-            <button
-              onClick={() => handleEdit('personalInfo')}
-              className="text-blue-600 hover:text-blue-800"
-            >
-              Edit
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Name</p>
-              <p className="font-medium">
-                {onboardingData?.personalInfo?.data?.firstName} {onboardingData?.personalInfo?.data?.lastName}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="font-medium">{onboardingData?.personalInfo?.data?.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Phone</p>
-              <p className="font-medium">{onboardingData?.personalInfo?.data?.phone}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Address</p>
-              <p className="font-medium">
-                {onboardingData?.personalInfo?.data?.address?.street}, {onboardingData?.personalInfo?.data?.address?.city}, {onboardingData?.personalInfo?.data?.address?.state} {onboardingData?.personalInfo?.data?.address?.zipCode}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          {/* Header */}
+          <div className="bg-gray-800 px-6 py-8">
+            <div className="text-center">
+              <div className="mb-4">
+                <svg className="mx-auto h-16 w-16 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Congratulations, {user?.name}!
+              </h1>
+              <p className="text-gray-300 text-lg">
+                You've successfully completed your profile setup
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Professional Information */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">Professional Information</h3>
-            <button
-              onClick={() => handleEdit('professionalInfo')}
-              className="text-blue-600 hover:text-blue-800"
-            >
-              Edit
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Current Title</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.data?.currentTitle}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Years of Experience</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.data?.yearsOfExperience} years</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Desired Title</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.data?.desiredTitle}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Employment Type</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.data?.employmentType}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Work Authorization</p>
-              <p className="font-medium">{onboardingData?.professionalInfo?.data?.workAuthorization}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Skills */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">Skills & Qualifications</h3>
-            <button
-              onClick={() => handleEdit('skills')}
-              className="text-blue-600 hover:text-blue-800"
-            >
-              Edit
-            </button>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Technical Skills</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.skills?.data?.technical?.map((skill, index) => (
-                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Soft Skills</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.skills?.data?.soft?.map((skill, index) => (
-                  <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Languages</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.skills?.data?.languages?.map((skill, index) => (
-                  <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Certifications</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.skills?.data?.certifications?.map((skill, index) => (
-                  <span key={index} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Preferences */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-900">Job Preferences</h3>
-            <button
-              onClick={() => handleEdit('preferences')}
-              className="text-blue-600 hover:text-blue-800"
-            >
-              Edit
-            </button>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Work Arrangement</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.data?.jobPreferences?.remoteWork && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Remote Work</span>
-                )}
-                {onboardingData?.preferences?.data?.jobPreferences?.hybridWork && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Hybrid Work</span>
-                )}
-                {onboardingData?.preferences?.data?.jobPreferences?.onsiteWork && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">On-site Work</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Work Schedule</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.data?.jobPreferences?.flexibleHours && (
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">Flexible Hours</span>
-                )}
-                {onboardingData?.preferences?.data?.jobPreferences?.fixedHours && (
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">Fixed Hours</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Industry Preferences</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.data?.industryPreferences?.map((industry, index) => (
-                  <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                    {industry}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Work Culture</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.data?.workCulture?.map((culture, index) => (
-                  <span key={index} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                    {culture}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Desired Benefits</p>
-              <div className="flex flex-wrap gap-2">
-                {onboardingData?.preferences?.data?.benefits?.map((benefit, index) => (
-                  <span key={index} className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
-                    {benefit}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Availability</p>
-              <div className="mt-2 grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Start Date</p>
-                  <p className="font-medium">{onboardingData?.preferences?.data?.availability?.startDate}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Hours per Week</p>
-                  <p className="font-medium">{onboardingData?.preferences?.data?.availability?.hoursPerWeek}</p>
+          {/* Content */}
+          <div className="px-6 py-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* User Info Card */}
+              <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Profile Overview</h3>
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="relative h-20 w-20">
+                      {imageLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded-full">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-gray-600"></div>
+                        </div>
+                      )}
+                      <img
+                        src={imageUrl || DEFAULT_AVATAR}
+                        alt="Profile"
+                        className={`h-20 w-20 rounded-full object-cover border-2 border-white shadow transition-opacity duration-300 ${
+                          imageLoading ? 'opacity-0' : 'opacity-100'
+                        }`}
+                        onLoad={handleImageLoad}
+                        onError={handleImageError}
+                      />
+                    </div>
+                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-1">
+                      <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-medium text-gray-900">{user?.name}</h3>
+                    <p className="text-gray-600">{userData?.personalInfo?.data?.phone}</p>
+                  </div>
                 </div>
               </div>
+
+              {/* Next Steps */}
+              <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Next Steps</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-center">
+                    <svg className="h-5 w-5 text-gray-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span className="text-gray-700">Browse available jobs</span>
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="h-5 w-5 text-gray-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span className="text-gray-700">Set up job alerts</span>
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="h-5 w-5 text-gray-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span className="text-gray-700">Complete your profile verification</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <div className="mt-8 text-center">
+              <button
+                onClick={handleComplete}
+                disabled={submitting}
+                className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 ${
+                  submitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {submitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Completing...
+                  </>
+                ) : (
+                  'Go to Dashboard'
+                )}
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* Complete Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={handleComplete}
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Complete Profile
-          </button>
         </div>
       </div>
-    </OnboardingLayout>
+    </div>
   );
-}
+};
 
-export default Complete; 
+export default Complete;

@@ -1,12 +1,7 @@
 /* JobPortal.css */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
-}
+
 
 body {
   margin: 0;
@@ -90,7 +85,24 @@ body {
 .logo-text {
   opacity: 0;
   transform: translateX(-10px);
-  animation: fadeIn 0.5s ease forwards 0.3s;
+  display: inline-block;
+  will-change: transform, opacity;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.logo-text.animate {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Desktop Navigation */
@@ -296,7 +308,7 @@ body {
   text-align: center;
   color: white;
   position: relative;
-  min-height: 60vh;
+  min-height: 70vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -408,11 +420,11 @@ body {
 }
 
 @keyframes fadeIn {
-  0% {
+  from {
     opacity: 0;
     transform: translateX(-10px);
   }
-  100% {
+  to {
     opacity: 1;
     transform: translateX(0);
   }

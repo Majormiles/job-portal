@@ -4,7 +4,7 @@ import Contact from '../components/ui/Contact';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
 
-const JobListingsPage = () => {
+const ContactPage = () => {
   return (
     <div className="page-container">
       <Header />
@@ -17,4 +17,4 @@ const JobListingsPage = () => {
   );
 };
 
-export default JobListingsPage;
+export default ContactPage;

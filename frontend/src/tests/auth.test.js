@@ -242,4 +242,79 @@ describe('Authentication State Persistence', () => {
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('user');
     expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('user');
   });
-}); 
+});
+
+const API_URL = 'http://localhost:5000/api';
+
+async function testFrontendAuth() {
+  try {
+    console.log('=== STARTING FRONTEND AUTH TEST ===');
+    
+    // 1. Test Login with Invalid Data
+    console.log('\n1. Testing Login with Invalid Data...');
+    try {
+      await axios.post(`${API_URL}/auth/login`, 'invalid@email.com');
+      console.log('❌ Login should have failed with invalid data');
+    } catch (error) {
+      console.log('✅ Login correctly rejected invalid data');
+    }
+
+    // 2. Test Login with Missing Password
+    console.log('\n2. Testing Login with Missing Password...');
+    try {
+      await axios.post(`${API_URL}/auth/login`, {
+        email: 'test@example.com'
+      });
+      console.log('❌ Login should have failed with missing password');
+    } catch (error) {
+      console.log('✅ Login correctly rejected missing password');
+    }
+
+    // 3. Test Login with Valid Credentials
+    console.log('\n3. Testing Login with Valid Credentials...');
+    const loginData = {
+      email: 'test@example.com',
+      password: 'testpassword123'
+    };
+
+    const loginResponse = await axios.post(`${API_URL}/auth/login`, loginData);
+    console.log('Login Response:', {
+      success: loginResponse.data.success,
+      hasToken: !!loginResponse.data.token,
+      hasUser: !!loginResponse.data.user
+    });
+
+    // 4. Test Token Storage
+    console.log('\n4. Testing Token Storage...');
+    const token = loginResponse.data.token;
+    console.log('Token received:', token ? '✅ Yes' : '❌ No');
+
+    // 5. Test Protected Route with Token
+    console.log('\n5. Testing Protected Route...');
+    const protectedResponse = await axios.get(`${API_URL}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    console.log('Protected Route Response:', {
+      success: protectedResponse.data.success,
+      hasUser: !!protectedResponse.data.data
+    });
+
+    console.log('\n=== FRONTEND AUTH TEST COMPLETED ===');
+    process.exit(0);
+  } catch (error) {
+    console.error('\n❌ Test failed:', error.response?.data || error.message);
+    if (error.response) {
+      console.error('Error details:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    }
+    process.exit(1);
+  }
+}
+
+// Run the test
+testFrontendAuth(); 

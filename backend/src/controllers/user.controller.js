@@ -1,24 +1,30 @@
-const User = require('../models/user.model');
-const asyncHandler = require('../utils/asyncHandler');
-const AppError = require('../utils/appError');
-const sendEmail = require('../utils/sendEmail');
-const crypto = require('crypto');
+import User from '../models/user.model.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import AppError from '../utils/appError.js';
+import { sendEmail } from '../utils/emailService.js';
+import crypto from 'crypto';
 
 // @desc    Get current logged in user
 // @route   GET /api/users/me
 // @access  Private
-exports.getMe = asyncHandler(async (req, res, next) => {
+export const getMe = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user.id);
   res.status(200).json({
     success: true,
-    data: user
+    data: {
+      ...user.toObject(),
+      professionalInfo: {
+        ...user.professionalInfo,
+        resume: user.professionalInfo?.resume || null
+      }
+    }
   });
 });
 
 // @desc    Update user profile
 // @route   PUT /api/users/me
 // @access  Private
-exports.updateProfile = asyncHandler(async (req, res, next) => {
+export const updateProfile = asyncHandler(async (req, res, next) => {
   const fieldsToUpdate = {
     name: req.body.name,
     email: req.body.email
@@ -38,7 +44,7 @@ exports.updateProfile = asyncHandler(async (req, res, next) => {
 // @desc    Update password
 // @route   PUT /api/users/me/password
 // @access  Private
-exports.updatePassword = asyncHandler(async (req, res, next) => {
+export const updatePassword = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user.id).select('+password');
 
   // Check current password
@@ -58,7 +64,7 @@ exports.updatePassword = asyncHandler(async (req, res, next) => {
 // @desc    Forgot password
 // @route   POST /api/users/forgot-password
 // @access  Public
-exports.forgotPassword = asyncHandler(async (req, res, next) => {
+export const forgotPassword = asyncHandler(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
@@ -77,11 +83,11 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
 
   try {
-    await sendEmail({
-      email: user.email,
-      subject: 'Password reset token',
+    await sendEmail(
+      user.email,
+      'Password reset token',
       message
-    });
+    );
 
     res.status(200).json({
       success: true,
@@ -101,7 +107,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
 // @desc    Reset password
 // @route   PUT /api/users/reset-password/:resettoken
 // @access  Public
-exports.resetPassword = asyncHandler(async (req, res, next) => {
+export const resetPassword = asyncHandler(async (req, res, next) => {
   // Get hashed token
   const resetPasswordToken = crypto
     .createHash('sha256')
@@ -132,75 +138,11 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 // @desc    Delete account
 // @route   DELETE /api/users/me
 // @access  Private
-exports.deleteAccount = asyncHandler(async (req, res, next) => {
+export const deleteAccount = asyncHandler(async (req, res, next) => {
   await User.findByIdAndDelete(req.user.id);
 
   res.status(200).json({
     success: true,
     message: 'Account deleted successfully'
-  });
-});
-
-// @desc    Get user onboarding status
-// @route   GET /api/users/onboarding-status
-// @access  Private
-exports.getOnboardingStatus = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-
-  const onboardingStatus = {
-    isComplete: false,
-    personalInfo: false,
-    education: false,
-    experience: false,
-    skills: false,
-    preferences: false
-  };
-
-  // Check personal info
-  if (user.name && user.email && user.phone && user.address) {
-    onboardingStatus.personalInfo = true;
-  }
-
-  // Check professional info
-  if (user.professionalInfo && 
-      user.professionalInfo.currentTitle && 
-      user.professionalInfo.yearsOfExperience && 
-      user.professionalInfo.desiredTitle) {
-    onboardingStatus.education = true;
-  }
-
-  // Check experience
-  if (user.professionalInfo && 
-      user.professionalInfo.currentCompany && 
-      user.professionalInfo.employmentType) {
-    onboardingStatus.experience = true;
-  }
-
-  // Check skills
-  if (user.skills && 
-      (user.skills.technical?.length > 0 || 
-       user.skills.soft?.length > 0 || 
-       user.skills.languages?.length > 0)) {
-    onboardingStatus.skills = true;
-  }
-
-  // Check preferences
-  if (user.preferences && 
-      user.preferences.jobPreferences && 
-      user.preferences.industryPreferences?.length > 0) {
-    onboardingStatus.preferences = true;
-  }
-
-  // Set overall completion status
-  onboardingStatus.isComplete = 
-    onboardingStatus.personalInfo && 
-    onboardingStatus.education && 
-    onboardingStatus.experience && 
-    onboardingStatus.skills && 
-    onboardingStatus.preferences;
-
-  res.status(200).json({
-    success: true,
-    data: onboardingStatus
   });
 }); 

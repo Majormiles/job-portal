@@ -9,6 +9,60 @@
     background-color: white;
   }
   
+  /* Mobile responsiveness for settings tabs */
+.settings-tabs-container {
+  width: 100%;
+}
+
+.mobile-tabs-header {
+  display: none;
+}
+
+.mobile-tabs-toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dropdown-arrow {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+}
+
+.dropdown-arrow.expanded {
+  transform: rotate(180deg);
+}
+
+/* Responsive breakpoints */
+@media (max-width: 480px) {
+  .mobile-tabs-header {
+    display: block;
+    margin-bottom: 10px;
+  }
+  
+  .settings-tabs.collapsed {
+    display: none;
+  }
+  
+  .settings-tabs {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+  }
+  
+  .tab-button {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+}
   .settings-title {
     font-size: 24px;
     font-weight: 600;
@@ -29,6 +83,13 @@
     border-bottom: 1px solid #e0e0e0;
     margin-bottom: 24px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  .settings-tabs::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
   
   .tab-button {
@@ -43,6 +104,7 @@
     cursor: pointer;
     white-space: nowrap;
     position: relative;
+    transition: color 0.2s;
   }
   
   .tab-button:hover {
@@ -88,82 +150,135 @@
   /* Form Styling */
   .settings-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
   }
   
   .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
   }
   
-  .full-width {
-    grid-column: span 2;
-  }
-  
-  label {
+  .form-group label {
     display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
+    margin-bottom: 0.5rem;
     font-weight: 500;
     color: #333;
+    font-size: 0.875rem;
   }
   
   .form-control {
     width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     color: #333;
+    background-color: #fff;
     transition: border-color 0.2s;
   }
   
   .form-control:focus {
-    border-color: #0066FF;
     outline: none;
+    border-color: #0066FF;
+    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.1);
   }
   
+  .form-control:disabled {
+    background-color: #f8fafc;
+    cursor: not-allowed;
+  }
+  
+  .form-control::placeholder {
+    color: #94a3b8;
+  }
+  
+  /* Remove any floating label styles if they exist */
+  .form-group label {
+    position: static;
+    transform: none;
+    transition: none;
+  }
+  
+  /* Ensure input text is visible */
+  .form-control {
+    color: #333;
+  }
+  
+  /* Style for date input */
+  input[type="date"].form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 2V4M14 2V4M2.5 5.83333H17.5M2.5 8.33333V15.8333C2.5 16.2754 2.67559 16.6993 2.98816 17.0118C3.30072 17.3244 3.72464 17.5 4.16667 17.5H15.8333C16.2754 17.5 16.6993 17.3244 17.0118 17.0118C17.3244 16.6993 17.5 16.2754 17.5 15.8333V8.33333M2.5 5.83333V6.66667C2.5 7.10869 2.67559 7.53262 2.98816 7.84519C3.30072 8.15775 3.72464 8.33333 4.16667 8.33333H15.8333C16.2754 8.33333 16.6993 8.15775 17.0118 7.84519C17.3244 7.53262 17.5 7.10869 17.5 6.66667V5.83333' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
+  }
+  
+  /* Ensure select dropdowns are properly styled */
   .select-wrapper {
     position: relative;
   }
   
-  .select-wrapper::after {
-    content: '';
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 10px;
-    height: 10px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    pointer-events: none;
-  }
-  
-  select.form-control {
+  .select {
     appearance: none;
-    padding-right: 40px;
-    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem;
   }
   
+  /* Website input styling */
   .website-input-wrapper {
     position: relative;
+    display: flex;
+    align-items: center;
   }
   
   .website-icon {
     position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
+    left: 1rem;
+    display: flex;
+    align-items: center;
+    color: #94a3b8;
   }
   
   .website-input {
-    padding-left: 40px;
+    padding-left: 2.5rem;
+  }
+  
+  /* Full width form group */
+  .full-width {
+    grid-column: 1 / -1;
+  }
+  
+  /* Form actions */
+  .form-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .btn-save {
+    background-color: #0066FF;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    min-width: 120px;
+  }
+  
+  .btn-save:hover {
+    background-color: #0052CC;
+  }
+  
+  .btn-save:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
   }
   
   /* Profile Picture */
   .profile-picture-container {
-    grid-column: span 2;
+    grid-column: 1 / -1;
     margin-bottom: 20px;
   }
   
@@ -177,7 +292,7 @@
     justify-content: center;
     text-align: center;
     cursor: pointer;
-    height: 200px;
+    min-height: 200px;
     position: relative;
   }
   
@@ -215,33 +330,19 @@
     cursor: pointer;
   }
   
-  .profile-preview {
-    max-width: 100%;
-    max-height: 180px;
-    border-radius: 8px;
-  }
-  
-  /* Form Actions */
-  .form-actions {
-    margin-top: 24px;
+  .profile-preview-container {
+    width: 100%;
+    height: 100%;
     display: flex;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
   }
   
-  .btn-save {
-    background-color: #0066FF;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .btn-save:hover {
-    background-color: #0052cc;
+  .profile-preview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
   }
   
   /* Resume Section */
@@ -255,7 +356,7 @@
   
   .resume-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
   }
   
@@ -363,21 +464,303 @@
     color: #666;
   }
   
-  /* Responsive Design */
+  /* Resume Actions */
+  .resume-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  
+  .resume-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #666;
+    padding: 0;
+  }
+  
+  .resume-action-btn svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  
+  .resume-action-btn:hover {
+    background: #f1f5f9;
+    color: #0066FF;
+  }
+  
+  .resume-action-btn.delete-btn:hover {
+    color: #dc2626;
+  }
+  
+  /* Resume Modal */
+  .resume-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  
+  .resume-modal {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 800px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .resume-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .resume-modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  
+  .close-modal-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #64748b;
+  }
+  
+  .close-modal-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+  
+  .resume-modal-content {
+    flex: 1;
+    overflow: hidden;
+    padding: 24px;
+    background: #f8fafc;
+  }
+  
+  .resume-preview {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  /* Responsive adjustments */
   @media (max-width: 768px) {
-    .settings-grid {
-      grid-template-columns: 1fr;
+    .resume-modal {
+      height: 95vh;
     }
     
-    .full-width {
-      grid-column: span 1;
+    .resume-modal-content {
+      padding: 16px;
     }
     
-    .profile-picture-container {
-      grid-column: span 1;
+    .resume-action-btn {
+      width: 28px;
+      height: 28px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .resume-modal {
+      height: 100vh;
+      border-radius: 0;
     }
     
-    .resume-cards {
-      grid-template-columns: 1fr;
+    .resume-modal-header {
+      padding: 12px 16px;
+    }
+    
+    .resume-modal-content {
+      padding: 12px;
+    }
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .settings-container {
+      padding: 16px;
+    }
+    
+    .content-area {
+      padding: 20px;
+    }
+    
+    .settings-title {
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .settings-container {
+      padding: 12px;
+    }
+    
+    .content-area {
+      padding: 16px;
+    }
+    
+    .settings-title {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+    
+    .settings-tabs {
+      margin-bottom: 20px;
+    }
+    
+    .tab-button {
+      padding: 10px 14px;
+      font-size: 15px;
+    }
+    
+    .tab-icon {
+      width: 18px;
+      height: 18px;
+      margin-right: 6px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .settings-container {
+      padding: 8px;
+    }
+
+    .settings-container h1{
+
+      text-align: center;
+    }
+    
+    .content-area {
+      padding: 12px;
+    }
+    
+    .settings-title {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    
+    .settings-tabs {
+      margin-bottom: 16px;
+      padding-bottom: 4px;
+    }
+    
+    .tab-button {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    
+    .tab-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 4px;
+    }
+    
+    /* Improve touch targets */
+    .tab-button {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Add visual feedback for touch */
+    .tab-button:active {
+      background-color: rgba(0, 102, 255, 0.05);
+    }
+    
+    /* Ensure content is scrollable */
+    .content-area {
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Adjust spacing for mobile */
+    .settings-section {
+      margin-bottom: 24px;
+    }
+    
+    /* Make sure tabs don't overflow */
+    .settings-tabs {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    
+    .settings-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    
+    /* Add visual indicator for scrollable tabs */
+    .settings-tabs::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      background: linear-gradient(to right, transparent, white);
+      pointer-events: none;
+    }
+  }
+  
+  /* Ensure proper layout on very small screens */
+  @media (max-width: 320px) {
+    .settings-container {
+      padding: 4px;
+    }
+    
+    .content-area {
+      padding: 8px;
+    }
+    
+    .settings-title {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    
+    .tab-button {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    
+    .tab-icon {
+      width: 14px;
+      height: 14px;
+      margin-right: 3px;
     }
   }

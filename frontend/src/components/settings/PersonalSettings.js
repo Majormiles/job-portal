@@ -1,35 +1,335 @@
 // src/components/settings/PersonalSettings.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
 import '../css/Settings.css';
 
 const PersonalSettings = () => {
+  const { api, user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [resumes, setResumes] = useState([]);
   const [formData, setFormData] = useState({
-    fullName: '',
+    fullName: user?.name || '',
     title: '',
     experience: '',
     education: '',
-    website: ''
+    website: '',
+    phone: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: ''
+    },
+    dateOfBirth: ''
   });
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [selectedResume, setSelectedResume] = useState(null);
+
+  useEffect(() => {
+    fetchUserData();
+    fetchResumes();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/users/onboarding-status');
+      
+      if (response.data.success) {
+        const userData = response.data.data;
+        
+        // Update form data with personal info
+        if (userData.personalInfo?.data) {
+          const personalData = userData.personalInfo.data;
+          setFormData(prev => ({
+            ...prev,
+            phone: personalData.phone || '',
+            address: personalData.address || {
+              street: '',
+              city: '',
+              state: '',
+              zipCode: ''
+            },
+            dateOfBirth: personalData.dateOfBirth ? new Date(personalData.dateOfBirth).toISOString().split('T')[0] : ''
+          }));
+          
+          // Set profile picture if exists
+          if (personalData.profilePicture) {
+            setProfileImage(personalData.profilePicture);
+          }
+        }
+
+        // Update form data with professional info
+        if (userData.professionalInfo?.data) {
+          const professionalData = userData.professionalInfo.data;
+          setFormData(prev => ({
+            ...prev,
+            experience: professionalData.experience?.yearsOfExperience?.toString() || '',
+            education: professionalData.education?.level || ''
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      toast.error('Failed to load user data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchResumes = async () => {
+    try {
+      const response = await api.get('/users/onboarding-status');
+      if (response.data.success) {
+        // Check if resumes exist in the response
+        const userData = response.data.data;
+        if (userData.professionalInfo?.data?.resume) {
+          // Convert single resume to array format for display
+          setResumes([{
+            _id: 'current-resume',
+            originalName: 'Current Resume',
+            url: userData.professionalInfo.data.resume,
+            createdAt: new Date().toISOString()
+          }]);
+        } else {
+          setResumes([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching resumes:', error);
+      if (error.response?.status === 401) {
+        toast.error('Please log in again to continue');
+      } else {
+        toast.error('Failed to load resumes');
+      }
+      setResumes([]); // Set empty array on error
+    }
+  };
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setProfileImage(URL.createObjectURL(e.target.files[0]));
+      const file = e.target.files[0];
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Only JPG, JPEG, and PNG files are allowed');
+        return;
+      }
+
+      setProfileImage(URL.createObjectURL(file));
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.includes('pdf')) {
+      toast.error('Only PDF files are allowed');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      // Add existing professional info data
+      const professionalData = {
+        experience: {
+          yearsOfExperience: parseInt(formData.experience) || 0
+        },
+        education: {
+          level: formData.education || ''
+        }
+      };
+      formData.append('data', JSON.stringify(professionalData));
+
+      // Show loading toast
+      const loadingToast = toast.loading('Uploading resume...');
+
+      const response = await api.put('/users/onboarding/professional-info', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data.success) {
+        toast.update(loadingToast, {
+          render: 'Resume uploaded successfully',
+          type: 'success',
+          isLoading: false,
+          autoClose: 3000
+        });
+        
+        // Update resumes state with the new resume
+        const newResume = {
+          _id: 'current-resume',
+          originalName: file.name,
+          url: response.data.data.professionalInfo.data.resume,
+          createdAt: new Date().toISOString()
+        };
+        setResumes([newResume]);
+      }
+    } catch (error) {
+      console.error('Error uploading resume:', error);
+      if (error.response?.status === 401) {
+        toast.error('Please log in again to continue');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to upload resume');
+      }
+    } finally {
+      setLoading(false);
+      // Reset the file input
+      e.target.value = '';
+    }
+  };
+
+  const handleViewResume = (resume) => {
+    // Create a blob URL from the resume data
+    const resumeUrl = resume.url;
+    setSelectedResume({
+      ...resume,
+      url: resumeUrl
+    });
+    setShowResumeModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowResumeModal(false);
+    setSelectedResume(null);
+  };
+
+  const handleDeleteResume = async (resumeId) => {
+    if (window.confirm('Are you sure you want to delete this resume?')) {
+      try {
+        setLoading(true);
+        const formData = new FormData();
+        formData.append('data', JSON.stringify({
+          experience: formData.experience ? {
+            yearsOfExperience: parseInt(formData.experience) || 0
+          } : undefined,
+          education: formData.education ? {
+            level: formData.education
+          } : undefined,
+          resume: null
+        }));
+
+        const response = await api.put('/users/onboarding/professional-info', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        if (response.data.success) {
+          toast.success('Resume deleted successfully');
+          fetchResumes(); // Refresh resumes list
+        }
+      } catch (error) {
+        console.error('Error deleting resume:', error);
+        if (error.response?.status === 401) {
+          toast.error('Please log in again to continue');
+        } else {
+          toast.error('Failed to delete resume');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Implement your save logic here
-    console.log('Form submitted:', formData);
+    try {
+      setLoading(true);
+
+      // Create FormData for file upload
+      const formDataToSubmit = new FormData();
+      
+      // Prepare the data object
+      const dataToSend = {
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        address: formData.address,
+        experience: {
+          yearsOfExperience: parseInt(formData.experience) || 0
+        },
+        education: {
+          level: formData.education
+        }
+      };
+
+      // Append the data as a JSON string
+      formDataToSubmit.append('data', JSON.stringify(dataToSend));
+
+      // Add profile picture if exists and is a File
+      if (profileImage && profileImage.startsWith('blob:')) {
+        const response = await fetch(profileImage);
+        const blob = await response.blob();
+        formDataToSubmit.append('profilePicture', blob, 'profile-picture.jpg');
+      }
+
+      // Update personal info
+      await api.put('/users/onboarding/personal-info', formDataToSubmit, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Update professional info
+      await api.put('/users/onboarding/professional-info', {
+        data: {
+          experience: {
+            yearsOfExperience: parseInt(formData.experience) || 0
+          },
+          education: {
+            level: formData.education
+          }
+        }
+      });
+
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,7 +342,14 @@ const PersonalSettings = () => {
             <h3>Profile Picture</h3>
             <div className="profile-upload-area">
               {profileImage ? (
-                <img src={profileImage} alt="Profile" className="profile-preview" />
+                <div className="profile-preview-container">
+                  <img 
+                    src={profileImage} 
+                    alt="Profile" 
+                    className="profile-preview rounded-full object-cover"
+                    style={{ width: '150px', height: '150px' }}
+                  />
+                </div>
               ) : (
                 <div className="upload-placeholder">
                   <div className="upload-icon">
@@ -75,10 +382,90 @@ const PersonalSettings = () => {
               value={formData.fullName}
               onChange={handleInputChange}
               className="form-control"
+              disabled
+              aria-label="Full name"
             />
           </div>
           
-          <div className="form-group full-width">
+          <div className="form-group">
+            <label htmlFor="phone">Phone Number</label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="form-control"
+              aria-label="Phone number"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="dateOfBirth">Date of Birth</label>
+            <input
+              type="date"
+              id="dateOfBirth"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleInputChange}
+              className="form-control"
+              aria-label="Date of birth"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address.street">Street Address</label>
+            <input
+              type="text"
+              id="address.street"
+              name="address.street"
+              value={formData.address.street}
+              onChange={handleInputChange}
+              className="form-control"
+              aria-label="Street address"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address.city">City</label>
+            <input
+              type="text"
+              id="address.city"
+              name="address.city"
+              value={formData.address.city}
+              onChange={handleInputChange}
+              className="form-control"
+              aria-label="City"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address.state">State</label>
+            <input
+              type="text"
+              id="address.state"
+              name="address.state"
+              value={formData.address.state}
+              onChange={handleInputChange}
+              className="form-control"
+              aria-label="State"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address.zipCode">ZIP Code</label>
+            <input
+              type="text"
+              id="address.zipCode"
+              name="address.zipCode"
+              value={formData.address.zipCode}
+              onChange={handleInputChange}
+              className="form-control"
+              aria-label="ZIP code"
+            />
+          </div>
+          
+          <div className="form-group">
             <label htmlFor="title">Title/headline</label>
             <input
               type="text"
@@ -87,6 +474,7 @@ const PersonalSettings = () => {
               value={formData.title}
               onChange={handleInputChange}
               className="form-control"
+              aria-label="Title or headline"
             />
           </div>
           
@@ -100,7 +488,7 @@ const PersonalSettings = () => {
                 onChange={handleInputChange}
                 className="form-control select"
               >
-                <option value="" disabled>Select...</option>
+                <option value="" disabled>Select years of experience</option>
                 <option value="1">1 year</option>
                 <option value="2">2 years</option>
                 <option value="3">3 years</option>
@@ -111,7 +499,7 @@ const PersonalSettings = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="education">Educations</label>
+            <label htmlFor="education">Education</label>
             <div className="select-wrapper">
               <select
                 id="education"
@@ -120,7 +508,7 @@ const PersonalSettings = () => {
                 onChange={handleInputChange}
                 className="form-control select"
               >
-                <option value="" disabled>Select...</option>
+                <option value="" disabled>Select education level</option>
                 <option value="high-school">High School</option>
                 <option value="bachelors">Bachelor's Degree</option>
                 <option value="masters">Master's Degree</option>
@@ -129,7 +517,7 @@ const PersonalSettings = () => {
             </div>
           </div>
           
-          <div className="form-group full-width">
+          <div className="form-group">
             <label htmlFor="website">Personal Website</label>
             <div className="website-input-wrapper">
               <span className="website-icon">
@@ -144,7 +532,6 @@ const PersonalSettings = () => {
                 type="url"
                 id="website"
                 name="website"
-                placeholder="Website url..."
                 value={formData.website}
                 onChange={handleInputChange}
                 className="form-control website-input"
@@ -154,93 +541,113 @@ const PersonalSettings = () => {
         </div>
         
         <div className="form-actions">
-          <button type="submit" className="btn-save">Save Changes</button>
+          <button type="submit" className="btn-save" disabled={loading}>
+            {loading ? 'Saving...' : 'Save Changes'}
+          </button>
         </div>
       </form>
 
       <div className="resume-section">
-        <h2 className="section-title">Your CV/Resume</h2>
-        
+        <h2 className="section-title">Resumes</h2>
         <div className="resume-container">
           <div className="resume-cards">
-            <div className="resume-card">
-              <div className="resume-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 3V7C14 7.26522 14.1054 7.51957 14.2929 7.70711C14.4804 7.89464 14.7348 8 15 8H19M14 3H7C6.46957 3 5.96086 3.21071 5.58579 3.58579C5.21071 3.96086 5 4.46957 5 5V19C5 19.5304 5.21071 20.0391 5.58579 20.4142C5.96086 20.7893 6.46957 21 7 21H17C17.5304 21 18.0391 20.7893 18.4142 20.4142C18.7893 20.0391 19 19.5304 19 19V8M14 3L19 8" stroke="#0066FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+            {resumes && resumes.length > 0 ? (
+              resumes.map((resume) => (
+                <div key={resume._id} className="resume-card">
+                  <div className="resume-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M14 2V8H20" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M16 13H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M16 17H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M10 9H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <div className="resume-details">
+                    <h3>{resume.originalName}</h3>
+                    <p>Uploaded on {new Date(resume.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div className="resume-actions">
+                    <button 
+                      onClick={() => handleViewResume(resume)} 
+                      className="resume-action-btn view-btn"
+                      title="View Resume"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 3C4.5 3 1.5 5.5 1.5 8C1.5 10.5 4.5 13 8 13C11.5 13 14.5 10.5 14.5 8C14.5 5.5 11.5 3 8 3ZM8 11.5C5.5 11.5 3.5 9.5 3.5 8C3.5 6.5 5.5 4.5 8 4.5C10.5 4.5 12.5 6.5 12.5 8C12.5 9.5 10.5 11.5 8 11.5Z" fill="currentColor"/>
+                        <path d="M8 5.5C6.5 5.5 5.5 6.5 5.5 8C5.5 9.5 6.5 10.5 8 10.5C9.5 10.5 10.5 9.5 10.5 8C10.5 6.5 9.5 5.5 8 5.5Z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteResume(resume._id)} 
+                      className="resume-action-btn delete-btn"
+                      title="Delete Resume"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13.3333 4H2.66667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M5.33333 4V1.33333C5.33333 0.596954 5.93029 0 6.66667 0H9.33333C10.0697 0 10.6667 0.596954 10.6667 1.33333V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M6.66667 8V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9.33333 8V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M2 4H14V13.3333C14 13.687 13.8595 14.0261 13.6095 14.2761C13.3594 14.5262 13.0203 14.6667 12.6667 14.6667H3.33333C2.97971 14.6667 2.64057 14.5262 2.39052 14.2761C2.14048 14.0261 2 13.687 2 13.3333V4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="no-resumes">
+                <p>No resumes uploaded yet</p>
               </div>
-              <div className="resume-details">
-                <h3>Professional Resume</h3>
-                <p>3.5 MB</p>
-              </div>
-              <button className="resume-menu-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-            
-            <div className="resume-card">
-              <div className="resume-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 3V7C14 7.26522 14.1054 7.51957 14.2929 7.70711C14.4804 7.89464 14.7348 8 15 8H19M14 3H7C6.46957 3 5.96086 3.21071 5.58579 3.58579C5.21071 3.96086 5 4.46957 5 5V19C5 19.5304 5.21071 20.0391 5.58579 20.4142C5.96086 20.7893 6.46957 21 7 21H17C17.5304 21 18.0391 20.7893 18.4142 20.4142C18.7893 20.0391 19 19.5304 19 19V8M14 3L19 8" stroke="#0066FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div className="resume-details">
-                <h3>Product Designer</h3>
-                <p>4.7 MB</p>
-              </div>
-              <div className="resume-dropdown">
-                <button className="edit-btn">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11.7167 7.51667L12.4833 8.28333L4.93333 15.8333H4.16667V15.0667L11.7167 7.51667ZM14.7167 2.5C14.5083 2.5 14.2917 2.58333 14.1333 2.74167L12.6083 4.26667L15.7333 7.39167L17.2583 5.86667C17.5833 5.54167 17.5833 5.01667 17.2583 4.69167L15.3083 2.74167C15.1417 2.575 14.9333 2.5 14.7167 2.5ZM11.7167 5.15833L2.5 14.375V17.5H5.625L14.8417 8.28333L11.7167 5.15833Z" fill="#0066FF"/>
-                  </svg>
-                  Edit Resume
-                </button>
-                <button className="delete-btn">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5 15.8333C5 16.75 5.75 17.5 6.66667 17.5H13.3333C14.25 17.5 15 16.75 15 15.8333V5.83333H5V15.8333ZM6.66667 7.5H13.3333V15.8333H6.66667V7.5ZM12.9167 3.33333L12.0833 2.5H7.91667L7.08333 3.33333H4.16667V5H15.8333V3.33333H12.9167Z" fill="#FF424E"/>
-                  </svg>
-                  Delete
-                </button>
-              </div>
-            </div>
-            
-            <div className="resume-card">
-              <div className="resume-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 3V7C14 7.26522 14.1054 7.51957 14.2929 7.70711C14.4804 7.89464 14.7348 8 15 8H19M14 3H7C6.46957 3 5.96086 3.21071 5.58579 3.58579C5.21071 3.96086 5 4.46957 5 5V19C5 19.5304 5.21071 20.0391 5.58579 20.4142C5.96086 20.7893 6.46957 21 7 21H17C17.5304 21 18.0391 20.7893 18.4142 20.4142C18.7893 20.0391 19 19.5304 19 19V8M14 3L19 8" stroke="#0066FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div className="resume-details">
-                <h3>Visual Designer</h3>
-                <p>1.3 MB</p>
-              </div>
-              <button className="resume-menu-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
+            )}
             
             <div className="add-resume-card">
-              <div className="add-resume-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 5V19M5 12H19" stroke="#0066FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div className="add-resume-text">
-                <h3>Add CV/Resume</h3>
-                <p>Browse file or drop here, only pdf</p>
-              </div>
+              <input
+                type="file"
+                id="resumeUpload"
+                accept=".pdf"
+                onChange={handleResumeUpload}
+                className="file-input"
+                style={{ display: 'none' }}
+              />
+              <label htmlFor="resumeUpload" className="add-resume-content">
+                <div className="add-resume-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 5V19M5 12H19" stroke="#0066FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div className="add-resume-text">
+                  <h3>Add New Resume</h3>
+                  <p>Upload a PDF file (max 5MB)</p>
+                </div>
+              </label>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Resume Modal */}
+      {showResumeModal && selectedResume && (
+        <div className="resume-modal-overlay">
+          <div className="resume-modal">
+            <div className="resume-modal-header">
+              <h3>View Resume</h3>
+              <button onClick={handleCloseModal} className="close-modal-btn">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div className="resume-modal-content">
+              <iframe
+                src={selectedResume.url}
+                title="Resume Preview"
+                className="resume-preview"
+                sandbox="allow-same-origin allow-scripts allow-forms"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

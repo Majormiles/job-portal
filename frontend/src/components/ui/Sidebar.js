@@ -1,9 +1,22 @@
 // components/Sidebar.js
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import '../css/Sidebar.css';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   return (
     <>
       {/* Hamburger menu toggle button for mobile */}
@@ -47,7 +60,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             </div>
             <span>Favorite Jobs</span>
           </NavLink>
-          <NavLink to="/job-alert" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+          <NavLink to="/job-alerts" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
             <div className="nav-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -68,7 +81,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           </NavLink>
         </nav>
         <div className="sidebar-footer">
-          <button className="logout-btn">
+          <button className="logout-btn" onClick={handleLogout}>
             <div className="nav-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>

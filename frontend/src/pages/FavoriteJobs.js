@@ -24,8 +24,8 @@ const FavoriteJobsPage = () => {
   
   return (
     <div className="page-container">
-      <Header />
-      <div className="hero"></div>
+      {/* <Header />
+      <div className="hero"></div> */}
       
       <div className="dashboard-layout">
         <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />

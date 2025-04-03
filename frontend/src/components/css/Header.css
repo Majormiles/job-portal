@@ -81,7 +81,58 @@
   position: relative;
   z-index: 1001;
 }
+.user-profile button {
+  background: linear-gradient(to right, hsl(172, 76%, 46%), hsl(180, 99%, 26%));
+  color: rgb(255, 255, 255);
+  font-size: 16px;
+  position: relative;
+  overflow: hidden;
+  animation: crystalShimmer 3s infinite;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
 
+@keyframes crystalShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Add these for enhanced crystal effect */
+.user-profile button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 20%, 
+    rgba(255, 255, 255, 0.1) 20%, 
+    rgba(255, 255, 255, 0.1) 40%, 
+    transparent 40%
+  );
+  transform: rotate(30deg);
+  animation: crystalRefract 2s linear infinite;
+}
+
+@keyframes crystalRefract {
+  0% {
+    transform: rotate(30deg) translateY(10%);
+  }
+  50% {
+    transform: rotate(30deg) translateY(-10%);
+  }
+  100% {
+    transform: rotate(30deg) translateY(10%);
+  }
+}
 .profile-btn {
   display: flex;
   align-items: center;

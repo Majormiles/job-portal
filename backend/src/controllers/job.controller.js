@@ -1,10 +1,10 @@
-const Job = require('../models/job.model');
-const Application = require('../models/application.model');
+import Job from '../models/job.model.js';
+import Application from '../models/application.model.js';
 
 // @desc    Create a new job
 // @route   POST /api/jobs
 // @access  Private (Employers only)
-exports.createJob = async (req, res) => {
+export const createJob = async (req, res) => {
   try {
     req.body.company = req.user.id;
 
@@ -26,7 +26,7 @@ exports.createJob = async (req, res) => {
 // @desc    Get all jobs
 // @route   GET /api/jobs
 // @access  Public
-exports.getJobs = async (req, res) => {
+export const getJobs = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, type, location, experience } = req.query;
     const query = { status: 'active' };
@@ -66,7 +66,7 @@ exports.getJobs = async (req, res) => {
 // @desc    Get single job
 // @route   GET /api/jobs/:id
 // @access  Public
-exports.getJob = async (req, res) => {
+export const getJob = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id)
       .populate('company', 'name profilePicture')
@@ -95,7 +95,7 @@ exports.getJob = async (req, res) => {
 // @desc    Update job
 // @route   PUT /api/jobs/:id
 // @access  Private (Employers only)
-exports.updateJob = async (req, res) => {
+export const updateJob = async (req, res) => {
   try {
     let job = await Job.findById(req.params.id);
 
@@ -135,7 +135,7 @@ exports.updateJob = async (req, res) => {
 // @desc    Delete job
 // @route   DELETE /api/jobs/:id
 // @access  Private (Employers only)
-exports.deleteJob = async (req, res) => {
+export const deleteJob = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
 
@@ -172,7 +172,7 @@ exports.deleteJob = async (req, res) => {
 // @desc    Apply for a job
 // @route   POST /api/jobs/:id/apply
 // @access  Private
-exports.applyForJob = async (req, res) => {
+export const applyForJob = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
 
@@ -204,7 +204,7 @@ exports.applyForJob = async (req, res) => {
       resume: req.body.resume
     });
 
-    // Add application to job
+    // Add application to job's applications array
     job.applications.push(application._id);
     await job.save();
 
@@ -224,7 +224,7 @@ exports.applyForJob = async (req, res) => {
 // @desc    Get employer's jobs
 // @route   GET /api/jobs/employer/jobs
 // @access  Private (Employers only)
-exports.getEmployerJobs = async (req, res) => {
+export const getEmployerJobs = async (req, res) => {
   try {
     const jobs = await Job.find({ company: req.user.id })
       .populate('applications', 'status createdAt')

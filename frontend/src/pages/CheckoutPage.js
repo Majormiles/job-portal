@@ -4,7 +4,7 @@ import Checkout from '../components/ui/Checkout';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
 
-const JobListingsPage = () => {
+const CheckoutPage = () => {
   return (
     <div className="page-container">
       <Header />
@@ -17,4 +17,4 @@ const JobListingsPage = () => {
   );
 };
 
-export default JobListingsPage;
+export default CheckoutPage;

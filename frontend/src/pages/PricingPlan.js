@@ -3,7 +3,7 @@ import React from 'react';
 import Pricing from '../components/ui/Pricing';
 import Footer from '../components/ui/Footer';
 
-const JobListingsPage = () => {
+const PricingPlan = () => {
   return (
     <div className="page-container">
       <div className="content-section">
@@ -15,4 +15,4 @@ const JobListingsPage = () => {
   );
 };
 
-export default JobListingsPage;
+export default PricingPlan;

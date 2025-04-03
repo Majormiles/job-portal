@@ -1,31 +1,66 @@
-const express = require('express');
-const router = express.Router();
-const {
+import express from 'express';
+import {
   register,
   login,
   getMe,
   forgotPassword,
   resetPassword,
   updatePassword,
-  logout
-} = require('../controllers/auth.controller');
-const { protect } = require('../middleware/auth.middleware');
-const { validate } = require('../utils/validation');
-const {
+  logout,
+  verifyEmail,
+  googleLogin,
+  getOAuthConfig,
+  resendVerification
+} from '../controllers/auth.controller.js';
+import { protect } from '../middleware/auth.middleware.js';
+import { validate } from '../utils/validation.js';
+import {
   registerSchema,
   loginSchema
-} = require('../utils/validation');
+} from '../utils/validation.js';
+import { getAuthUrl, handleCallback } from '../utils/getGoogleRefreshToken.js';
+
+const router = express.Router();
 
 // Public routes
-router.post('/register', validate(registerSchema), register);
-router.post('/login', validate(loginSchema), login);
-router.post('/forgot-password', forgotPassword);
-router.put('/reset-password/:resettoken', resetPassword);
+router.post('/register', register);
+router.post('/login', login);
+router.post('/google', googleLogin);
+router.get('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerification);
+router.get('/config', getOAuthConfig);
 
 // Protected routes
 router.use(protect);
 router.get('/me', getMe);
+router.post('/forgot-password', forgotPassword);
+router.put('/reset-password/:resettoken', resetPassword);
 router.put('/update-password', updatePassword);
 router.get('/logout', logout);
 
-module.exports = router; 
+// Route to get the OAuth URL
+router.get('/google/url', (req, res) => {
+  const url = getAuthUrl();
+  res.json({ url });
+});
+
+// OAuth callback route
+router.get('/oauth2callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    if (!code) {
+      return res.status(400).json({ message: 'Authorization code is required' });
+    }
+
+    const tokens = await handleCallback(code);
+    res.json({ 
+      message: 'Authorization successful! Check your console for the tokens to add to your .env file.',
+      tokens 
+    });
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    res.status(500).json({ message: 'Error processing OAuth callback' });
+  }
+});
+
+export default router; 

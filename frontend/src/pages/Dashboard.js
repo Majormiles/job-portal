@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Dashboard from '../components/ui/DashboardEmployee';
-import Header from '../components/ui/Header';
+import Header from '../components/ui/Dashboardheader';
 import Footer from '../components/ui/Footer';
 import Sidebar from '../components/ui/Sidebar';
 
@@ -23,7 +23,7 @@ const DashboardEmployee = () => {
   return (
     <div className="page-container">
       <Header />
-      <div className="hero"></div>
+      {/* <div className="hero"></div> */}
 
       <div className="dashboard-layout">
         <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />

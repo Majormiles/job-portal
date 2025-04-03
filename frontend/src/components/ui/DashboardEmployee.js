@@ -1,59 +1,79 @@
 // pages/Dashboard.js
-import React, { useState } from 'react'; // Import useState hook
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
+import api from '../../utils/api';
 import '.././css/Dashboard.css';
 import userImage from '../../assets/images/woman.png';
 
-const Dashboard = () => {
-  // Add state to track selected job
-  const [selectedJobId, setSelectedJobId] = useState(4); // Default to the 4th job which was highlighted
+// Import Font Awesome components
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { 
+  faBriefcase, 
+  faBookmark, 
+  faBell, 
+  faArrowRight, 
+  faMapMarkerAlt, 
+  faDollarSign, 
+  faCheckCircle 
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-  const recentApplications = [
-    {
-      id: 1,
-      title: 'Networking Engineer',
-      company: 'Upwork',
-      logo: 'upwork-logo.png',
-      location: 'Washington',
-      salary: '$50k-80k/month',
-      date: 'Feb 2, 2025 19:28',
-      status: 'Active',
-      type: 'Remote'
+// Add icons to the library
+library.add(
+  faBriefcase, 
+  faBookmark, 
+  faBell, 
+  faArrowRight, 
+  faMapMarkerAlt, 
+  faDollarSign, 
+  faCheckCircle
+);
+
+const Dashboard = () => {
+  const { api } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [selectedJobId, setSelectedJobId] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      appliedJobs: 0,
+      favoriteJobs: 0,
+      jobAlerts: 0
     },
-    {
-      id: 2,
-      title: 'Product Designer',
-      company: 'Design Studio',
-      logo: 'design-logo.png',
-      location: 'Dhaka',
-      salary: '$50k-80k/month',
-      date: 'Dec 7, 2024 23:26',
-      status: 'Active',
-      type: 'Full Time'
-    },
-    {
-      id: 3,
-      title: 'Junior Graphic Designer',
-      company: 'Apple',
-      logo: 'apple-logo.png',
-      location: 'Brazil',
-      salary: '$50k-80k/month',
-      date: 'Feb 2, 2025 19:28',
-      status: 'Active',
-      type: 'Temporary'
-    },
-    {
-      id: 4,
-      title: 'Visual Designer',
-      company: 'Microsoft',
-      logo: 'microsoft-logo.png',
-      location: 'Wisconsin',
-      salary: '$50k-80k/month',
-      date: 'Dec 7, 2024 23:26',
-      status: 'Active',
-      type: 'Contract Base'
+    recentApplications: [],
+    profile: {
+      name: '',
+      profileImage: userImage,
+      profileCompletion: 0
     }
-  ];
+  });
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [api]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [profileResponse, applicationsResponse, statsResponse] = await Promise.all([
+        api.get('/dashboard/me'),
+        api.get('/dashboard/applications/recent'),
+        api.get('/dashboard/stats')
+      ]);
+
+      setDashboardData({
+        profile: profileResponse.data.data,
+        recentApplications: applicationsResponse.data.data,
+        stats: statsResponse.data.data
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error(error.response?.data?.message || 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Function to handle job selection
   const handleJobSelect = (jobId) => {
@@ -62,77 +82,85 @@ const Dashboard = () => {
 
   // Function to handle view details click
   const handleViewDetails = (jobId) => {
-    // Here you would typically navigate to a job details page
-    // For now, we'll just log the action
-    console.log(`View details for job ${jobId}`);
-    // You could add navigation logic here, e.g.:
-    // history.push(`/job-details/${jobId}`);
+    // Navigate to job details page
+    window.location.href = `/job-details/${jobId}`;
   };
+
+  if (loading) {
+    return (
+      <div className="content-area">
+        <div className="dashboard-container">
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+            <p>Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="content-area">
       <div className="dashboard-container">
-        {/* Other components remain unchanged */}
         <div className="dashboard-header">
-          <h1>Hello, Esther Howard</h1>
+          <h1>Hello, {dashboardData.profile.name}</h1>
           <p>Here is your daily activities and job alerts</p>
         </div>
 
         <div className="stats-container">
-          {/* Stats cards remain unchanged */}
           <div className="stat-card blue">
             <div className="stat-info">
-              <h2>589</h2>
+              <h2>{dashboardData.stats.appliedJobs}</h2>
               <p>Applied jobs</p>
             </div>
             <div className="stat-icon">
-              <i className="far fa-briefcase"></i>
+              <FontAwesomeIcon icon="briefcase" />
             </div>
           </div>
 
           <div className="stat-card yellow">
             <div className="stat-info">
-              <h2>238</h2>
+              <h2>{dashboardData.stats.favoriteJobs}</h2>
               <p>Favorite jobs</p>
             </div>
             <div className="stat-icon">
-              <i className="far fa-bookmark"></i>
+              <FontAwesomeIcon icon="bookmark" />
             </div>
           </div>
 
           <div className="stat-card green">
             <div className="stat-info">
-              <h2>574</h2>
+              <h2>{dashboardData.stats.jobAlerts}</h2>
               <p>Job Alerts</p>
             </div>
             <div className="stat-icon">
-              <i className="far fa-bell"></i>
+              <FontAwesomeIcon icon="bell" />
             </div>
           </div>
         </div>
 
-        <div className="profile-alert">
-          {/* Profile alert remains unchanged */}
-          <div className="profile-alert-content">
-            <div className="profile-image">
-            <img src={userImage} alt="Profile"  />
+        {dashboardData.profile.profileCompletion < 100 && (
+          <div className="profile-alert">
+            <div className="profile-alert-content">
+              <div className="profile-image">
+                <img src={dashboardData.profile.profileImage} alt="Profile" />
+              </div>
+              <div className="alert-message">
+                <h3>Your profile editing is not completed.</h3>
+                <p>Complete your profile editing & build your custom Resume</p>
+              </div>
             </div>
-            <div className="alert-message">
-              <h3>Your profile editing is not completed.</h3>
-              <p>Complete your profile editing & build your custom Resume</p>
-            </div>
-             
+            <Link to="/profile" className="edit-profile-btn">
+              Edit Profile <FontAwesomeIcon icon="arrow-right" />
+            </Link>
           </div>
-          <button className="edit-profile-btn">
-            Edit Profile <i className="fas fa-arrow-right"></i>
-          </button>
-        </div>
+        )}
 
         <div className="recent-applications">
           <div className="recent-header">
             <h3>Recently Applied</h3>
             <Link to="/applied-jobs" className="view-all">
-              View all <i className="fas fa-arrow-right"></i>
+              View all <FontAwesomeIcon icon="arrow-right" />
             </Link>
           </div>
 
@@ -144,7 +172,7 @@ const Dashboard = () => {
               <div className="column-action">Action</div>
             </div>
 
-            {recentApplications.map((job) => (
+            {dashboardData.recentApplications.map((job) => (
               <div 
                 className={`table-row ${job.id === selectedJobId ? 'highlighted' : ''}`} 
                 key={job.id}
@@ -154,24 +182,25 @@ const Dashboard = () => {
                 <div className="column-job">
                   <div className="job-info">
                     <div className="company-logo">
-                      {job.company === 'Upwork' && <div className="logo upwork">Up</div>}
-                      {job.company === 'Design Studio' && <div className="logo design">Ds</div>}
-                      {job.company === 'Apple' && <div className="logo apple"><i className="fab fa-apple"></i></div>}
-                      {job.company === 'Microsoft' && <div className="logo microsoft">MS</div>}
+                      {job.companyLogo ? (
+                        <img src={job.companyLogo} alt={job.company} />
+                      ) : (
+                        <div className="logo default">{job.company[0]}</div>
+                      )}
                     </div>
                     <div className="job-details">
                       <h4>{job.title} <span className={`job-type ${job.type.toLowerCase().replace(' ', '-')}`}>{job.type}</span></h4>
                       <div className="job-meta">
-                        <span><i className="fas fa-map-marker-alt"></i> {job.location}</span>
-                        <span><i className="fas fa-dollar-sign"></i> {job.salary}</span>
+                        <span><FontAwesomeIcon icon="map-marker-alt" /> {job.location}</span>
+                        <span><FontAwesomeIcon icon="dollar-sign" /> {job.salary}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="column-date">{job.date}</div>
+                <div className="column-date">{new Date(job.appliedDate).toLocaleString()}</div>
                 <div className="column-status">
-                  <span className="status-badge active">
-                    <i className="fas fa-check-circle"></i> {job.status}
+                  <span className={`status-badge ${job.status.toLowerCase()}`}>
+                    <FontAwesomeIcon icon="check-circle" /> {job.status}
                   </span>
                 </div>
                 <div className="column-action">

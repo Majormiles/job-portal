@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import loginImage1 from '../assets/images/login.png';
 import loginImage2 from '../assets/images/happybusiness-woman2.jpg';
 import loginImage3 from '../assets/images/pexels.jpg'; 
 import loginImage4 from '../assets/images/happybusiness-woman.jpg';
 import loginImage5 from '../assets/images/business-woman3.jpg';
 import loginImage6 from '../assets/images/pexels.jpg'; 
-
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import GoogleOAuthButton from '../components/GoogleOAuthButton';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +28,54 @@ const LoginPage = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [nextImageIndex, setNextImageIndex] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const images = [loginImage1, loginImage2, loginImage3, loginImage4,loginImage5];
+  const images = [loginImage1, loginImage2, loginImage3, loginImage4, loginImage5];
+
+  // Get the redirect path from location state, default to home
+  const from = location.state?.from || '/';
+
+  const handleGoogleLogin = async (response) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      console.log('Google login response received');
+      
+      if (!response.credential) {
+        throw new Error('No credential received from Google');
+      }
+
+      // Log the response for debugging
+      console.log('Google response:', {
+        credential: response.credential.substring(0, 20) + '...',
+        select_by: response.select_by,
+        g_csrf_token: response.g_csrf_token
+      });
+
+      const result = await login({ tokenId: response.credential });
+      
+      if (!result || !result.user) {
+        throw new Error('Invalid login response');
+      }
+
+      // Check if user needs to complete onboarding
+      if (!result.user.onboardingComplete) {
+        navigate('/onboarding/personal-info', { replace: true });
+      } else {
+        // If onboarding is complete, redirect to the original destination or dashboard
+        const redirectTo = from === '/' ? '/dashboard_employee' : from;
+        navigate(redirectTo, { replace: true });
+      }
+
+      toast.success('Login successful!');
+    } catch (error) {
+      console.error('Google login error:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to login with Google';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Set up interval to change image every 5 seconds
@@ -39,13 +91,20 @@ const LoginPage = () => {
           (prevIndex + 1) % images.length
         );
         setIsTransitioning(false);
-      }, 500); // Half of the transition duration
-    }, 5000);
+      }, 400); // Half of the transition duration
+    }, 4000);
 
     // Clean up interval on component unmount
     return () => clearInterval(imageInterval);
   }, []);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,41 +112,29 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting login with:', { email });
-      const { success, onboardingStatus } = await login(email, password, rememberMe);
-
-      if (success) {
-        console.log('Login successful, onboarding status:', onboardingStatus);
-        
-        // Default to dashboard if no onboarding status is provided
-        if (!onboardingStatus) {
-          navigate('/dashboard_employee');
-          return;
-        }
-
-        // For new users or incomplete onboarding, redirect to onboarding
-        if (!onboardingStatus.isComplete) {
-          // Redirect to the first incomplete onboarding step
-          if (!onboardingStatus.personalInfo) {
-            navigate('/onboarding/personal-info');
-          } else if (!onboardingStatus.education) {
-            navigate('/onboarding/education');
-          } else if (!onboardingStatus.experience) {
-            navigate('/onboarding/experience');
-          } else if (!onboardingStatus.skills) {
-            navigate('/onboarding/skills');
-          } else if (!onboardingStatus.preferences) {
-            navigate('/onboarding/preferences');
-          }
-        } else {
-          // For existing users with complete onboarding, go to dashboard
-          navigate('/dashboard_employee');
-        }
+      const response = await login(formData);
+      
+      if (!response || !response.user) {
+        throw new Error('Invalid login response');
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      // The error message is already set in the AuthContext
-      // We just need to handle the navigation
+
+      // Check if user needs to complete onboarding
+      if (!response.user.onboardingComplete) {
+        navigate('/onboarding/personal-info', { replace: true });
+      } else {
+        // If onboarding is complete, redirect to the original destination or dashboard
+        const redirectTo = from === '/' ? '/dashboard_employee' : from;
+        navigate(redirectTo, { replace: true });
+      }
+
+      toast.success('Login successful!');
+    } catch (error) {
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || 'Invalid email or password';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      // Clear any invalid tokens
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -127,11 +174,13 @@ const LoginPage = () => {
               <input
                 type="email"
                 id="email"
+                name="email"
                 className="w-full px-3 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 placeholder="Enter your mail address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -145,11 +194,13 @@ const LoginPage = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
+                  name="password"
                   className="w-full px-3 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 pr-10"
                   placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleChange}
                   required
+                  disabled={loading}
                 />
                 <button
                   type="button"
@@ -194,91 +245,59 @@ const LoginPage = () => {
               style={{ background: 'linear-gradient(135deg, #3a9b8e 0%, #2c8276 100%)' }}
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Log In'}
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
-          </form>
 
-          <div className="mt-6 text-center">
-            <div className="relative">
+            {/* Add Google OAuth Button */}
+            <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or, Login with</span>
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
 
-            <div className="mt-6">
-              <button
-                type="button"
-                className="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Sign in with Google
-              </button>
-            </div>
-          </div>
+            <GoogleOAuthButton
+              onSuccess={handleGoogleLogin}
+              buttonId="google-login-button"
+              buttonText="Sign in with Google"
+            />
+          </form>
 
-          <p className="mt-6 sm:mt-8 text-center text-sm text-gray-600">
+          {/* Sign up link */}
+          <p className="mt-4 text-center text-sm text-gray-600">
             Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-purple-600 hover:text-purple-500">
-              Register here
+            <Link to="/register" className="text-purple-600 hover:text-purple-800">
+              Sign up
             </Link>
           </p>
         </div>
       </div>
 
-      {/* Right Section - Image */}
-      <div className="hidden md:block w-1/2 relative overflow-hidden pl-2">
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
-        <div className="relative h-full">
-          <div className="relative w-full h-full">
-            {images.map((image, index) => (
-              <div
-                key={index}
-                className={`absolute inset-0 transition-transform duration-30000 ease-in-out ${index === currentImageIndex
-                    ? 'translate-x-0'
-                    : index === nextImageIndex
-                      ? 'translate-x-full'
-                      : '-translate-x-full'
-                  }`}
-              >
-                <img
-                  src={image}
-                  alt={`Login illustration ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Text Overlay */}
-        <div className="absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-white px-6 max-w-md">
-          <h2 className="text-3xl font-bold mb-4">Discover Your Perfect Career Path</h2>
-          <p className="text-lg opacity-80">
-            Unlock opportunities, connect with top employers, and take the next step in your professional journey.
-          </p>
+      {/* Right Section - Image Slider */}
+      <div className="hidden md:block md:w-1/3 relative overflow-hidden">
+        <div className="absolute inset-0">
+          {images.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-800 ${
+                index === currentImageIndex
+                  ? 'opacity-100'
+                  : index === nextImageIndex
+                  ? 'opacity-0'
+                  : 'opacity-0'
+              }`}
+            >
+              <img
+                src={image}
+                alt={`Login background ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
         </div>
       </div>
-
     </div>
   );
 };

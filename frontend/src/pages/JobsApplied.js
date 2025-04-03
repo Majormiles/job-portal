@@ -1,8 +1,6 @@
 // src/pages/JobAppliedPage.js
 import React, { useState, useEffect } from 'react';
 import JobsApplied from '../components/ui/AppliedJobs';
-import Header from '../components/ui/Header';
-import Footer from '../components/ui/Footer';
 import Sidebar from '../components/ui/Sidebar';
 import '../components/css/AppliedJobs.css';
 
@@ -24,8 +22,6 @@ const JobAppliedPage = () => {
   
   return (
     <div className="page-container">
-      <Header />
-      <div className="hero"></div>
       
       <div className="dashboard-layout">
         <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />

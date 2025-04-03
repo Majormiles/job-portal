@@ -1,3 +1,4 @@
+/* Original CSS with updated .nav-icon styling */
 /* App.css - Main container styles */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -11,14 +12,14 @@
 /* Sidebar Styles */
 .sidebar {
   width: 260px;
-  background-color: white;
+  background: linear-gradient(135deg, #86a0e6, #e6f0ff, #d6e6ff); 
   display: flex;
   flex-direction: column;
   border-right: 1px solid #eaedf2;
-  height: 100vh;
+  min-height: 100vh;
   position: sticky;
   top: 0;
-  left: 20px;
+  left: 0px;
   z-index: 1000;
   transition: all 0.3s ease;
   flex-shrink: 0; /* Prevent sidebar from shrinking */
@@ -28,7 +29,7 @@
   padding: 20px;
   font-weight: 600;
   font-size: 14px;
-  color: #667085;
+  color: #041333;
   border-bottom: 1px solid #eaedf2;
 }
 
@@ -45,7 +46,7 @@
   align-items: center;
   padding: 12px 20px;
   text-decoration: none;
-  color: #667085;
+  color: #041333;
   margin: 4px 0;
   position: relative;
   transition: all 0.3s ease;
@@ -53,7 +54,7 @@
 
 .nav-item.active {
   color: #2563eb;
-  background-color: #ebf2ff;
+  background-color: #9fbef5;
   border-left: 3px solid #2563eb;
 }
 
@@ -63,6 +64,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  color: #2563eb; 
+  opacity: 0.8; 
+}
+
+.nav-icon svg {
+  color: #2563eb !important; 
+  opacity: 0.8;
 }
 
 .alert-badge {
@@ -154,9 +162,9 @@
     width: 260px;
     left: 0;
     height: calc(100vh - 60px - 50px); 
-    top: auto; 
+    top: auto;
   }
-
+  
   .dashboard-layout{
     position: relative;
   }
@@ -168,8 +176,7 @@
   .main-content {
     margin-left: 0;
   }
-
-
+  
   .sidebar-header {
     padding: 20px;
     font-weight: 600;

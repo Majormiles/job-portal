@@ -1,6 +1,5 @@
-const express = require('express');
-const router = express.Router();
-const {
+import express from 'express';
+import {
   createJob,
   getJobs,
   getJob,
@@ -8,8 +7,10 @@ const {
   deleteJob,
   applyForJob,
   getEmployerJobs
-} = require('../controllers/job.controller');
-const { protect, authorize } = require('../middleware/auth.middleware');
+} from '../controllers/job.controller.js';
+import { protect, authorize } from '../middleware/auth.middleware.js';
+
+const router = express.Router();
 
 // Public routes
 router.get('/', getJobs);
@@ -35,4 +36,4 @@ router
 
 router.get('/employer/jobs', getEmployerJobs);
 
-module.exports = router; 
+export default router; 
