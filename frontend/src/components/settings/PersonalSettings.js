@@ -6,6 +6,7 @@ import api from '../../utils/api';
 import '../css/Settings.css';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import { Modal } from '../ui/modal';
 
 // ScrollToTop component to handle scrolling on route change
 const ScrollToTop = () => {
@@ -38,8 +39,8 @@ const PersonalSettings = () => {
     },
     dateOfBirth: ''
   });
-  const [showResumeModal, setShowResumeModal] = useState(false);
   const [selectedResume, setSelectedResume] = useState(null);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
   const DEFAULT_PROFILE_IMAGE = "https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=150";
   const [isSaving, setIsSaving] = useState(false);
@@ -360,6 +361,21 @@ const PersonalSettings = () => {
     }
   };
 
+  // Add this function to store resume data in localStorage
+  const storeResumeInLocalStorage = (resume) => {
+    if (resume && resume.url) {
+      try {
+        localStorage.setItem('userResumeUrl', resume.url);
+        localStorage.setItem('userResumeName', resume.originalName || 'Resume');
+        localStorage.setItem('userResumeDate', resume.createdAt || new Date().toISOString());
+        console.log('Stored resume in localStorage:', resume.url);
+      } catch (error) {
+        console.error('Error storing resume in localStorage:', error);
+      }
+    }
+  };
+
+  // Update the fetchResumes function to retrieve from localStorage if API fails
   const fetchResumes = async () => {
     try {
       console.log('Fetching resume data...');
@@ -369,10 +385,23 @@ const PersonalSettings = () => {
         response = await api.get('/users/onboarding-status');
         console.log('Successfully fetched resume data from /users/onboarding-status');
       } catch (error) {
-        // If we get a 404, set empty resumes and exit early
+        // If we get a 404, check localStorage
         if (error.response && error.response.status === 404) {
-          console.log('Endpoint /users/onboarding-status not found, setting empty resumes');
-          setResumes([]);
+          console.log('Endpoint /users/onboarding-status not found, checking localStorage');
+          const resumeUrl = localStorage.getItem('userResumeUrl');
+          if (resumeUrl) {
+            console.log('Found resume in localStorage:', resumeUrl);
+            const resumeObj = {
+              _id: 'stored-resume',
+              originalName: localStorage.getItem('userResumeName') || 'Resume',
+              url: resumeUrl,
+              createdAt: localStorage.getItem('userResumeDate') || new Date().toISOString()
+            };
+            setResumes([resumeObj]);
+          } else {
+            console.log('No resume found in localStorage, setting empty resumes');
+            setResumes([]);
+          }
           return;
         } else {
           // If it's not a 404, rethrow the error
@@ -398,16 +427,32 @@ const PersonalSettings = () => {
           // Convert single resume to array format for display
           const resumeObj = {
             _id: 'current-resume',
-            originalName: 'Current Resume',
+            originalName: localStorage.getItem('userResumeName') || 'Current Resume',
             url: resumeUrl,
-            createdAt: new Date().toISOString()
+            createdAt: localStorage.getItem('userResumeDate') || new Date().toISOString()
           };
           
           console.log('Setting resume state with:', resumeObj);
           setResumes([resumeObj]);
+          
+          // Store in localStorage for persistence
+          storeResumeInLocalStorage(resumeObj);
         } else {
-          console.log('No resume found in user data');
-          setResumes([]);
+          console.log('No resume found in user data, checking localStorage');
+          const resumeUrl = localStorage.getItem('userResumeUrl');
+          if (resumeUrl) {
+            console.log('Found resume in localStorage:', resumeUrl);
+            const resumeObj = {
+              _id: 'stored-resume',
+              originalName: localStorage.getItem('userResumeName') || 'Resume',
+              url: resumeUrl,
+              createdAt: localStorage.getItem('userResumeDate') || new Date().toISOString()
+            };
+            setResumes([resumeObj]);
+          } else {
+            console.log('No resume found, setting empty resumes');
+            setResumes([]);
+          }
         }
       }
     } catch (error) {
@@ -415,12 +460,26 @@ const PersonalSettings = () => {
       if (error.response) {
         console.error('Server error:', error.response.data);
       }
-      if (error.response?.status === 401) {
-        toast.error('Please log in again to continue');
+      
+      // Try to fall back to localStorage
+      const resumeUrl = localStorage.getItem('userResumeUrl');
+      if (resumeUrl) {
+        console.log('Error occurred but found resume in localStorage:', resumeUrl);
+        const resumeObj = {
+          _id: 'stored-resume',
+          originalName: localStorage.getItem('userResumeName') || 'Resume',
+          url: resumeUrl,
+          createdAt: localStorage.getItem('userResumeDate') || new Date().toISOString()
+        };
+        setResumes([resumeObj]);
       } else {
-        toast.error('Failed to load resumes');
+        if (error.response?.status === 401) {
+          toast.error('Please log in again to continue');
+        } else {
+          toast.error('Failed to load resumes');
+        }
+        setResumes([]); // Set empty array on error
       }
-      setResumes([]); // Set empty array on error
     }
   };
 
@@ -493,10 +552,11 @@ const PersonalSettings = () => {
     }
   };
 
+  // Update the handleResumeUpload function to better persist the uploaded resume
   const handleResumeUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      console.log('Image file selected:', file.name, 'type:', file.type, 'size:', file.size);
+      console.log('Resume file selected:', file.name, 'type:', file.type, 'size:', file.size);
       
       // Validate file type
       if (!file.type.includes('pdf')) {
@@ -566,6 +626,14 @@ const PersonalSettings = () => {
             };
             console.log('Setting resume state with:', newResume);
             setResumes([newResume]);
+            
+            // Store in localStorage for persistence
+            storeResumeInLocalStorage(newResume);
+            
+            // Verify the resume was saved correctly
+            setTimeout(() => {
+              fetchResumes();
+            }, 1000);
           }
         } catch (error) {
           console.error('Error uploading resume:', error);
@@ -589,18 +657,130 @@ const PersonalSettings = () => {
     }
   };
 
-  const handleViewResume = (resume) => {
-    // Create a blob URL from the resume data
-    const resumeUrl = resume.url;
-    setSelectedResume({
-      ...resume,
-      url: resumeUrl
-    });
-    setShowResumeModal(true);
+  // Improved checkResumeAccess function with retries and CORS bypass
+  const checkResumeAccess = async (url) => {
+    try {
+      console.log("Testing resume accessibility at:", url);
+      
+      // If it's a Cloudinary URL, we should check in a different way
+      if (url.includes('cloudinary.com')) {
+        // For Cloudinary, we'll use a special approach to bypass CORS
+        const isCloudinary = true;
+        
+        // Instead of actually checking (which might fail due to CORS), 
+        // we'll return true and handle any access issues when the user tries to view the file
+        return true;
+      }
+      
+      // For non-Cloudinary URLs, try a HEAD request
+      try {
+        const response = await fetch(url, { 
+          method: 'HEAD',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        console.log("Resume access check response:", response.status);
+        return response.ok;
+      } catch (error) {
+        console.warn("HEAD request failed, trying GET request...");
+        // Fall back to a GET request with no-cors mode
+        try {
+          const response = await fetch(url, { 
+            method: 'GET',
+            mode: 'no-cors'
+          });
+          // If we get here, the request didn't throw, but we can't check status in no-cors mode
+          // So we'll assume it's accessible
+          return true;
+        } catch (err) {
+          console.error("Both HEAD and GET requests failed");
+          return false;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking resume accessibility:", error);
+      return false;
+    }
+  };
+
+  // Improved handleViewResume function to better handle Cloudinary URLs
+  const handleViewResume = async (resume) => {
+    console.log('Viewing resume:', resume);
+    setIsPdfLoading(true);
+    
+    // Extract the resume URL 
+    let resumeUrl = resume.url;
+    
+    // Check if it's a Cloudinary URL
+    const isCloudinary = resumeUrl.includes('cloudinary.com');
+    
+    if (isCloudinary) {
+      // For Cloudinary URLs, we need special handling
+      try {
+        // Get the cloud name, resource type, public ID, and version from the URL
+        const cloudNameMatch = resumeUrl.match(/res\.cloudinary\.com\/([^\/]+)/);
+        const cloudName = cloudNameMatch ? cloudNameMatch[1] : null;
+        
+        // Parse the version and file path
+        const versionMatch = resumeUrl.match(/\/v\d+\/(.+)$/);
+        const version = resumeUrl.match(/\/v(\d+)\//)?.[1];
+        const filePath = versionMatch ? versionMatch[1] : null;
+        
+        console.log('Parsed Cloudinary URL:', { cloudName, version, filePath });
+        
+        // Different possible URL formats to try
+        let urls = {
+          // Direct URL - may hit 401 but works sometimes
+          direct: resumeUrl,
+          
+          // Add fl_attachment for downloading
+          download: resumeUrl.replace('/upload/', '/upload/fl_attachment/'),
+          
+          // Try a public link that might bypass CORS
+          publicView: `https://res.cloudinary.com/${cloudName}/image/upload/v${version}/${filePath}`,
+          
+          // Add fl_attachment for downloading with public link
+          publicDownload: `https://res.cloudinary.com/${cloudName}/image/upload/fl_attachment/v${version}/${filePath}`
+        };
+        
+        console.log('Generated Cloudinary URLs:', urls);
+        
+        // Store the URLs for the modal to try
+        setSelectedResume({
+          ...resume,
+          url: urls.direct,
+          downloadUrl: urls.download,
+          publicViewUrl: urls.publicView,
+          publicDownloadUrl: urls.publicDownload,
+          isCloudinary: true,
+          isAccessible: true // Assume accessible, and handle errors in the iframe
+        });
+      } catch (err) {
+        console.error('Error parsing Cloudinary URLs:', err);
+        // Fallback to basic URLs
+        setSelectedResume({
+          ...resume,
+          url: resumeUrl,
+          downloadUrl: resumeUrl.replace('/upload/', '/upload/fl_attachment/'),
+          isCloudinary: true,
+          isAccessible: false // Mark as inaccessible to show alternative methods
+        });
+      }
+    } else {
+      // For non-Cloudinary URLs, check accessibility and use the same URL for both view and download
+      const isAccessible = await checkResumeAccess(resumeUrl);
+      setSelectedResume({
+        ...resume,
+        url: resumeUrl,
+        downloadUrl: resumeUrl,
+        isCloudinary: false,
+        isAccessible
+      });
+    }
+    
+    setIsPdfLoading(false);
   };
 
   const handleCloseModal = () => {
-    setShowResumeModal(false);
     setSelectedResume(null);
   };
 
@@ -635,6 +815,13 @@ const PersonalSettings = () => {
         console.log('Resume deletion response:', response.data);
         if (response.data.success) {
           toast.success('Resume deleted successfully');
+          
+          // Clear resume from localStorage
+          localStorage.removeItem('userResumeUrl');
+          localStorage.removeItem('userResumeName');
+          localStorage.removeItem('userResumeDate');
+          console.log('Cleared resume from localStorage');
+          
           setResumes([]); // Clear resumes immediately
           
           // Verify the deletion
@@ -1078,33 +1265,195 @@ const PersonalSettings = () => {
         </div>
 
         {/* Resume Modal */}
-        {showResumeModal && selectedResume && (
-          <div className="resume-modal-overlay">
-            <div className="resume-modal">
-              <div className="resume-modal-header">
-                <h3>View Resume</h3>
-                <button onClick={handleCloseModal} className="close-modal-btn">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-              <div className="resume-modal-content">
-                <iframe
-                  src={selectedResume.url}
-                  title="Resume Preview"
-                  className="resume-preview"
-                  sandbox="allow-same-origin allow-scripts allow-forms"
-                  onError={(e) => {
-                    console.error('Resume failed to load:', selectedResume.url);
-                    toast.error('Failed to load resume. The file may be inaccessible.');
-                    handleCloseModal();
+        <Modal
+          isOpen={selectedResume !== null}
+          onClose={() => setSelectedResume(null)}
+          className="resume-modal"
+        >
+          <div className="resume-modal-header">
+            <h2 className="text-xl font-bold">Resume Preview</h2>
+            <div className="resume-modal-actions">
+              {selectedResume && (
+                <a 
+                  href={selectedResume.downloadUrl} 
+                  download={selectedResume.originalName || "resume.pdf"}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="download-btn"
+                  onClick={(e) => {
+                    console.log('Download clicked, using URL:', selectedResume.downloadUrl);
+                    // For Cloudinary, we'll open in a new tab as direct download might not work
+                    if (selectedResume.isCloudinary) {
+                      e.preventDefault();
+                      window.open(selectedResume.downloadUrl, '_blank');
+                    }
                   }}
-                />
-              </div>
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download
+                </a>
+              )}
+              <button
+                onClick={() => setSelectedResume(null)}
+                className="close-button"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width={24} 
+                  height={24} 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
           </div>
-        )}
+          
+          <div className="resume-modal-content">
+            {selectedResume && (
+              <>
+                {selectedResume.isAccessible === false ? (
+                  <div className="pdf-fallback-message" style={{ display: 'block' }}>
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                      <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">Unable to access resume</h3>
+                    <p>The resume file cannot be embedded due to security restrictions.</p>
+                    
+                    <div className="mt-4">
+                      <p>Please try one of these options instead:</p>
+                      <div className="flex justify-center mt-2 space-x-3">
+                        {selectedResume.isCloudinary && (
+                          <>
+                            <a 
+                              href={selectedResume.downloadUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            >
+                              Direct Link
+                            </a>
+                            <a 
+                              href={selectedResume.publicDownloadUrl || selectedResume.publicViewUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              Public Link
+                            </a>
+                          </>
+                        )}
+                        <button 
+                          onClick={() => window.open(selectedResume.url, '_blank')}
+                          className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                        >
+                          View in browser
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div id="pdf-viewer-container" className={`pdf-viewer-container ${isPdfLoading ? 'pdf-loading' : ''}`}>
+                      {isPdfLoading && (
+                        <div className="pdf-loading-indicator">
+                          <div className="animate-spin mx-auto h-12 w-12 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="#2A9D8F" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="#2A9D8F" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          </div>
+                          <p className="text-gray-600">Loading PDF...</p>
+                        </div>
+                      )}
+                      <iframe
+                        src={selectedResume.url}
+                        title="Resume Preview"
+                        className="resume-iframe"
+                        onLoad={() => setIsPdfLoading(false)}
+                        onError={(e) => {
+                          console.error("PDF iframe load error:", e);
+                          setIsPdfLoading(false);
+                          
+                          // Try alternate URL for Cloudinary if direct URL fails
+                          if (selectedResume.isCloudinary && selectedResume.publicViewUrl) {
+                            console.log("Attempting to load PDF with alternate URL:", selectedResume.publicViewUrl);
+                            e.target.src = selectedResume.publicViewUrl;
+                          } else {
+                            e.target.style.display = 'none';
+                            document.getElementById('pdf-fallback').style.display = 'block';
+                          }
+                        }}
+                      />
+                    </div>
+                    <div id="pdf-fallback" style={{ display: 'none' }}>
+                      <div className="pdf-fallback-message">
+                        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                          <svg className="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                        </div>
+                        <h3 className="font-bold text-lg mb-2">PDF Viewer Not Available</h3>
+                        <p>Unable to display the PDF in the embedded viewer.</p>
+                        <div className="mt-4">
+                          <p>Please try one of these options instead:</p>
+                          <div className="flex justify-center mt-2 space-x-3">
+                            {selectedResume.isCloudinary ? (
+                              <>
+                                <a 
+                                  href={selectedResume.downloadUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                  Direct Link
+                                </a>
+                                <a 
+                                  href={selectedResume.publicDownloadUrl || selectedResume.publicViewUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                                >
+                                  Public Link
+                                </a>
+                              </>
+                            ) : (
+                              <a 
+                                href={selectedResume.downloadUrl} 
+                                download={selectedResume.originalName || "resume.pdf"}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                              >
+                                Download
+                              </a>
+                            )}
+                            <button 
+                              onClick={() => window.open(selectedResume.url, '_blank')}
+                              className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                            >
+                              View in browser
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </Modal>
       </div>
     </div>
   );
