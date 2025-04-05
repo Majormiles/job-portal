@@ -355,7 +355,8 @@ const googleLogin = async (req, res) => {
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, isAdmin } = req.body;
+    console.log('Login attempt:', { email, isAdmin: isAdmin ? 'yes' : 'no' });
 
     // Validate email & password
     if (!email || !password) {
@@ -369,43 +370,85 @@ const login = async (req, res) => {
     const user = await User.findOne({ email }).select('+password');
     
     if (!user) {
+      console.log(`User not found with email: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
+
+    console.log(`User found with email: ${email}, role: ${user.role}, isVerified: ${user.isVerified}`);
 
     // Check if password matches
-    const isMatch = await user.comparePassword(password);
-    
+    let isMatch = false;
+    try {
+      // Check if we need to use comparePassword or matchPassword
+      if (typeof user.comparePassword === 'function') {
+        isMatch = await user.comparePassword(password);
+      } else if (typeof user.matchPassword === 'function') {
+        isMatch = await user.matchPassword(password);
+      } else {
+        console.error(`No password comparison method available for user: ${email}`);
+        return res.status(500).json({
+          success: false,
+          message: 'Server configuration error'
+        });
+      }
+    } catch (passwordError) {
+      console.error('Error comparing passwords:', passwordError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error during authentication'
+      });
+    }
+
     if (!isMatch) {
+      console.log(`Password does not match for user: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
 
-    // Check if email is verified
-    if (!user.isVerified) {
+    console.log(`Password matches for user: ${email}`);
+
+    // If admin login is requested, check if user has admin role
+    if (isAdmin && user.role !== 'admin') {
+      console.log(`Admin access denied for user: ${email} (role: ${user.role})`);
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Admin access denied.'
+      });
+    }
+
+    // Check if email is verified (skip for admin users)
+    if (!user.isVerified && !isAdmin) {
+      console.log(`Unverified email for user: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Please verify your email before logging in'
       });
     }
 
-    // Get onboarding status
-    const onboarding = await Onboarding.findOne({ user: user._id });
+    // Get onboarding status (not needed for admin users)
+    let onboarding = null;
+    if (!isAdmin) {
+      onboarding = await Onboarding.findOne({ user: user._id });
+    }
     
     // Generate token
     const token = generateToken(user._id);
 
-    // Remove password from response
-    user.password = undefined;
+    // Create a safe user object without password
+    const safeUserObj = user.toObject();
+    delete safeUserObj.password;
 
-    // Add onboarding status to user object
+    // Add onboarding status to user object if needed
     if (onboarding) {
-      user.onboarding = onboarding;
+      safeUserObj.onboarding = onboarding;
     }
+
+    console.log(`Login successful for user: ${email}, role: ${user.role}, isAdmin: ${isAdmin}`);
 
     // Set token in cookie
     res.cookie('token', token, {
@@ -415,10 +458,12 @@ const login = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
-    res.json({
+    res.status(200).json({
       success: true,
-      token,
-      user
+      data: {
+        token,
+        user: safeUserObj
+      }
     });
   } catch (error) {
     console.error('Login error:', error);

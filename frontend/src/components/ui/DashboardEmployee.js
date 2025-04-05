@@ -32,7 +32,7 @@ library.add(
 );
 
 const Dashboard = () => {
-  const { api } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [dashboardData, setDashboardData] = useState({
@@ -43,7 +43,7 @@ const Dashboard = () => {
     },
     recentApplications: [],
     profile: {
-      name: '',
+      name: user?.name || '',
       profileImage: userImage,
       profileCompletion: 0
     }
@@ -51,7 +51,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [api]);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {

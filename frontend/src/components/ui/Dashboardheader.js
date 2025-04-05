@@ -52,11 +52,11 @@ const Header = () => {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <a href="/" className="flex items-center">
+            <Link to="/" className="flex items-center">
               <span className={`font-bold text-xl ${isScrolled ? 'text-gray-800' : 'text-white'}`}>
                 Brand
               </span>
-            </a>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -81,36 +81,30 @@ const Header = () => {
 
             {/* Navigation Links */}
             <div className="flex items-center space-x-6">
-              <a
-                href="#"
-                className={`font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'
-                  }`}
+              <NavLink
+                to="/dashboard_employee"
+                className={({isActive}) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
               >
                 Home
-              </a>
-              <a
-                href="#"
-                className={`font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'
-                  }`}
+              </NavLink>
+              <NavLink
+                to="/features"
+                className={({isActive}) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
               >
                 Features
-              </a>
-              <a
-                href="#"
-                className={`font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'
-                  }`}
+              </NavLink>
+              <NavLink
+                to="/about"
+                className={({isActive}) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
               >
                 About
-              </a>
+              </NavLink>
 
-              <Link to="/">
-                <a
-
-                  className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-md"
-                >
-                  <span>Visit Site</span>
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+              <Link to="/"
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-md"
+              >
+                <span>Visit Site</span>
+                <ExternalLink className="w-4 h-4" />
               </Link>
             </div>
           </nav>
@@ -149,18 +143,32 @@ const Header = () => {
             </form>
 
             {/* Mobile Navigation Links */}
-            <Link to="/">
-              <div className="flex flex-col space-y-4 pt-2">
-
-                <a
-                  href="#"
-                  className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-md font-medium"
-                >
-                  <span>Visit Site</span>
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
-            </Link>
+            <div className="flex flex-col space-y-3 pt-2">
+              <NavLink
+                to="/dashboard_employee"
+                className={({isActive}) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/features"
+                className={({isActive}) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
+              >
+                Features
+              </NavLink>
+              <NavLink
+                to="/about"
+                className={({isActive}) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
+              >
+                About
+              </NavLink>
+              <Link to="/"
+                className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-md font-medium"
+              >
+                <span>Visit Site</span>
+                <ExternalLink className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
         </div>
       )}

@@ -91,8 +91,8 @@ const LoginPage = () => {
           (prevIndex + 1) % images.length
         );
         setIsTransitioning(false);
-      }, 400); // Half of the transition duration
-    }, 4000);
+      }, 500); // Half of the transition duration
+    }, 5000);
 
     // Clean up interval on component unmount
     return () => clearInterval(imageInterval);
@@ -112,29 +112,43 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await login(formData);
+      // Create login data with trimmed values
+      const loginData = {
+        email: formData.email.trim(),
+        password: formData.password
+      };
       
-      if (!response || !response.user) {
-        throw new Error('Invalid login response');
-      }
-
-      // Check if user needs to complete onboarding
-      if (!response.user.onboardingComplete) {
-        navigate('/onboarding/personal-info', { replace: true });
-      } else {
-        // If onboarding is complete, redirect to the original destination or dashboard
-        const redirectTo = from === '/' ? '/dashboard_employee' : from;
-        navigate(redirectTo, { replace: true });
-      }
-
+      // Call login with the complete loginData object
+      const response = await login(loginData);
+      console.log('Login successful:', response);
       toast.success('Login successful!');
-    } catch (error) {
-      console.error('Login error:', error);
-      const errorMessage = error.response?.data?.message || 'Invalid email or password';
+      
+      // Check if user needs to complete onboarding
+      if (response.user && !response.user.onboardingComplete) {
+        navigate('/onboarding/personal-info');
+      } else {
+        navigate('/dashboard_employee');
+      }
+    } catch (err) {
+      // More robust error handling
+      console.error('Login error:', err);
+      let errorMessage = 'Invalid email or password. Please try again.';
+      
+      if (err.message) {
+        // Check for specific error messages we want to display directly
+        if (err.message.includes('verify your email')) {
+          errorMessage = err.message;
+        } else if (err.message.includes('Authentication failed')) {
+          errorMessage = 'Authentication failed. Please check your credentials.';
+        } else if (err.message.includes('Server error')) {
+          errorMessage = 'Server error. Please try again later.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       setError(errorMessage);
       toast.error(errorMessage);
-      // Clear any invalid tokens
-      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -276,7 +290,7 @@ const LoginPage = () => {
       </div>
 
       {/* Right Section - Image Slider */}
-      <div className="hidden md:block md:w-1/3 relative overflow-hidden">
+      <div className="hidden md:block md:w-2/3 relative overflow-hidden">
         <div className="absolute inset-0">
           {images.map((image, index) => (
             <div
@@ -297,7 +311,17 @@ const LoginPage = () => {
             </div>
           ))}
         </div>
+
+        {/* Text Overlay */}
+      <div className="absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-white px-4 max-w-md">
+          <h2 className="text-3xl font-bold mb-4">Discover Your Perfect Career Path</h2>
+          <p className="text-lg opacity-80">
+            Unlock opportunities, connect with top employers, and take the next step in your professional journey.
+          </p>
+        </div>
       </div>
+
+      
     </div>
   );
 };

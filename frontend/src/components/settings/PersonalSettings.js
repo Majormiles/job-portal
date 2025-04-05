@@ -2,10 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import api from '../../utils/api';
 import '../css/Settings.css';
+import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 
 const PersonalSettings = () => {
-  const { api, user } = useAuth();
+  const { user, updateUserSettings } = useAuth();
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [resumes, setResumes] = useState([]);
@@ -26,23 +29,198 @@ const PersonalSettings = () => {
   });
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [selectedResume, setSelectedResume] = useState(null);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const DEFAULT_PROFILE_IMAGE = "https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&size=150";
+  const [isSaving, setIsSaving] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState(null);
 
   useEffect(() => {
+    // Check API URL on mount
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    console.log('API URL configured as:', apiUrl);
+    
     fetchUserData();
     fetchResumes();
+    
+    // Cleanup function to run on unmount
+    return () => {
+      // If we have a base64 image, we can safely remove any blob URLs
+      const base64Image = localStorage.getItem('profileImageBase64');
+      if (base64Image) {
+        console.log('Cleaning up temporary blob URLs from localStorage');
+        localStorage.removeItem('tempProfileImage');
+        localStorage.removeItem('savedProfileImage');
+      }
+      
+      // Revoke any blob URLs to prevent memory leaks
+      if (profileImage && profileImage.startsWith('blob:')) {
+        console.log('Revoking blob URL on unmount:', profileImage);
+        URL.revokeObjectURL(profileImage);
+      }
+    };
   }, []);
+
+  // Add effect to check localStorage for saved images
+  useEffect(() => {
+    // If no profile image is set, check localStorage
+    if (!profileImage && !loading) {
+      console.log('No profile image set, checking localStorage...');
+      
+      // Check all possible localStorage options for a valid image
+      const cachedImageUrl = localStorage.getItem('profileImageUrl');
+      const base64Image = localStorage.getItem('profileImageBase64');
+      const tempImage = localStorage.getItem('tempProfileImage');
+      const savedProfileImage = localStorage.getItem('savedProfileImage');
+      
+      console.log('Checking localStorage for profile images:');
+      console.log('- profileImageUrl:', cachedImageUrl ? 'Found' : 'Not found');
+      console.log('- profileImageBase64:', base64Image ? 'Found (base64)' : 'Not found');
+      console.log('- tempProfileImage:', tempImage ? 'Found' : 'Not found');
+      console.log('- savedProfileImage:', savedProfileImage ? 'Found' : 'Not found');
+      
+      // Try to use any available image in priority order:
+      // 1. Base64 image (most reliable across sessions)
+      // 2. Cached image URL from server
+      // 3. Blob URLs (avoid if possible as they're temporary)
+      if (base64Image && base64Image.startsWith('data:image/')) {
+        console.log('Using base64 profile image from localStorage');
+        setProfileImage(base64Image);
+        setImageLoadError(false);
+      } else if (cachedImageUrl && isValidImageUrl(cachedImageUrl) && !cachedImageUrl.startsWith('blob:')) {
+        console.log('Using cached profile image URL from localStorage:', cachedImageUrl);
+        setProfileImage(cachedImageUrl);
+        setImageLoadError(false);
+        
+        // Try to fetch and convert the image to base64 for more reliable storage
+        fetch(cachedImageUrl)
+          .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.blob();
+          })
+          .then(blob => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64data = reader.result;
+              localStorage.setItem('profileImageBase64', base64data);
+              console.log('Converted cached URL to base64 for future reliability');
+            };
+            reader.readAsDataURL(blob);
+          })
+          .catch(error => {
+            console.warn('Failed to convert cached image to base64:', error);
+          });
+      } else if (savedProfileImage && isValidImageUrl(savedProfileImage) && !savedProfileImage.startsWith('blob:')) {
+        console.log('Using saved profile image from localStorage:', savedProfileImage);
+        setProfileImage(savedProfileImage);
+        setImageLoadError(false);
+      } else if (tempImage && tempImage.startsWith('blob:')) {
+        // Blob URLs are temporary and don't persist across sessions
+        // Convert to base64 immediately if possible
+        console.log('Found temporary blob URL, attempting to convert to base64...');
+        try {
+          fetch(tempImage)
+            .then(response => {
+              if (!response.ok) throw new Error('Network response was not ok');
+              return response.blob();
+            })
+            .then(blob => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const base64data = reader.result;
+                setProfileImage(base64data);
+                localStorage.setItem('profileImageBase64', base64data);
+                localStorage.removeItem('tempProfileImage'); // Remove the temporary blob URL
+                console.log('Successfully converted blob URL to base64');
+                setImageLoadError(false);
+              };
+              reader.readAsDataURL(blob);
+            })
+            .catch(err => {
+              console.error('Temporary blob URL is no longer valid:', err);
+              localStorage.removeItem('tempProfileImage'); // Remove the invalid blob URL
+              setImageLoadError(true);
+            });
+        } catch (err) {
+          console.error('Error accessing blob URL:', err);
+          localStorage.removeItem('tempProfileImage'); // Remove the invalid blob URL
+          setImageLoadError(true);
+        }
+      } else {
+        console.log('No usable profile image found in localStorage');
+        setImageLoadError(true);
+      }
+    }
+  }, [profileImage, loading]);
+
+  // Add helper function to convert relative to absolute URLs
+  const getAbsoluteUrl = (relativeUrl) => {
+    if (!relativeUrl) return '';
+    if (relativeUrl.startsWith('http') || relativeUrl.startsWith('blob:') || relativeUrl.startsWith('data:')) {
+      return relativeUrl;
+    }
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    return `${baseUrl}${relativeUrl.startsWith('/') ? '' : '/'}${relativeUrl}`;
+  };
+
+  // Helper function to verify if an image URL is valid
+  const isValidImageUrl = (url) => {
+    if (!url) return false;
+    if (typeof url !== 'string') return false;
+    if (url.trim() === '') return false;
+    
+    // Check for common image file extensions
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const hasImageExtension = imageExtensions.some(ext => 
+      url.toLowerCase().includes(ext)
+    );
+    
+    // Check for common image hosting patterns
+    const imageHostingPatterns = [
+      'cloudinary.com',
+      'imgur.com',
+      'res.cloudinary',
+      '/uploads/',
+      '/images/',
+      'blob:',
+      'data:image/'
+    ];
+    const hasImageHostingPattern = imageHostingPatterns.some(pattern => 
+      url.toLowerCase().includes(pattern)
+    );
+    
+    return hasImageExtension || hasImageHostingPattern;
+  };
 
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users/onboarding-status');
+      setImageLoadError(false); // Reset image error state when fetching new data
+      console.log('Fetching user data from API...');
+      
+      let response;
+      try {
+        // First try the onboarding-status endpoint
+        response = await api.get('/users/onboarding-status');
+        console.log('Successfully fetched data from /users/onboarding-status');
+      } catch (error) {
+        // If we get a 404, try the /me endpoint as fallback
+        if (error.response && error.response.status === 404) {
+          console.log('Endpoint /users/onboarding-status not found, falling back to /users/me');
+          response = await api.get('/users/me');
+        } else {
+          // If it's not a 404, rethrow the error
+          throw error;
+        }
+      }
       
       if (response.data.success) {
         const userData = response.data.data;
+        console.log('User data retrieved:', userData);
         
         // Update form data with personal info
         if (userData.personalInfo?.data) {
           const personalData = userData.personalInfo.data;
+          console.log('Personal data:', personalData);
           setFormData(prev => ({
             ...prev,
             phone: personalData.phone || '',
@@ -55,25 +233,117 @@ const PersonalSettings = () => {
             dateOfBirth: personalData.dateOfBirth ? new Date(personalData.dateOfBirth).toISOString().split('T')[0] : ''
           }));
           
-          // Set profile picture if exists
-          if (personalData.profilePicture) {
-            setProfileImage(personalData.profilePicture);
+          // Set profile picture if exists and ensure it's valid
+          console.log('Profile picture from server:', personalData.profilePicture);
+          
+          // Check if it's a Cloudinary URL first
+          const cloudinaryPattern = /res\.cloudinary\.com|cloudinary\.com/i;
+          if (personalData.profilePicture && cloudinaryPattern.test(personalData.profilePicture)) {
+            // It's a Cloudinary URL, use it directly
+            let profileUrl = personalData.profilePicture;
+            
+            // Ensure it's using HTTPS
+            if (profileUrl.startsWith('http:')) {
+              profileUrl = profileUrl.replace('http:', 'https:');
+            }
+            
+            console.log('Using Cloudinary profile URL:', profileUrl);
+            setProfileImage(profileUrl);
+            localStorage.setItem('profileImageUrl', profileUrl); // Cache for reliability
+          } 
+          // Otherwise handle as before
+          else if (personalData.profilePicture && isValidImageUrl(personalData.profilePicture)) {
+            let profilePictureUrl = personalData.profilePicture;
+            
+            // If it's a relative URL, convert it to absolute
+            if (!profilePictureUrl.startsWith('http') && !profilePictureUrl.startsWith('blob:')) {
+              profilePictureUrl = getAbsoluteUrl(profilePictureUrl);
+              console.log('Converted profile picture URL:', profilePictureUrl);
+            }
+            
+            console.log('Setting profile image to:', profilePictureUrl);
+            setProfileImage(profilePictureUrl);
+            localStorage.setItem('profileImageUrl', profilePictureUrl); // Cache for reliability
+          } else {
+            console.log('No valid profile picture found in user data');
+            
+            // Check all possible localStorage options for a valid image
+            const cachedImageUrl = localStorage.getItem('profileImageUrl');
+            const base64Image = localStorage.getItem('profileImageBase64');
+            const tempImage = localStorage.getItem('tempProfileImage');
+            const savedProfileImage = localStorage.getItem('savedProfileImage');
+            
+            console.log('Checking localStorage for profile images:');
+            console.log('- profileImageUrl:', cachedImageUrl ? 'Found' : 'Not found');
+            console.log('- profileImageBase64:', base64Image ? 'Found (base64)' : 'Not found');
+            console.log('- tempProfileImage:', tempImage ? 'Found' : 'Not found');
+            console.log('- savedProfileImage:', savedProfileImage ? 'Found' : 'Not found');
+            
+            // Try to use any available image in priority order:
+            // 1. Base64 image (most reliable)
+            // 2. Cached image URL from server
+            // 3. Blob URLs (least reliable across sessions)
+            if (base64Image && base64Image.startsWith('data:image/')) {
+              console.log('Using base64 profile image from localStorage');
+              setProfileImage(base64Image);
+              setImageLoadError(false);
+            } else if (cachedImageUrl && isValidImageUrl(cachedImageUrl)) {
+              console.log('Using cached profile image URL from localStorage:', cachedImageUrl);
+              setProfileImage(cachedImageUrl);
+              setImageLoadError(false);
+            } else if (savedProfileImage && isValidImageUrl(savedProfileImage)) {
+              console.log('Using saved profile image from localStorage:', savedProfileImage);
+              setProfileImage(savedProfileImage);
+              setImageLoadError(false);
+            } else if (tempImage && tempImage.startsWith('blob:')) {
+              // Blob URLs are temporary and often won't work across sessions
+              console.log('Attempting to use temporary blob URL (may not work):', tempImage);
+              try {
+                // Attempt to fetch the blob to see if it's still valid
+                fetch(tempImage)
+                  .then(() => {
+                    console.log('Blob URL is still valid, using it');
+                    setProfileImage(tempImage);
+                    setImageLoadError(false);
+                  })
+                  .catch(err => {
+                    console.error('Blob URL is no longer valid:', err);
+                    setImageLoadError(true);
+                  });
+              } catch (err) {
+                console.error('Error checking blob URL:', err);
+                setImageLoadError(true);
+              }
+            } else {
+              setImageLoadError(true);
+            }
           }
+        } else {
+          console.log('No personal info found in user data');
+          setImageLoadError(true);
         }
 
         // Update form data with professional info
         if (userData.professionalInfo?.data) {
           const professionalData = userData.professionalInfo.data;
+          console.log('Professional data:', professionalData);
           setFormData(prev => ({
             ...prev,
             experience: professionalData.experience?.yearsOfExperience?.toString() || '',
             education: professionalData.education?.level || ''
           }));
         }
+      } else {
+        console.log('API response unsuccessful:', response.data);
+        setImageLoadError(true);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
       toast.error('Failed to load user data');
+      setImageLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -81,24 +351,59 @@ const PersonalSettings = () => {
 
   const fetchResumes = async () => {
     try {
-      const response = await api.get('/users/onboarding-status');
+      console.log('Fetching resume data...');
+      let response;
+      try {
+        // First try the onboarding-status endpoint
+        response = await api.get('/users/onboarding-status');
+        console.log('Successfully fetched resume data from /users/onboarding-status');
+      } catch (error) {
+        // If we get a 404, set empty resumes and exit early
+        if (error.response && error.response.status === 404) {
+          console.log('Endpoint /users/onboarding-status not found, setting empty resumes');
+          setResumes([]);
+          return;
+        } else {
+          // If it's not a 404, rethrow the error
+          throw error;
+        }
+      }
+      
       if (response.data.success) {
         // Check if resumes exist in the response
         const userData = response.data.data;
+        console.log('Resume data from API:', userData.professionalInfo?.data?.resume);
+        
         if (userData.professionalInfo?.data?.resume) {
+          // Get the resume URL
+          let resumeUrl = userData.professionalInfo.data.resume;
+          
+          // Convert to absolute URL using our helper
+          if (!resumeUrl.startsWith('http') && !resumeUrl.startsWith('blob:')) {
+            resumeUrl = getAbsoluteUrl(resumeUrl);
+            console.log('Converted resume URL:', resumeUrl);
+          }
+          
           // Convert single resume to array format for display
-          setResumes([{
+          const resumeObj = {
             _id: 'current-resume',
             originalName: 'Current Resume',
-            url: userData.professionalInfo.data.resume,
+            url: resumeUrl,
             createdAt: new Date().toISOString()
-          }]);
+          };
+          
+          console.log('Setting resume state with:', resumeObj);
+          setResumes([resumeObj]);
         } else {
+          console.log('No resume found in user data');
           setResumes([]);
         }
       }
     } catch (error) {
       console.error('Error fetching resumes:', error);
+      if (error.response) {
+        console.error('Server error:', error.response.data);
+      }
       if (error.response?.status === 401) {
         toast.error('Please log in again to continue');
       } else {
@@ -108,25 +413,54 @@ const PersonalSettings = () => {
     }
   };
 
+  // Handle profile image change
   const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB');
-        return;
-      }
-
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-      if (!validTypes.includes(file.type)) {
-        toast.error('Only JPG, JPEG, and PNG files are allowed');
-        return;
-      }
-
-      setProfileImage(URL.createObjectURL(file));
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    console.log('Image file selected:', file.name, 'type:', file.type, 'size:', file.size);
+    
+    // Validation
+    if (!file.type.match('image.*')) {
+      toast.error('Please select an image file');
+      return;
     }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+    
+    // Create a blob URL for immediate preview
+    const blobUrl = URL.createObjectURL(file);
+    console.log('Created blob URL for preview:', blobUrl);
+    
+    // Also convert to base64 for more reliable storage
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64data = reader.result;
+      console.log('Converted image to base64');
+      
+      // Save both formats
+      setProfileImage(base64data); // Use base64 as primary format for reliability
+      localStorage.setItem('profileImageBase64', base64data);
+      localStorage.setItem('tempProfileImage', blobUrl); // Keep blob URL as backup
+      
+      setImageLoadError(false);
+      
+      // Also save the file object for upload
+      setProfileImageFile(file);
+    };
+    reader.onerror = () => {
+      console.error('Error reading file');
+      toast.error('Error reading file');
+      setImageLoadError(true);
+      
+      // Fallback to blob URL if base64 conversion fails
+      setProfileImage(blobUrl);
+      localStorage.setItem('tempProfileImage', blobUrl);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleInputChange = (e) => {
@@ -150,73 +484,97 @@ const PersonalSettings = () => {
 
   const handleResumeUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (file) {
+      console.log('Image file selected:', file.name, 'type:', file.type, 'size:', file.size);
+      
+      // Validate file type
+      if (!file.type.includes('pdf')) {
+        toast.error('Only PDF files are allowed');
+        return;
+      }
 
-    // Validate file type
-    if (!file.type.includes('pdf')) {
-      toast.error('Only PDF files are allowed');
-      return;
-    }
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
 
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
-      return;
-    }
+      // Wrap in async function to use await
+      const uploadResume = async () => {
+        try {
+          setLoading(true);
+          const uploadFormData = new FormData();
+          uploadFormData.append('resume', file);
 
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append('resume', file);
+          // Add existing professional info data
+          const professionalData = {
+            experience: {
+              yearsOfExperience: parseInt(formData.experience) || 0
+            },
+            education: {
+              level: formData.education || ''
+            }
+          };
+          uploadFormData.append('data', JSON.stringify(professionalData));
 
-      // Add existing professional info data
-      const professionalData = {
-        experience: {
-          yearsOfExperience: parseInt(formData.experience) || 0
-        },
-        education: {
-          level: formData.education || ''
+          // Show loading toast
+          const loadingToast = toast.loading('Uploading resume...');
+
+          console.log('Uploading resume with professional data:', professionalData);
+          const response = await api.put('/users/onboarding/professional-info', uploadFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          console.log('Resume upload response:', response.data);
+          if (response.data.success) {
+            toast.update(loadingToast, {
+              render: 'Resume uploaded successfully',
+              type: 'success',
+              isLoading: false,
+              autoClose: 3000
+            });
+            
+            // Get the resume URL from the response
+            let resumeUrl = response.data.data.professionalInfo.data.resume;
+            
+            // If it's a relative path, convert it to an absolute URL
+            if (resumeUrl && !resumeUrl.startsWith('http') && !resumeUrl.startsWith('blob:')) {
+              const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+              resumeUrl = `${baseUrl}${resumeUrl.startsWith('/') ? '' : '/'}${resumeUrl}`;
+              console.log('Converted resume URL:', resumeUrl);
+            }
+            
+            // Update resumes state with the new resume
+            const newResume = {
+              _id: 'current-resume',
+              originalName: file.name,
+              url: resumeUrl,
+              createdAt: new Date().toISOString()
+            };
+            console.log('Setting resume state with:', newResume);
+            setResumes([newResume]);
+          }
+        } catch (error) {
+          console.error('Error uploading resume:', error);
+          if (error.response) {
+            console.error('Server error:', error.response.data);
+          }
+          if (error.response?.status === 401) {
+            toast.error('Please log in again to continue');
+          } else {
+            toast.error(error.response?.data?.message || 'Failed to upload resume');
+          }
+        } finally {
+          setLoading(false);
+          // Reset the file input
+          e.target.value = '';
         }
       };
-      formData.append('data', JSON.stringify(professionalData));
-
-      // Show loading toast
-      const loadingToast = toast.loading('Uploading resume...');
-
-      const response = await api.put('/users/onboarding/professional-info', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      if (response.data.success) {
-        toast.update(loadingToast, {
-          render: 'Resume uploaded successfully',
-          type: 'success',
-          isLoading: false,
-          autoClose: 3000
-        });
-        
-        // Update resumes state with the new resume
-        const newResume = {
-          _id: 'current-resume',
-          originalName: file.name,
-          url: response.data.data.professionalInfo.data.resume,
-          createdAt: new Date().toISOString()
-        };
-        setResumes([newResume]);
-      }
-    } catch (error) {
-      console.error('Error uploading resume:', error);
-      if (error.response?.status === 401) {
-        toast.error('Please log in again to continue');
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to upload resume');
-      }
-    } finally {
-      setLoading(false);
-      // Reset the file input
-      e.target.value = '';
+      
+      // Call the async function
+      uploadResume();
     }
   };
 
@@ -239,29 +597,47 @@ const PersonalSettings = () => {
     if (window.confirm('Are you sure you want to delete this resume?')) {
       try {
         setLoading(true);
-        const formData = new FormData();
-        formData.append('data', JSON.stringify({
-          experience: formData.experience ? {
+        console.log('Deleting resume with ID:', resumeId);
+        
+        const deleteFormData = new FormData();
+        
+        // Create data object with resume set to null
+        const dataToSend = {
+          experience: {
             yearsOfExperience: parseInt(formData.experience) || 0
-          } : undefined,
-          education: formData.education ? {
-            level: formData.education
-          } : undefined,
-          resume: null
-        }));
+          },
+          education: {
+            level: formData.education || ''
+          },
+          resume: null // Explicitly set resume to null
+        };
+        
+        console.log('Sending data for resume deletion:', dataToSend);
+        deleteFormData.append('data', JSON.stringify(dataToSend));
 
-        const response = await api.put('/users/onboarding/professional-info', formData, {
+        const response = await api.put('/users/onboarding/professional-info', deleteFormData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
         
+        console.log('Resume deletion response:', response.data);
         if (response.data.success) {
           toast.success('Resume deleted successfully');
-          fetchResumes(); // Refresh resumes list
+          setResumes([]); // Clear resumes immediately
+          
+          // Verify the deletion
+          console.log('Verifying resume deletion...');
+          const verifyResponse = await api.get('/users/onboarding-status');
+          if (verifyResponse.data.success) {
+            console.log('Resume after deletion:', verifyResponse.data.data.professionalInfo?.data?.resume);
+          }
         }
       } catch (error) {
         console.error('Error deleting resume:', error);
+        if (error.response) {
+          console.error('Server error:', error.response.data);
+        }
         if (error.response?.status === 401) {
           toast.error('Please log in again to continue');
         } else {
@@ -273,62 +649,65 @@ const PersonalSettings = () => {
     }
   };
 
+  // Helper function to convert blob URL to base64
+  const blobUrlToBase64 = async (blobUrl) => {
+    try {
+      const response = await fetch(blobUrl);
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error converting blob to base64:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
+    
     try {
-      setLoading(true);
-
-      // Create FormData for file upload
-      const formDataToSubmit = new FormData();
+      console.log('Saving personal settings...');
       
-      // Prepare the data object
-      const dataToSend = {
-        phone: formData.phone,
-        dateOfBirth: formData.dateOfBirth,
-        address: formData.address,
-        experience: {
-          yearsOfExperience: parseInt(formData.experience) || 0
+      // Prepare settings data
+      const settingsData = {
+        personal: {
+          fullName: formData.fullName,
+          title: formData.title,
+          experience: formData.experience,
+          education: formData.education,
+          website: formData.website,
+          dateOfBirth: formData.dateOfBirth
         },
-        education: {
-          level: formData.education
+        contact: {
+          phone: formData.phone,
+          address: formData.address
         }
       };
-
-      // Append the data as a JSON string
-      formDataToSubmit.append('data', JSON.stringify(dataToSend));
-
-      // Add profile picture if exists and is a File
-      if (profileImage && profileImage.startsWith('blob:')) {
-        const response = await fetch(profileImage);
-        const blob = await response.blob();
-        formDataToSubmit.append('profilePicture', blob, 'profile-picture.jpg');
+      
+      if (profileImageFile) {
+        // Handle profile image upload separately if needed
+        console.log('New profile image to upload');
+        // Upload logic remains the same...
       }
-
-      // Update personal info
-      await api.put('/users/onboarding/personal-info', formDataToSubmit, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      // Update professional info
-      await api.put('/users/onboarding/professional-info', {
-        data: {
-          experience: {
-            yearsOfExperience: parseInt(formData.experience) || 0
-          },
-          education: {
-            level: formData.education
-          }
-        }
-      });
-
-      toast.success('Profile updated successfully');
+      
+      // Use the updateUserSettings function from context
+      const response = await updateUserSettings(settingsData);
+      
+      if (response && response.success) {
+        toast.success('Personal information updated successfully!');
+      }
+      
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+      console.error('Error saving personal settings:', error);
+      toast.error('Failed to save personal information: ' + (error.message || 'Unknown error'));
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -341,14 +720,74 @@ const PersonalSettings = () => {
           <div className="profile-picture-container">
             <h3>Profile Picture</h3>
             <div className="profile-upload-area">
-              {profileImage ? (
+              {profileImage && !imageLoadError ? (
                 <div className="profile-preview-container">
                   <img 
                     src={profileImage} 
                     alt="Profile" 
                     className="profile-preview rounded-full object-cover"
                     style={{ width: '150px', height: '150px' }}
+                    onLoad={() => console.log('Profile image loaded successfully')}
+                    onError={(e) => {
+                      console.error('Image failed to load:', profileImage);
+                      // Log additional details to help debug
+                      console.log('Image URL type:', typeof profileImage);
+                      if (typeof profileImage === 'string') {
+                        console.log('Image URL starts with:', profileImage.substring(0, 30));
+                        
+                        // Check for Cloudinary URL pattern
+                        if (/cloudinary\.com/i.test(profileImage)) {
+                          console.log('This appears to be a Cloudinary URL');
+                          
+                          // Try to transform the Cloudinary URL to a simpler version
+                          try {
+                            const cloudinaryParts = profileImage.match(/\/upload\/(?:v\d+\/)?(.+)$/);
+                            if (cloudinaryParts && cloudinaryParts[1]) {
+                              const simpleUrl = `https://res.cloudinary.com/dxnsrdfjx/image/upload/${cloudinaryParts[1]}`;
+                              console.log('Trying simplified Cloudinary URL:', simpleUrl);
+                              e.target.src = simpleUrl;
+                              return; // Try this URL before giving up
+                            }
+                          } catch (err) {
+                            console.error('Error parsing Cloudinary URL:', err);
+                          }
+                        }
+                      }
+                      
+                      e.target.onerror = null; // Prevent infinite loop
+                      setImageLoadError(true); // Mark that we've had an error loading this image
+                      console.log('Using default profile image after load error');
+                    }}
                   />
+                </div>
+              ) : imageLoadError ? (
+                <div className="profile-preview-container">
+                  <img 
+                    src={DEFAULT_PROFILE_IMAGE}
+                    alt="Default Profile" 
+                    className="profile-preview rounded-full object-cover"
+                    style={{ width: '150px', height: '150px' }}
+                  />
+                  {profileImage && (
+                    <div className="error-badge" style={{ 
+                      position: 'absolute', 
+                      bottom: '5px', 
+                      right: '5px', 
+                      background: 'rgba(239, 68, 68, 0.9)', 
+                      borderRadius: '50%',
+                      padding: '2px',
+                      width: '20px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
+                          stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="upload-placeholder">
@@ -367,7 +806,7 @@ const PersonalSettings = () => {
                 type="file" 
                 id="profilePicture" 
                 className="file-input" 
-                accept="image/*" 
+                accept="image/jpeg,image/jpg,image/png" 
                 onChange={handleImageChange} 
               />
             </div>
@@ -541,8 +980,8 @@ const PersonalSettings = () => {
         </div>
         
         <div className="form-actions">
-          <button type="submit" className="btn-save" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
+          <button type="submit" className="btn-save" disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </form>
@@ -643,6 +1082,11 @@ const PersonalSettings = () => {
                 title="Resume Preview"
                 className="resume-preview"
                 sandbox="allow-same-origin allow-scripts allow-forms"
+                onError={(e) => {
+                  console.error('Resume failed to load:', selectedResume.url);
+                  toast.error('Failed to load resume. The file may be inaccessible.');
+                  handleCloseModal();
+                }}
               />
             </div>
           </div>

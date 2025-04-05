@@ -35,6 +35,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'default-profile.png'
   },
+  socialLinks: [{
+    id: Number,
+    name: String,
+    icon: String,
+    url: String
+  }],
   phone: String,
   address: {
     street: String,

@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import OnboardingLayout from '../../components/onboarding/OnboardingLayout';
 import { useAuth } from '../../contexts/AuthContext';
+
+// ScrollToTop component to handle scrolling on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
 
 const Skills = () => {
   const navigate = useNavigate();
@@ -291,34 +302,37 @@ const Skills = () => {
   };
 
   return (
-    <OnboardingLayout>
-      <div className="max-w-2xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-6">Skills & Expertise</h2>
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {renderSkillInputs('technicalSkills', 'Technical Skills')}
-          {renderSkillInputs('softSkills', 'Soft Skills')}
-          {renderSkillInputs('languages', 'Languages')}
-          {renderSkillInputs('certifications', 'Certifications')}
+    <>
+      <ScrollToTop />
+      <OnboardingLayout>
+        <div className="max-w-2xl mx-auto p-6">
+          <h2 className="text-2xl font-bold mb-6">Skills & Expertise</h2>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {renderSkillInputs('technicalSkills', 'Technical Skills')}
+            {renderSkillInputs('softSkills', 'Soft Skills')}
+            {renderSkillInputs('languages', 'Languages')}
+            {renderSkillInputs('certifications', 'Certifications')}
 
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={() => navigate('/onboarding/professional-info')}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Back
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : 'Next'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </OnboardingLayout>
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={() => navigate('/onboarding/professional-info')}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Next'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </OnboardingLayout>
+    </>
   );
 };
 

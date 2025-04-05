@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import OnboardingLayout from '../../components/onboarding/OnboardingLayout';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+
+// ScrollToTop component to handle scrolling on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
 
 const PersonalInfo = () => {
   const navigate = useNavigate();
@@ -279,142 +290,145 @@ const PersonalInfo = () => {
   };
 
   return (
-    <OnboardingLayout>
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold mb-6">Personal Information</h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Profile Picture Upload */}
-          <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-              {formData.profilePictureUrl ? (
-                <img
-                  src={formData.profilePictureUrl}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
+    <>
+      <ScrollToTop />
+      <OnboardingLayout>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold mb-6">Personal Information</h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Profile Picture Upload */}
+            <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                {formData.profilePictureUrl ? (
+                  <img
+                    src={formData.profilePictureUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 w-full">
+                <label className="block text-sm font-medium text-gray-700">
+                  Profile Picture
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="mt-1 block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100"
                 />
-              ) : (
-                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              )}
+              </div>
             </div>
-            <div className="flex-1 w-full">
-              <label className="block text-sm font-medium text-gray-700">
-                Profile Picture
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="mt-1 block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-full file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone || ''}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              name="dateOfBirth"
-              value={formData.dateOfBirth || ''}
-              onChange={handleDateChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
-              max={new Date().toISOString().split('T')[0]}
-            />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Address</h3>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Street Address
+                Phone Number
               </label>
               <input
-                type="text"
-                name="address.street"
-                value={formData.address.street || ''}
+                type="tel"
+                name="phone"
+                value={formData.phone || ''}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Date of Birth
+              </label>
+              <input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth || ''}
+                onChange={handleDateChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+                max={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">Address</h3>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  City
+                  Street Address
                 </label>
                 <input
                   type="text"
-                  name="address.city"
-                  value={formData.address.city || ''}
+                  name="address.street"
+                  value={formData.address.street || ''}
                   onChange={handleChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  State
-                </label>
-                <input
-                  type="text"
-                  name="address.state"
-                  value={formData.address.state || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  ZIP Code
-                </label>
-                <input
-                  type="text"
-                  name="address.zipCode"
-                  value={formData.address.zipCode || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    name="address.city"
+                    value={formData.address.city || ''}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    name="address.state"
+                    value={formData.address.state || ''}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    ZIP Code
+                  </label>
+                  <input
+                    type="text"
+                    name="address.zipCode"
+                    value={formData.address.zipCode || ''}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {isSubmitting ? 'Saving...' : 'Next'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </OnboardingLayout>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Saving...' : 'Next'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </OnboardingLayout>
+    </>
   );
 };
 

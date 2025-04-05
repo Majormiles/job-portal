@@ -1,5 +1,5 @@
 // src/pages/HomePage.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import Companies from '../components/ui/Companies';
 import RecentJobs from '../components/ui/RecentJobs';
 import JobCategories from '../components/ui/JobCategories';
@@ -9,8 +9,16 @@ import FaqDropdown from '../components/ui/FaqDropdown';
 import Footer from '../components/ui/Footer';
 
 const HomePage = () => {
+  useEffect(() => {
+    // Add home-page class to body when component mounts
+    document.body.classList.add('home-page');
+    
+    // Remove the class when component unmounts
+    return () => {
+      document.body.classList.remove('home-page');
+    };
+  }, []);
 
-  
   return (
     <>
       <Companies />

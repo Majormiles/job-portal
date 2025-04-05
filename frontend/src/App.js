@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, useNavigate, createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import { ToastContainer } from 'react-toastify';
 import { Toaster } from 'react-hot-toast';
 import 'react-toastify/dist/ReactToastify.css';
@@ -40,7 +41,7 @@ import Complete from './pages/onboarding/Complete';
 
 // Admin Components
 import MainLayout from './components/admin/components/layout/MainLayout';
-import AdminLogin from './components/admin/pages/auth/Login';
+import AdminLogin from './components/admin/pages/auth/adminLogin';
 import AdminDashboard from './components/admin/pages/Dashboard';
 import AdminResume from './components/admin/pages/Resume';
 import AdminCalendar from './components/admin/pages/Calendar';
@@ -186,12 +187,45 @@ const OnboardingRoute = ({ children }) => {
   return children;
 };
 
+// Admin Protected Route Component
+const AdminProtectedRoute = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Check for admin token
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-teal-500"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/admin/login" state={{ from: location.pathname }} replace />;
+  }
+
+  return children;
+};
+
 // This wrapper component checks if we're on the home route
 const AppContent = () => {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const isHomePage = location.pathname === '/';
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminLoginRoute = location.pathname === '/admin/login';
   const isOnboardingRoute = location.pathname.startsWith('/onboarding');
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
   const isPublicRoute = location.pathname === '/jobs' || location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/job-detail' || location.pathname === '/pricing-plan';
@@ -199,9 +233,9 @@ const AppContent = () => {
   return (
     <div className="App">
       {/* Show Header-one only on home page */}
-      {isHomePage && !isAuthRoute && !isOnboardingRoute && <HeaderOne />}
+      {isHomePage && !isAuthRoute && !isOnboardingRoute && !isAdminRoute && <HeaderOne />}
       {/* Show Header on other public pages */}
-      {isPublicRoute && !isAuthRoute && !isOnboardingRoute && <Header />}
+      {isPublicRoute && !isAuthRoute && !isOnboardingRoute && !isAdminRoute && <Header />}
       <Routes>
         {/* Public Routes - Always accessible */}
         <Route path="/" element={<Home />} />
@@ -313,9 +347,15 @@ const AppContent = () => {
         />
 
         {/* Admin Routes */}
-        <Route path="/admin" element={<MainLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="login" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        
+        {/* All other admin routes wrapped in AdminProtectedRoute and MainLayout */}
+        <Route path="/admin" element={
+          <AdminProtectedRoute>
+            <MainLayout />
+          </AdminProtectedRoute>
+        }>
+          <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="resume" element={<AdminResume />} />
           <Route path="calendar" element={<AdminCalendar />} />
           <Route path="categories" element={<AdminCategories />} />
@@ -327,32 +367,54 @@ const AppContent = () => {
           <Route path="invoice" element={<AdminInvoice />} />
           <Route path="timeline" element={<AdminTimeline />} />
           <Route path="job-seekers" element={<AdminJobSeekers />} />
-          <Route path="applications" element={<AdminManageApplications />} />
-          <Route path="applicants" element={<AdminJobApplicants />} />
+          <Route path="manage-applications" element={<AdminManageApplications />} />
+          <Route path="job-applicants" element={<AdminJobApplicants />} />
         </Route>
 
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <ToastContainer />
-      <Toaster position="top-right" />
     </div>
   );
 };
 
 // Main App component
 const App = () => {
+  // Define a list of routes that need the SettingsProvider
+  const needsSettingsProvider = (pathname) => {
+    return pathname.startsWith('/settings') || pathname.includes('settings');
+  };
+
   return (
-    <ErrorBoundary>
+    <ErrorBoundary fallback={<ErrorBoundaryComponent />}>
       <Router>
-        <AuthProvider>
-          <GoogleOAuthProvider>
-            <AppContent />
-          </GoogleOAuthProvider>
-        </AuthProvider>
+        <GoogleOAuthProvider>
+          <AuthProvider>
+            <SettingsWrappedRoutes />
+          </AuthProvider>
+        </GoogleOAuthProvider>
       </Router>
+      <ToastContainer position="top-right" autoClose={3000} />
+      <Toaster position="top-right" />
     </ErrorBoundary>
   );
+};
+
+// Component that conditionally wraps routes with SettingsProvider
+const SettingsWrappedRoutes = () => {
+  const location = useLocation();
+  const needsSettings = location.pathname.startsWith('/settings') || location.pathname.includes('settings');
+  
+  // Wrap with SettingsProvider for settings pages, otherwise render directly
+  const content = (
+    <AppContent />
+  );
+  
+  return needsSettings ? (
+    <SettingsProvider>
+      {content}
+    </SettingsProvider>
+  ) : content;
 };
 
 export default App;

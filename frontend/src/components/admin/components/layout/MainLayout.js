@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import '../../styles/admin.css';
@@ -7,22 +7,36 @@ import '../../styles/admin.css';
 function MainLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const checkAdminAuth = () => {
+      const adminToken = localStorage.getItem('adminToken');
+      if (!adminToken) {
+        console.log('No admin token found, redirecting to admin login');
+        navigate('/admin/login');
+        return false;
+      }
+      return true;
+    };
+
+    // Define handleResize outside initializeLayout so it can be referenced in cleanup
+    const handleResize = () => {
+      const shouldShowSidebar = window.innerWidth > 991.98;
+      setIsSidebarOpen(shouldShowSidebar);
+      document.body.classList.toggle('sidebar-collapsed', !shouldShowSidebar);
+    };
+
     const initializeLayout = () => {
+      // Check admin authentication first
+      if (!checkAdminAuth()) return;
+
       // Initialize Feather Icons
       if (window.feather) {
         window.feather.replace();
       }
 
       // Set initial sidebar state based on screen size
-      const handleResize = () => {
-        const shouldShowSidebar = window.innerWidth > 991.98;
-        setIsSidebarOpen(shouldShowSidebar);
-        document.body.classList.toggle('sidebar-collapsed', !shouldShowSidebar);
-      };
-
-      // Add resize listener
       window.addEventListener('resize', handleResize);
       handleResize(); // Initial check
 
@@ -54,7 +68,15 @@ function MainLayout() {
     };
 
     initializeLayout();
-  }, []);
+
+    // Setup interval to periodically check admin authentication
+    const authCheckInterval = setInterval(checkAdminAuth, 60000); // Check every minute
+
+    return () => {
+      clearInterval(authCheckInterval);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [navigate]);
 
   const toggleSidebar = () => {
     const newState = !isSidebarOpen;

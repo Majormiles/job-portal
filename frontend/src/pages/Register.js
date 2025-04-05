@@ -348,7 +348,7 @@ const RegisterPage = () => {
       </div>
 
       {/* Right Section - Image */}
-      <div className="hidden md:block w-1/2 relative overflow-hidden pl-2">
+      <div className="hidden md:block w-2/3 relative overflow-hidden pl-2">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 opacity-90"></div>
         <div className="relative h-full">
           <div className="relative w-full h-full">

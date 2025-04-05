@@ -5,11 +5,13 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import {
   getMe,
+  getAccountData,
   updateProfile,
   updatePassword,
   forgotPassword,
   resetPassword,
-  deleteAccount
+  deleteAccount,
+  updateUserSettings
 } from '../controllers/user.controller.js';
 import {
   getOnboardingStatus,
@@ -81,9 +83,11 @@ router.post('/reset-password/:token', resetPassword);
 router.use(protect);
 
 router.get('/me', getMe);
+router.get('/account-data', getAccountData);
 router.put('/update-profile', updateProfile);
 router.put('/update-password', updatePassword);
 router.delete('/me', deleteAccount);
+router.put('/settings', updateUserSettings);
 
 // Onboarding routes
 router.get('/onboarding-status', getOnboardingStatus);

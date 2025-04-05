@@ -24,7 +24,13 @@ const router = express.Router();
 
 // Public routes
 router.post('/register', register);
-router.post('/login', login);
+router.post('/login', (req, res, next) => {
+  console.log('AUTH ROUTE: Login request received');
+  if (req.body.isAdmin) {
+    console.log('AUTH ROUTE: Admin login attempt for:', req.body.email);
+  }
+  return login(req, res, next);
+});
 router.post('/google', googleLogin);
 router.get('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerification);

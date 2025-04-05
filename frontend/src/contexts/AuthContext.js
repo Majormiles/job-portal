@@ -128,32 +128,80 @@ export const AuthProvider = ({ children }) => {
         });
       } else {
         // Regular login
+        console.log('Attempting regular login', credentials.isAdmin ? '(admin)' : '(user)');
         response = await api.post('/auth/login', credentials);
       }
 
+      console.log('Login response:', {
+        success: response.data.success,
+        hasData: !!response.data.data,
+        hasToken: !!(response.data.token || (response.data.data && response.data.data.token)),
+        responseStructure: response.data
+      });
+
       if (response.data.success) {
-        const { token, user } = response.data;
+        // Extract token and user from response - handle both old and new formats
+        let token, user;
         
-        // Check if email is verified for regular login
-        if (!credentials.tokenId && !user.isVerified) {
+        // New response format (data property containing user and token)
+        if (response.data.data && response.data.data.token) {
+          token = response.data.data.token;
+          user = response.data.data.user || {};
+        } 
+        // Old response format (direct token and user properties)
+        else if (response.data.token) {
+          token = response.data.token;
+          user = response.data.user || {};
+        }
+        // Unexpected format
+        else {
+          console.error('Invalid response format - missing token:', response.data);
+          throw new Error('Invalid response format from server');
+        }
+        
+        // For admin login, don't check email verification and store separately
+        if (credentials.isAdmin) {
+          console.log('Admin login successful, storing admin token');
+          localStorage.setItem('adminToken', token);
+          return {
+            success: true,
+            token,
+            user
+          };
+        }
+        
+        // For regular users, check if email is verified
+        // Add null/undefined check for user and isVerified before checking
+        if (!credentials.tokenId && user && user.hasOwnProperty('isVerified') && !user.isVerified) {
           throw new Error('Please verify your email before logging in');
         }
 
+        // Store regular user token
         localStorage.setItem('token', token);
         setUser(user);
         setToken(token);
         setIsAuthenticated(true);
-        return response.data;
+        
+        return {
+          success: true,
+          token,
+          user
+        };
+      } else {
+        throw new Error(response.data.message || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
       
-      // Clear any existing tokens
-      localStorage.removeItem('token');
-      setUser(null);
-      setToken(null);
-      setIsAuthenticated(false);
-      setOnboardingStatus(null);
+      // Don't clear tokens for admin login attempts
+      if (!credentials.isAdmin) {
+        // Clear any existing tokens
+        localStorage.removeItem('token');
+        setUser(null);
+        setToken(null);
+        setIsAuthenticated(false);
+        setOnboardingStatus(null);
+      }
       
       // Format error message based on the type of error
       let errorMessage = 'Authentication failed';
@@ -263,6 +311,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Add function to update user settings and sync across components
+  const updateUserSettings = async (settingsData) => {
+    try {
+      console.log('Updating user settings:', settingsData);
+      const response = await api.put('/users/settings', settingsData);
+      
+      if (response.data.success) {
+        // Update the user object with new settings
+        setUser(prev => ({
+          ...prev,
+          ...response.data.data
+        }));
+        
+        // Fetch fresh user data to ensure all components have access to the latest state
+        const userResponse = await api.get('/users/me');
+        if (userResponse.data.success) {
+          setUser(userResponse.data.data);
+        }
+        
+        return response.data;
+      } else {
+        throw new Error(response.data.message || 'Failed to update user settings');
+      }
+    } catch (error) {
+      console.error('Error updating user settings:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -274,7 +351,10 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         checkOnboardingStatus,
-        updateOnboardingStatus
+        updateOnboardingStatus,
+        updateUserSettings,
+        setUser,
+        api
       }}
     >
       {children}
