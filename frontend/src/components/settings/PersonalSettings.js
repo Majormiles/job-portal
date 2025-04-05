@@ -7,6 +7,17 @@ import '../css/Settings.css';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 
+// ScrollToTop component to handle scrolling on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
+
 const PersonalSettings = () => {
   const { user, updateUserSettings } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -712,386 +723,389 @@ const PersonalSettings = () => {
   };
 
   return (
-    <div className="settings-section">
-      <h2 className="section-title">Basic Information</h2>
-      
-      <form onSubmit={handleSubmit}>
-        <div className="settings-grid">
-          <div className="profile-picture-container">
-            <h3>Profile Picture</h3>
-            <div className="profile-upload-area">
-              {profileImage && !imageLoadError ? (
-                <div className="profile-preview-container">
-                  <img 
-                    src={profileImage} 
-                    alt="Profile" 
-                    className="profile-preview rounded-full object-cover"
-                    style={{ width: '150px', height: '150px' }}
-                    onLoad={() => console.log('Profile image loaded successfully')}
-                    onError={(e) => {
-                      console.error('Image failed to load:', profileImage);
-                      // Log additional details to help debug
-                      console.log('Image URL type:', typeof profileImage);
-                      if (typeof profileImage === 'string') {
-                        console.log('Image URL starts with:', profileImage.substring(0, 30));
-                        
-                        // Check for Cloudinary URL pattern
-                        if (/cloudinary\.com/i.test(profileImage)) {
-                          console.log('This appears to be a Cloudinary URL');
+    <div className="settings-content">
+      <div className="settings-section">
+        <ScrollToTop />
+        <h2 className="section-title">Basic Information</h2>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="settings-grid">
+            <div className="profile-picture-container">
+              <h3>Profile Picture</h3>
+              <div className="profile-upload-area">
+                {profileImage && !imageLoadError ? (
+                  <div className="profile-preview-container">
+                    <img 
+                      src={profileImage} 
+                      alt="Profile" 
+                      className="profile-preview rounded-full object-cover"
+                      style={{ width: '150px', height: '150px' }}
+                      onLoad={() => console.log('Profile image loaded successfully')}
+                      onError={(e) => {
+                        console.error('Image failed to load:', profileImage);
+                        // Log additional details to help debug
+                        console.log('Image URL type:', typeof profileImage);
+                        if (typeof profileImage === 'string') {
+                          console.log('Image URL starts with:', profileImage.substring(0, 30));
                           
-                          // Try to transform the Cloudinary URL to a simpler version
-                          try {
-                            const cloudinaryParts = profileImage.match(/\/upload\/(?:v\d+\/)?(.+)$/);
-                            if (cloudinaryParts && cloudinaryParts[1]) {
-                              const simpleUrl = `https://res.cloudinary.com/dxnsrdfjx/image/upload/${cloudinaryParts[1]}`;
-                              console.log('Trying simplified Cloudinary URL:', simpleUrl);
-                              e.target.src = simpleUrl;
-                              return; // Try this URL before giving up
+                          // Check for Cloudinary URL pattern
+                          if (/cloudinary\.com/i.test(profileImage)) {
+                            console.log('This appears to be a Cloudinary URL');
+                            
+                            // Try to transform the Cloudinary URL to a simpler version
+                            try {
+                              const cloudinaryParts = profileImage.match(/\/upload\/(?:v\d+\/)?(.+)$/);
+                              if (cloudinaryParts && cloudinaryParts[1]) {
+                                const simpleUrl = `https://res.cloudinary.com/dxnsrdfjx/image/upload/${cloudinaryParts[1]}`;
+                                console.log('Trying simplified Cloudinary URL:', simpleUrl);
+                                e.target.src = simpleUrl;
+                                return; // Try this URL before giving up
+                              }
+                            } catch (err) {
+                              console.error('Error parsing Cloudinary URL:', err);
                             }
-                          } catch (err) {
-                            console.error('Error parsing Cloudinary URL:', err);
                           }
                         }
-                      }
-                      
-                      e.target.onerror = null; // Prevent infinite loop
-                      setImageLoadError(true); // Mark that we've had an error loading this image
-                      console.log('Using default profile image after load error');
-                    }}
-                  />
-                </div>
-              ) : imageLoadError ? (
-                <div className="profile-preview-container">
-                  <img 
-                    src={DEFAULT_PROFILE_IMAGE}
-                    alt="Default Profile" 
-                    className="profile-preview rounded-full object-cover"
-                    style={{ width: '150px', height: '150px' }}
-                  />
-                  {profileImage && (
-                    <div className="error-badge" style={{ 
-                      position: 'absolute', 
-                      bottom: '5px', 
-                      right: '5px', 
-                      background: 'rgba(239, 68, 68, 0.9)', 
-                      borderRadius: '50%',
-                      padding: '2px',
-                      width: '20px',
-                      height: '20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
-                          stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        
+                        e.target.onerror = null; // Prevent infinite loop
+                        setImageLoadError(true); // Mark that we've had an error loading this image
+                        console.log('Using default profile image after load error');
+                      }}
+                    />
+                  </div>
+                ) : imageLoadError ? (
+                  <div className="profile-preview-container">
+                    <img 
+                      src={DEFAULT_PROFILE_IMAGE}
+                      alt="Default Profile" 
+                      className="profile-preview rounded-full object-cover"
+                      style={{ width: '150px', height: '150px' }}
+                    />
+                    {profileImage && (
+                      <div className="error-badge" style={{ 
+                        position: 'absolute', 
+                        bottom: '5px', 
+                        right: '5px', 
+                        background: 'rgba(239, 68, 68, 0.9)', 
+                        borderRadius: '50%',
+                        padding: '2px',
+                        width: '20px',
+                        height: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
+                            stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="upload-placeholder">
+                    <div className="upload-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 16V8M12 8L8 12M12 8L16 12" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <p className="browse-text">Browse photo or drop here</p>
+                      <p className="upload-instruction">A photo larger than 400 pixels work best. Max photo size 5 MB.</p>
+                    </div>
+                  </div>
+                )}
+                <input 
+                  type="file" 
+                  id="profilePicture" 
+                  className="file-input" 
+                  accept="image/jpeg,image/jpg,image/png" 
+                  onChange={handleImageChange} 
+                />
+              </div>
+            </div>
+            
+            <div className="form-group full-width">
+              <label htmlFor="fullName">Full name</label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                className="form-control"
+                disabled
+                aria-label="Full name"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="phone">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="form-control"
+                aria-label="Phone number"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="dateOfBirth">Date of Birth</label>
+              <input
+                type="date"
+                id="dateOfBirth"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleInputChange}
+                className="form-control"
+                aria-label="Date of birth"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address.street">Street Address</label>
+              <input
+                type="text"
+                id="address.street"
+                name="address.street"
+                value={formData.address.street}
+                onChange={handleInputChange}
+                className="form-control"
+                aria-label="Street address"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address.city">City</label>
+              <input
+                type="text"
+                id="address.city"
+                name="address.city"
+                value={formData.address.city}
+                onChange={handleInputChange}
+                className="form-control"
+                aria-label="City"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address.state">State</label>
+              <input
+                type="text"
+                id="address.state"
+                name="address.state"
+                value={formData.address.state}
+                onChange={handleInputChange}
+                className="form-control"
+                aria-label="State"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address.zipCode">ZIP Code</label>
+              <input
+                type="text"
+                id="address.zipCode"
+                name="address.zipCode"
+                value={formData.address.zipCode}
+                onChange={handleInputChange}
+                className="form-control"
+                aria-label="ZIP code"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="title">Title/headline</label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                className="form-control"
+                aria-label="Title or headline"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="experience">Experience</label>
+              <div className="select-wrapper">
+                <select
+                  id="experience"
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleInputChange}
+                  className="form-control select"
+                >
+                  <option value="" disabled>Select years of experience</option>
+                  <option value="1">1 year</option>
+                  <option value="2">2 years</option>
+                  <option value="3">3 years</option>
+                  <option value="4">4 years</option>
+                  <option value="5+">5+ years</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="education">Education</label>
+              <div className="select-wrapper">
+                <select
+                  id="education"
+                  name="education"
+                  value={formData.education}
+                  onChange={handleInputChange}
+                  className="form-control select"
+                >
+                  <option value="" disabled>Select education level</option>
+                  <option value="high-school">High School</option>
+                  <option value="bachelors">Bachelor's Degree</option>
+                  <option value="masters">Master's Degree</option>
+                  <option value="phd">PhD</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="website">Personal Website</label>
+              <div className="website-input-wrapper">
+                <span className="website-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2.5 10H17.5" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M10 2.5C12.0711 4.75442 13.1814 7.77534 13.125 10.9375C13.0686 14.0997 11.8577 17.0683 10 19.1875" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M10 2.5C7.92887 4.75442 6.81866 7.77534 6.875 10.9375C6.93134 14.0997 8.14225 17.0683 10 19.1875" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <input
+                  type="url"
+                  id="website"
+                  name="website"
+                  value={formData.website}
+                  onChange={handleInputChange}
+                  className="form-control website-input"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="form-actions">
+            <button type="submit" className="btn-save" disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+
+        <div className="resume-section">
+          <h2 className="section-title">Resumes</h2>
+          <div className="resume-container">
+            <div className="resume-cards">
+              {resumes && resumes.length > 0 ? (
+                resumes.map((resume) => (
+                  <div key={resume._id} className="resume-card">
+                    <div className="resume-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M14 2V8H20" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M16 13H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M16 17H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M10 9H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div className="resume-details">
+                      <h3>{resume.originalName}</h3>
+                      <p>Uploaded on {new Date(resume.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="resume-actions">
+                      <button 
+                        onClick={() => handleViewResume(resume)} 
+                        className="resume-action-btn view-btn"
+                        title="View Resume"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M8 3C4.5 3 1.5 5.5 1.5 8C1.5 10.5 4.5 13 8 13C11.5 13 14.5 10.5 14.5 8C14.5 5.5 11.5 3 8 3ZM8 11.5C5.5 11.5 3.5 9.5 3.5 8C3.5 6.5 5.5 4.5 8 4.5C10.5 4.5 12.5 6.5 12.5 8C12.5 9.5 10.5 11.5 8 11.5Z" fill="currentColor"/>
+                          <path d="M8 5.5C6.5 5.5 5.5 6.5 5.5 8C5.5 9.5 6.5 10.5 8 10.5C9.5 10.5 10.5 9.5 10.5 8C10.5 6.5 9.5 5.5 8 5.5Z" fill="currentColor"/>
+                        </svg>
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteResume(resume._id)} 
+                        className="resume-action-btn delete-btn"
+                        title="Delete Resume"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M13.3333 4H2.66667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M5.33333 4V1.33333C5.33333 0.596954 5.93029 0 6.66667 0H9.33333C10.0697 0 10.6667 0.596954 10.6667 1.33333V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M6.66667 8V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M9.33333 8V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M2 4H14V13.3333C14 13.687 13.8595 14.0261 13.6095 14.2761C13.3594 14.5262 13.0203 14.6667 12.6667 14.6667H3.33333C2.97971 14.6667 2.64057 14.5262 2.39052 14.2761C2.14048 14.0261 2 13.687 2 13.3333V4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))
               ) : (
-                <div className="upload-placeholder">
-                  <div className="upload-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 16V8M12 8L8 12M12 8L16 12" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="browse-text">Browse photo or drop here</p>
-                    <p className="upload-instruction">A photo larger than 400 pixels work best. Max photo size 5 MB.</p>
-                  </div>
+                <div className="no-resumes">
+                  <p>No resumes uploaded yet</p>
                 </div>
               )}
-              <input 
-                type="file" 
-                id="profilePicture" 
-                className="file-input" 
-                accept="image/jpeg,image/jpg,image/png" 
-                onChange={handleImageChange} 
-              />
-            </div>
-          </div>
-          
-          <div className="form-group full-width">
-            <label htmlFor="fullName">Full name</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleInputChange}
-              className="form-control"
-              disabled
-              aria-label="Full name"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              className="form-control"
-              aria-label="Phone number"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="dateOfBirth">Date of Birth</label>
-            <input
-              type="date"
-              id="dateOfBirth"
-              name="dateOfBirth"
-              value={formData.dateOfBirth}
-              onChange={handleInputChange}
-              className="form-control"
-              aria-label="Date of birth"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="address.street">Street Address</label>
-            <input
-              type="text"
-              id="address.street"
-              name="address.street"
-              value={formData.address.street}
-              onChange={handleInputChange}
-              className="form-control"
-              aria-label="Street address"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="address.city">City</label>
-            <input
-              type="text"
-              id="address.city"
-              name="address.city"
-              value={formData.address.city}
-              onChange={handleInputChange}
-              className="form-control"
-              aria-label="City"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="address.state">State</label>
-            <input
-              type="text"
-              id="address.state"
-              name="address.state"
-              value={formData.address.state}
-              onChange={handleInputChange}
-              className="form-control"
-              aria-label="State"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="address.zipCode">ZIP Code</label>
-            <input
-              type="text"
-              id="address.zipCode"
-              name="address.zipCode"
-              value={formData.address.zipCode}
-              onChange={handleInputChange}
-              className="form-control"
-              aria-label="ZIP code"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="title">Title/headline</label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              className="form-control"
-              aria-label="Title or headline"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="experience">Experience</label>
-            <div className="select-wrapper">
-              <select
-                id="experience"
-                name="experience"
-                value={formData.experience}
-                onChange={handleInputChange}
-                className="form-control select"
-              >
-                <option value="" disabled>Select years of experience</option>
-                <option value="1">1 year</option>
-                <option value="2">2 years</option>
-                <option value="3">3 years</option>
-                <option value="4">4 years</option>
-                <option value="5+">5+ years</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="education">Education</label>
-            <div className="select-wrapper">
-              <select
-                id="education"
-                name="education"
-                value={formData.education}
-                onChange={handleInputChange}
-                className="form-control select"
-              >
-                <option value="" disabled>Select education level</option>
-                <option value="high-school">High School</option>
-                <option value="bachelors">Bachelor's Degree</option>
-                <option value="masters">Master's Degree</option>
-                <option value="phd">PhD</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="website">Personal Website</label>
-            <div className="website-input-wrapper">
-              <span className="website-icon">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2.5 10H17.5" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M10 2.5C12.0711 4.75442 13.1814 7.77534 13.125 10.9375C13.0686 14.0997 11.8577 17.0683 10 19.1875" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M10 2.5C7.92887 4.75442 6.81866 7.77534 6.875 10.9375C6.93134 14.0997 8.14225 17.0683 10 19.1875" stroke="#999" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-              <input
-                type="url"
-                id="website"
-                name="website"
-                value={formData.website}
-                onChange={handleInputChange}
-                className="form-control website-input"
-              />
-            </div>
-          </div>
-        </div>
-        
-        <div className="form-actions">
-          <button type="submit" className="btn-save" disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </form>
-
-      <div className="resume-section">
-        <h2 className="section-title">Resumes</h2>
-        <div className="resume-container">
-          <div className="resume-cards">
-            {resumes && resumes.length > 0 ? (
-              resumes.map((resume) => (
-                <div key={resume._id} className="resume-card">
-                  <div className="resume-icon">
+              
+              <div className="add-resume-card">
+                <input
+                  type="file"
+                  id="resumeUpload"
+                  accept=".pdf"
+                  onChange={handleResumeUpload}
+                  className="file-input"
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="resumeUpload" className="add-resume-content">
+                  <div className="add-resume-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M14 2V8H20" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M16 13H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M16 17H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M10 9H8" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M12 5V19M5 12H19" stroke="#0066FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <div className="resume-details">
-                    <h3>{resume.originalName}</h3>
-                    <p>Uploaded on {new Date(resume.createdAt).toLocaleDateString()}</p>
+                  <div className="add-resume-text">
+                    <h3>Add New Resume</h3>
+                    <p>Upload a PDF file (max 5MB)</p>
                   </div>
-                  <div className="resume-actions">
-                    <button 
-                      onClick={() => handleViewResume(resume)} 
-                      className="resume-action-btn view-btn"
-                      title="View Resume"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 3C4.5 3 1.5 5.5 1.5 8C1.5 10.5 4.5 13 8 13C11.5 13 14.5 10.5 14.5 8C14.5 5.5 11.5 3 8 3ZM8 11.5C5.5 11.5 3.5 9.5 3.5 8C3.5 6.5 5.5 4.5 8 4.5C10.5 4.5 12.5 6.5 12.5 8C12.5 9.5 10.5 11.5 8 11.5Z" fill="currentColor"/>
-                        <path d="M8 5.5C6.5 5.5 5.5 6.5 5.5 8C5.5 9.5 6.5 10.5 8 10.5C9.5 10.5 10.5 9.5 10.5 8C10.5 6.5 9.5 5.5 8 5.5Z" fill="currentColor"/>
-                      </svg>
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteResume(resume._id)} 
-                      className="resume-action-btn delete-btn"
-                      title="Delete Resume"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M13.3333 4H2.66667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M5.33333 4V1.33333C5.33333 0.596954 5.93029 0 6.66667 0H9.33333C10.0697 0 10.6667 0.596954 10.6667 1.33333V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M6.66667 8V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M9.33333 8V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M2 4H14V13.3333C14 13.687 13.8595 14.0261 13.6095 14.2761C13.3594 14.5262 13.0203 14.6667 12.6667 14.6667H3.33333C2.97971 14.6667 2.64057 14.5262 2.39052 14.2761C2.14048 14.0261 2 13.687 2 13.3333V4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="no-resumes">
-                <p>No resumes uploaded yet</p>
+                </label>
               </div>
-            )}
-            
-            <div className="add-resume-card">
-              <input
-                type="file"
-                id="resumeUpload"
-                accept=".pdf"
-                onChange={handleResumeUpload}
-                className="file-input"
-                style={{ display: 'none' }}
-              />
-              <label htmlFor="resumeUpload" className="add-resume-content">
-                <div className="add-resume-icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 5V19M5 12H19" stroke="#0066FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <div className="add-resume-text">
-                  <h3>Add New Resume</h3>
-                  <p>Upload a PDF file (max 5MB)</p>
-                </div>
-              </label>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Resume Modal */}
-      {showResumeModal && selectedResume && (
-        <div className="resume-modal-overlay">
-          <div className="resume-modal">
-            <div className="resume-modal-header">
-              <h3>View Resume</h3>
-              <button onClick={handleCloseModal} className="close-modal-btn">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-            <div className="resume-modal-content">
-              <iframe
-                src={selectedResume.url}
-                title="Resume Preview"
-                className="resume-preview"
-                sandbox="allow-same-origin allow-scripts allow-forms"
-                onError={(e) => {
-                  console.error('Resume failed to load:', selectedResume.url);
-                  toast.error('Failed to load resume. The file may be inaccessible.');
-                  handleCloseModal();
-                }}
-              />
+        {/* Resume Modal */}
+        {showResumeModal && selectedResume && (
+          <div className="resume-modal-overlay">
+            <div className="resume-modal">
+              <div className="resume-modal-header">
+                <h3>View Resume</h3>
+                <button onClick={handleCloseModal} className="close-modal-btn">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <div className="resume-modal-content">
+                <iframe
+                  src={selectedResume.url}
+                  title="Resume Preview"
+                  className="resume-preview"
+                  sandbox="allow-same-origin allow-scripts allow-forms"
+                  onError={(e) => {
+                    console.error('Resume failed to load:', selectedResume.url);
+                    toast.error('Failed to load resume. The file may be inaccessible.');
+                    handleCloseModal();
+                  }}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
