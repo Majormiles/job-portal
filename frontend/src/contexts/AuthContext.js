@@ -143,8 +143,14 @@ export const AuthProvider = ({ children }) => {
         // Extract token and user from response - handle both old and new formats
         let token, user;
         
+        // Admin login response format (direct properties)
+        if (credentials.isAdmin) {
+          console.log('Processing admin login response:', response.data);
+          token = response.data.token;
+          user = response.data.user || {};
+        }
         // New response format (data property containing user and token)
-        if (response.data.data && response.data.data.token) {
+        else if (response.data.data && response.data.data.token) {
           token = response.data.data.token;
           user = response.data.data.user || {};
         } 
@@ -162,6 +168,13 @@ export const AuthProvider = ({ children }) => {
         // For admin login, don't check email verification and store separately
         if (credentials.isAdmin) {
           console.log('Admin login successful, storing admin token');
+          
+          // Verify the user has admin role
+          if (user.role !== 'admin') {
+            console.error('User does not have admin role:', user);
+            throw new Error('Unauthorized. Admin access denied.');
+          }
+          
           localStorage.setItem('adminToken', token);
           return {
             success: true,

@@ -481,11 +481,39 @@ const login = async (req, res) => {
 
     console.log(`User found with email: ${email}, role: ${user.role}, isVerified: ${user.isVerified}`);
 
+    // For admin login, check if user has admin role first
+    if (isAdmin) {
+      console.log(`Admin login attempt for user: ${email}, role: ${user.role}`);
+      if (user.role !== 'admin') {
+        console.log(`Admin access denied for user: ${email} (role: ${user.role})`);
+        return res.status(401).json({
+          success: false,
+          message: 'Unauthorized. Admin access denied.'
+        });
+      }
+    }
+
     // Check if password matches
     let isMatch = false;
     try {
-      // Check if we need to use comparePassword or matchPassword
-      if (typeof user.comparePassword === 'function') {
+      // Special handling for admin logins to make sure password check works
+      if (isAdmin) {
+        console.log('Admin login attempt, performing direct password verification');
+        
+        // For admin login, use bcrypt directly to compare password
+        if (user.password) {
+          isMatch = await bcrypt.compare(password, user.password);
+          console.log(`Admin password check result: ${isMatch ? 'PASSED' : 'FAILED'}`);
+        } else {
+          console.error('Admin user has no password field');
+          return res.status(500).json({
+            success: false,
+            message: 'Admin user has invalid configuration'
+          });
+        }
+      } 
+      // Regular user login flow
+      else if (typeof user.comparePassword === 'function') {
         isMatch = await user.comparePassword(password);
       } else if (typeof user.matchPassword === 'function') {
         isMatch = await user.matchPassword(password);
@@ -513,15 +541,6 @@ const login = async (req, res) => {
     }
 
     console.log(`Password matches for user: ${email}`);
-
-    // If admin login is requested, check if user has admin role
-    if (isAdmin && user.role !== 'admin') {
-      console.log(`Admin access denied for user: ${email} (role: ${user.role})`);
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized. Admin access denied.'
-      });
-    }
 
     // Check if email is verified (skip for admin users)
     if (!user.isVerified && !isAdmin) {
@@ -560,6 +579,16 @@ const login = async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
+    // For admin login, use a simpler response format
+    if (isAdmin) {
+      return res.status(200).json({
+        success: true,
+        token,
+        user: safeUserObj
+      });
+    }
+
+    // Regular user response
     res.status(200).json({
       success: true,
       data: {
