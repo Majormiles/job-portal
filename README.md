@@ -2,6 +2,12 @@
 
 This is a full-stack job portal application with a React frontend and Node.js/Express backend.
 
+## Project Status
+
+⚠️ **DEVELOPMENT IN PROGRESS**
+
+This application is currently under active development. Features may be incomplete, and breaking changes are expected. The application is not yet ready for production use.
+
 ## Project Structure
 
 - `frontend/` - React frontend application
@@ -118,3 +124,13 @@ Or navigate back to the root directory:
 cd ..
 npm start
 ```
+
+## Developer
+
+This application was developed by Major Myles.
+
+## License
+
+© 2025 Major Myles. All Rights Reserved.
+
+This software is the property of Major Myles and is protected by copyright law. Unauthorized reproduction or distribution of this software, or any portion of it, may result in severe civil and criminal penalties.
