@@ -1,7 +1,18 @@
 import React, { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import jobsearchImage from '../../assets/images/woman.jpg';
 import '../css/About.css';
+
+// ScrollToTop component to handle scrolling on route change
+const RouterScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
 
 // Icon components
 const UserIcon = () => (
@@ -121,6 +132,7 @@ const JobPortal = () => {
 
     return (
         <div className="job-portal-container">
+            <RouterScrollToTop />
             {/* Hero Section */}
             <section className="about-hero-section" ref={heroRef}>
                 <div className="container">

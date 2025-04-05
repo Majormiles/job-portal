@@ -11,6 +11,17 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import GoogleOAuthButton from '../components/GoogleOAuthButton';
 
+// ScrollToTop component to handle scrolling on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -156,6 +167,7 @@ const LoginPage = () => {
 
   return (
     <div className="flex bg-[#fff] flex-col md:flex-row min-h-screen">
+      <ScrollToTop />
       {/* Left Section - Login Form */}
       <div className="w-full md:w-2/3 flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-sm sm:max-w-md">

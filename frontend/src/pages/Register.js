@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import registerImage1 from '../assets/images/login.png';
 import registerImage2 from '../assets/images/happybusiness-woman2.jpg';
@@ -7,6 +7,17 @@ import registerImage3 from '../assets/images/pexels.jpg';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import GoogleOAuthButton from '../components/GoogleOAuthButton';
+
+// ScrollToTop component to handle scrolling on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -174,6 +185,7 @@ const RegisterPage = () => {
 
   return (
     <div className="flex bg-[#fff] flex-col md:flex-row min-h-screen">
+      <ScrollToTop />
       {/* Left Section - Registration Form */}
       <div className="w-full md:w-2/3 flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-sm sm:max-w-md">
