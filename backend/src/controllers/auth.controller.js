@@ -295,57 +295,159 @@ const resendVerification = async (req, res) => {
 const googleLogin = async (req, res) => {
   try {
     const { tokenId } = req.body;
+    
+    console.log('Google OAuth login attempt with tokenId:', tokenId ? 'Present (length: ' + tokenId.length + ')' : 'Missing');
 
-    // Verify Google token
-    const ticket = await client.verifyIdToken({
-      idToken: tokenId,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
-
-    const { email_verified, email, name, picture, sub: googleId } = ticket.getPayload();
-
-    // Check if user exists
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      // Create new user if doesn't exist
-      user = await User.create({
-        name,
-        email,
-        googleId,
-        isVerified: email_verified,
-        profilePicture: picture
+    if (!tokenId) {
+      return res.status(400).json({
+        success: false,
+        message: 'No token ID provided'
       });
-    } else if (!user.googleId) {
-      // Link Google account to existing user
-      user.googleId = googleId;
-      await user.save();
     }
 
-    // Generate token
-    const token = generateToken(user._id);
-    
-    // Remove password from response
-    user.password = undefined;
+    try {
+      // Verify Google token
+      console.log('Verifying token with Google...');
+      console.log('Using client ID:', process.env.GOOGLE_CLIENT_ID);
+      
+      const ticket = await client.verifyIdToken({
+        idToken: tokenId,
+        audience: process.env.GOOGLE_CLIENT_ID
+      });
 
-    // Set token in cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
+      const payload = ticket.getPayload();
+      console.log('Token verified successfully. Payload received with email:', payload.email);
+      
+      const { email_verified, email, name, picture, sub: googleId } = payload;
 
-    res.json({
-      success: true,
-      token,
-      user
-    });
+      // Check if user exists
+      console.log('Checking if user exists with email:', email);
+      let user = await User.findOne({ email });
+
+      if (!user) {
+        // Create new user if doesn't exist
+        console.log('User not found, creating new user with email:', email);
+        try {
+          // Validate required fields for new user
+          if (!name) {
+            throw new Error('Name is required but not provided by Google');
+          }
+          if (!email) {
+            throw new Error('Email is required but not provided by Google');
+          }
+          if (!googleId) {
+            throw new Error('Google ID is required but not provided');
+          }
+
+          // Create a new user with bare minimum required fields
+          const newUser = {
+            name,
+            email,
+            googleId,
+            isVerified: email_verified || true, // Default to true if not provided
+            profilePicture: picture || undefined
+          };
+          
+          console.log('Creating new user with data:', { 
+            name, 
+            email, 
+            googleId: googleId ? 'Present' : 'Missing',
+            isVerified: email_verified || true,
+            profilePicture: picture ? 'Present' : 'Missing'
+          });
+
+          user = await User.create(newUser);
+          console.log('New user created successfully with ID:', user._id);
+        } catch (createError) {
+          console.error('Error creating new user:', createError);
+          console.error('Error details:', createError.stack);
+          
+          if (createError.name === 'ValidationError') {
+            // Handle mongoose validation errors
+            const validationErrors = Object.values(createError.errors)
+              .map(err => err.message)
+              .join(', ');
+              
+            return res.status(400).json({
+              success: false,
+              message: 'Validation failed when creating new user',
+              error: validationErrors,
+              details: createError.errors
+            });
+          }
+          
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to create new user',
+            error: createError.message,
+            details: createError.stack
+          });
+        }
+      } else {
+        console.log('User found with ID:', user._id);
+        if (!user.googleId) {
+          // Link Google account to existing user
+          console.log('Linking Google account to existing user');
+          user.googleId = googleId;
+          await user.save();
+        }
+      }
+
+      // Generate token
+      console.log('Generating JWT token for user:', user._id);
+      const token = generateToken(user._id);
+      
+      // Remove password from response
+      user.password = undefined;
+
+      // Set token in cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      });
+
+      console.log('Google OAuth login successful for user:', user.email);
+      return res.status(200).json({
+        success: true,
+        token,
+        user
+      });
+    } catch (verificationError) {
+      console.error('Error verifying Google token:', verificationError);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired Google token',
+        error: verificationError.message
+      });
+    }
   } catch (error) {
-    res.status(500).json({
+    console.error('Uncaught error in Google login:', error);
+    
+    // Check for specific MongoDB/Mongoose errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        error: error.message,
+        details: error.errors
+      });
+    }
+    
+    if (error.name === 'MongoServerError' && error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email already exists',
+        error: 'Duplicate key error'
+      });
+    }
+    
+    return res.status(500).json({
       success: false,
       message: 'Error with Google login',
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

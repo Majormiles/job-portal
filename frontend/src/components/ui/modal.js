@@ -41,7 +41,7 @@ export const Modal = ({
     };
   }, [isOpen, onClose]);
 
-  // Don't render anything if not open - move this after all hooks are defined
+  // Don't render anything if not open - moved after all hooks are defined
   if (!isOpen) return null;
 
   // Handle backdrop click

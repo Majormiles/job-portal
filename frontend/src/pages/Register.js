@@ -67,18 +67,68 @@ const RegisterPage = () => {
         g_csrf_token: response.g_csrf_token
       });
 
-      const result = await login({ tokenId: response.credential });
-      
-      if (!result || !result.user) {
-        throw new Error('Invalid registration response');
-      }
+      // Show a loading toast during registration
+      const loadingToastId = toast.loading('Creating your account...');
 
-      // Redirect to onboarding
-      navigate('/onboarding/personal-info', { replace: true });
-      toast.success('Registration successful! Please complete your profile.');
+      try {
+        const result = await login({ tokenId: response.credential });
+        
+        toast.dismiss(loadingToastId);
+        
+        if (!result || !result.user) {
+          throw new Error('Invalid registration response');
+        }
+
+        // Redirect to onboarding
+        navigate('/onboarding/personal-info', { replace: true });
+        toast.success('Registration successful! Please complete your profile.');
+      } catch (apiError) {
+        toast.dismiss(loadingToastId);
+        console.error('API error during Google registration:', apiError);
+        
+        // Handle specific backend errors
+        if (apiError.response) {
+          const { status, data } = apiError.response;
+          
+          if (status === 401) {
+            setError('Authentication failed. Please try again with a different Google account.');
+            toast.error('Authentication failed. Please try again.');
+          } else if (status === 409) {
+            setError('An account with this email already exists. Please log in instead.');
+            toast.error('Account already exists. Please log in.');
+          } else if (status === 500) {
+            // Get the detailed error message from the response if available
+            const errorMsg = data.message || 'Server error';
+            const detailedError = data.error || '';
+            
+            console.error('Server error details:', {
+              message: errorMsg,
+              error: detailedError,
+              details: data.details || {}
+            });
+            
+            setError(`Server error: ${errorMsg}${detailedError ? ': ' + detailedError : ''}`);
+            
+            // Show a more user-friendly error message in the toast
+            toast.error('We encountered an issue creating your account. Please try again later or use email registration instead.');
+          } else if (status === 400) {
+            // For validation errors
+            const errorMsg = data.error || data.message || 'Validation error';
+            setError(`Error: ${errorMsg}`);
+            toast.error(errorMsg);
+          } else {
+            setError(data.message || 'Failed to register with Google');
+            toast.error(data.message || 'Registration failed. Please try again.');
+          }
+        } else {
+          // Network or other client-side errors
+          setError('Network error. Please check your connection and try again.');
+          toast.error('Network error. Please try again.');
+        }
+      }
     } catch (error) {
       console.error('Google registration error:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to register with Google';
+      const errorMessage = error.message || 'Failed to register with Google';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

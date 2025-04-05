@@ -728,31 +728,38 @@ const PersonalSettings = () => {
         console.log('Parsed Cloudinary URL:', { cloudName, version, filePath });
         
         // Different possible URL formats to try
+        const authTimestamp = Math.floor(Date.now() / 1000); // Current time in seconds
+        
         let urls = {
           // Direct URL - may hit 401 but works sometimes
           direct: resumeUrl,
           
-          // Add fl_attachment for downloading
+          // Add fl_attachment for downloading - often bypasses authentication issues
           download: resumeUrl.replace('/upload/', '/upload/fl_attachment/'),
           
-          // Try a public link that might bypass CORS
-          publicView: `https://res.cloudinary.com/${cloudName}/image/upload/v${version}/${filePath}`,
+          // Try a raw access URL rather than upload
+          rawAccess: resumeUrl.replace('/upload/', '/raw/upload/'),
           
-          // Add fl_attachment for downloading with public link
-          publicDownload: `https://res.cloudinary.com/${cloudName}/image/upload/fl_attachment/v${version}/${filePath}`
+          // Try the PDF-specific URL format with auto format flag
+          pdfView: resumeUrl.replace('/upload/', '/upload/fl_attachment,fl_document/'),
+          
+          // Try a URL with a cache-buster token
+          cacheBuster: `${resumeUrl}?t=${authTimestamp}`,
+          
+          // Try a simplified URL structure that might work better
+          simplified: `https://res.cloudinary.com/${cloudName}/raw/upload/v${version}/${filePath}`
         };
         
-        console.log('Generated Cloudinary URLs:', urls);
+        console.log('Generated Cloudinary URLs to try:', urls);
         
-        // Store the URLs for the modal to try
+        // Store the URLs for the modal to try in sequence if primary fails
         setSelectedResume({
           ...resume,
-          url: urls.direct,
-          downloadUrl: urls.download,
-          publicViewUrl: urls.publicView,
-          publicDownloadUrl: urls.publicDownload,
+          url: urls.direct, // Try direct URL first
+          downloadUrl: urls.download, // Prioritize fl_attachment URL for download
+          fallbackUrls: [urls.rawAccess, urls.pdfView, urls.simplified, urls.cacheBuster], // Alternative URLs to try if direct fails
           isCloudinary: true,
-          isAccessible: true // Assume accessible, and handle errors in the iframe
+          isAccessible: true // Assume accessible, will handle errors in iframe
         });
       } catch (err) {
         console.error('Error parsing Cloudinary URLs:', err);
@@ -1385,14 +1392,19 @@ const PersonalSettings = () => {
                           console.error("PDF iframe load error:", e);
                           setIsPdfLoading(false);
                           
-                          // Try alternate URL for Cloudinary if direct URL fails
-                          if (selectedResume.isCloudinary && selectedResume.publicViewUrl) {
-                            console.log("Attempting to load PDF with alternate URL:", selectedResume.publicViewUrl);
-                            e.target.src = selectedResume.publicViewUrl;
-                          } else {
-                            e.target.style.display = 'none';
-                            document.getElementById('pdf-fallback').style.display = 'block';
+                          // First try alternate URLs if we have any
+                          if (selectedResume.isCloudinary && selectedResume.fallbackUrls && selectedResume.fallbackUrls.length > 0) {
+                            const nextUrl = selectedResume.fallbackUrls.shift();
+                            console.log("Primary URL failed. Trying alternate URL:", nextUrl);
+                            if (nextUrl) {
+                              e.target.src = nextUrl;
+                              return; // Don't show fallback yet, try the next URL
+                            }
                           }
+                          
+                          // If we've tried all URLs or there are none, show fallback
+                          e.target.style.display = 'none';
+                          document.getElementById('pdf-fallback').style.display = 'block';
                         }}
                       />
                     </div>
@@ -1404,28 +1416,32 @@ const PersonalSettings = () => {
                           </svg>
                         </div>
                         <h3 className="font-bold text-lg mb-2">PDF Viewer Not Available</h3>
-                        <p>Unable to display the PDF in the embedded viewer.</p>
+                        <p>Unable to display the PDF in the embedded viewer due to security restrictions from Cloudinary.</p>
                         <div className="mt-4">
-                          <p>Please try one of these options instead:</p>
-                          <div className="flex justify-center mt-2 space-x-3">
+                          <p>Please use one of these options instead:</p>
+                          <div className="flex flex-wrap justify-center mt-2 gap-3">
                             {selectedResume.isCloudinary ? (
                               <>
                                 <a 
                                   href={selectedResume.downloadUrl} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
                                 >
-                                  Direct Link
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                  </svg>
+                                  Download PDF
                                 </a>
-                                <a 
-                                  href={selectedResume.publicDownloadUrl || selectedResume.publicViewUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                                <button 
+                                  onClick={() => window.open(selectedResume.downloadUrl, '_blank')}
+                                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
                                 >
-                                  Public Link
-                                </a>
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                  Open in New Tab
+                                </button>
                               </>
                             ) : (
                               <a 
@@ -1433,17 +1449,18 @@ const PersonalSettings = () => {
                                 download={selectedResume.originalName || "resume.pdf"}
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
                               >
-                                Download
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download PDF
                               </a>
                             )}
-                            <button 
-                              onClick={() => window.open(selectedResume.url, '_blank')}
-                              className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
-                            >
-                              View in browser
-                            </button>
+                          </div>
+                          <div className="mt-4 bg-blue-50 p-3 rounded-lg">
+                            <p className="text-sm text-blue-800 mb-2"><strong>Note:</strong> Cloudinary PDFs may require direct download due to security restrictions.</p>
+                            <p className="text-sm text-blue-800">This is a known limitation with their service for PDF files.</p>
                           </div>
                         </div>
                       </div>

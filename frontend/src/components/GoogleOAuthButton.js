@@ -24,8 +24,16 @@ const GoogleOAuthButton = ({ onSuccess, buttonId = 'google-login-button', button
       try {
         window.google.accounts.id.renderButton(
           document.getElementById(buttonId),
-          { theme: 'outline', size: 'large', width: '100%' }
+          { 
+            theme: 'outline', 
+            size: 'large', 
+            width: 300,
+            type: 'standard',
+            text: 'continue_with',
+            shape: 'rectangular'
+          }
         );
+        console.log('Google sign-in button rendered successfully');
       } catch (error) {
         console.error('Error rendering Google button:', error);
         if (retryCount < maxRetries) {
@@ -47,13 +55,13 @@ const GoogleOAuthButton = ({ onSuccess, buttonId = 'google-login-button', button
   }, [error]);
 
   return (
-    <div className="w-full">
+    <div className="w-full flex justify-center">
       {isLoading ? (
         <div className="w-full py-2.5 sm:py-3 px-4 text-sm sm:text-base text-gray-600 rounded-md font-medium text-center">
           Loading Google sign-in...
         </div>
       ) : (
-        <div id={buttonId} className="w-full"></div>
+        <div id={buttonId} className="google-login-button"></div>
       )}
     </div>
   );
