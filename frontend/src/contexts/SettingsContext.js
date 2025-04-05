@@ -107,11 +107,27 @@ export const SettingsProvider = ({ children }) => {
     try {
       setIsSaving(true);
       
+      // Log for debugging
+      console.log(`SettingsContext: Updating ${section} with:`, data);
+      
       // Update local state optimistically
-      setSettingsData(prev => ({
-        ...prev,
-        [section]: { ...prev[section], ...data }
-      }));
+      setSettingsData(prev => {
+        let updatedState = { ...prev };
+        
+        if (section === 'jobAlerts') {
+          // Ensure job alerts are properly set with defaults for missing values
+          updatedState.jobAlerts = {
+            role: data.role || prev.jobAlerts?.role || '',
+            location: data.location || prev.jobAlerts?.location || ''
+          };
+          console.log('SettingsContext: Updated jobAlerts state:', updatedState.jobAlerts);
+        } else {
+          // Regular update for other sections
+          updatedState[section] = { ...prev[section], ...data };
+        }
+        
+        return updatedState;
+      });
       
       // Prepare data for API
       let settingsData = {};
@@ -148,9 +164,13 @@ export const SettingsProvider = ({ children }) => {
         case 'jobAlerts':
           settingsData = {
             settings: {
-              jobAlerts: data
+              jobAlerts: {
+                role: data.role || '',
+                location: data.location || ''
+              }
             }
           };
+          console.log('SettingsContext: Sending jobAlerts data to API:', settingsData);
           break;
         case 'socialLinks':
           settingsData = {
@@ -165,6 +185,7 @@ export const SettingsProvider = ({ children }) => {
       const response = await updateUserSettings(settingsData);
       
       if (response && response.success) {
+        console.log(`SettingsContext: ${section} updated successfully`);
         // Refresh all settings to ensure consistency
         await fetchAllSettings();
         return true;

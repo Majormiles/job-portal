@@ -25,12 +25,12 @@ const countryCodes = {
 };
 
 const AccountSettings = () => {
-  const { user } = useAuth();
+  const { user, api } = useAuth();
   const { 
     contactInfo,
     notificationPreferences,
     privacySettings,
-    jobAlerts,
+    jobAlerts = { role: '', location: '' },
     loading,
     isSaving,
     updateSettings,
@@ -65,6 +65,22 @@ const AccountSettings = () => {
     }
   }, [user, contactInfo]);
 
+  // Add effect to ensure job alerts are properly initialized from the user's data
+  useEffect(() => {
+    if (user && user.settings?.jobAlerts) {
+      console.log('Initializing job alerts from user settings:', user.settings.jobAlerts);
+      updateSettings('jobAlerts', user.settings.jobAlerts);
+    } else if (user && user.onboardingData?.preferences?.data?.jobPreferences) {
+      // Fallback to onboarding data if settings don't have job alerts
+      const { desiredRole, desiredLocation } = user.onboardingData.preferences.data.jobPreferences;
+      console.log('Initializing job alerts from onboarding data:', { role: desiredRole, location: desiredLocation });
+      updateSettings('jobAlerts', { 
+        role: desiredRole || '',
+        location: desiredLocation || ''
+      });
+    }
+  }, [user]);
+
   const checkSettingsCompletion = (userData) => {
     // Check if essential settings are completed
     return !!(
@@ -84,8 +100,14 @@ const AccountSettings = () => {
   };
 
   const handleJobAlertsChange = (field, value) => {
-    console.log(`Updating job alerts ${field} to: ${value}`);
-    updateSettings('jobAlerts', { ...jobAlerts, [field]: value });
+    console.log(`Updating job alerts ${field} to: "${value}"`);
+    // Create a new object with the updated field to ensure React detects the change
+    const updatedJobAlerts = { 
+      ...jobAlerts, 
+      [field]: value 
+    };
+    console.log('New job alerts state:', updatedJobAlerts);
+    updateSettings('jobAlerts', updatedJobAlerts);
   };
 
   const handlePrivacyChange = (field, value) => {
@@ -105,6 +127,10 @@ const AccountSettings = () => {
       // Use the optimistic updates in the updateSettings function
       const fullPhoneNumber = contactInfo.phoneCode + ' ' + contactInfo.phoneNumber.trim();
       
+      // Ensure all objects exist with defaults if needed
+      const currentJobAlerts = jobAlerts || { role: '', location: '' };
+      console.log('Saving job alerts:', currentJobAlerts);
+      
       const settingsData = {
         contact: {
           mapLocation: contactInfo.mapLocation,
@@ -114,15 +140,24 @@ const AccountSettings = () => {
         settings: {
           notifications: notificationPreferences,
           privacy: privacySettings,
-          jobAlerts: jobAlerts
+          jobAlerts: {
+            role: currentJobAlerts.role || '',
+            location: currentJobAlerts.location || ''
+          }
         }
       };
+      
+      console.log('Saving complete settings data:', settingsData);
       
       // Use a single update call with combined data
       const success = await updateSettings('combined', settingsData);
       
       if (success) {
         toast.success('Settings saved successfully!');
+        console.log('Settings saved successfully, refreshing data...');
+        
+        // Refresh settings to ensure UI is in sync with server data
+        refreshSettings();
       }
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -186,13 +221,13 @@ const AccountSettings = () => {
     }
     
     try {
-      // Use the optimistic updates in the updateSettings function
-      const response = await updateSettings('delete', { email: deleteConfirmation.email });
+      // Call the delete endpoint directly using the API from context
+      const response = await api.delete('/users/me');
       
-      if (response.success) {
+      if (response.data.success) {
         toast.success('Account deleted successfully');
         
-        // Redirect to login page or home
+        // Redirect to login page and clear storage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
@@ -379,14 +414,13 @@ const AccountSettings = () => {
               <label className="block text-sm text-gray-700 mb-1">Desired Job Role</label>
               <input
                 type="text"
-                value={jobAlerts.role}
+                value={jobAlerts?.role || ''}
                 onChange={(e) => handleJobAlertsChange('role', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g. Software Engineer, Project Manager"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter job titles that interest you to receive relevant alerts{' '}
-                {jobAlerts.role && <span className="italic">Currently: {jobAlerts.role}</span>}
+                Enter job titles that interest you to receive relevant alerts
               </p>
             </div>
             
@@ -394,14 +428,13 @@ const AccountSettings = () => {
               <label className="block text-sm text-gray-700 mb-1">Desired Location</label>
               <input
                 type="text"
-                value={jobAlerts.location}
+                value={jobAlerts?.location || ''}
                 onChange={(e) => handleJobAlertsChange('location', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g. Accra, Remote"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter locations where you'd like to work{' '}
-                {jobAlerts.location && <span className="italic">Currently: {jobAlerts.location}</span>}
+                Enter locations where you'd like to work
               </p>
             </div>
           </div>

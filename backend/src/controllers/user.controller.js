@@ -156,7 +156,7 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/users/settings
 // @access  Private
 export const updateUserSettings = asyncHandler(async (req, res, next) => {
-  console.log('Updating user settings with data:', req.body);
+  console.log('Updating user settings with data:', JSON.stringify(req.body, null, 2));
   
   try {
     const userId = req.user.id;
@@ -236,14 +236,17 @@ export const updateUserSettings = asyncHandler(async (req, res, next) => {
       
       // Handle job alerts settings
       if (req.body.settings.jobAlerts) {
+        console.log('Received job alerts update:', req.body.settings.jobAlerts);
         fieldsToUpdate.settings.jobAlerts = {
           ...(fieldsToUpdate.settings.jobAlerts || {}),
-          ...req.body.settings.jobAlerts
+          role: req.body.settings.jobAlerts.role || '',
+          location: req.body.settings.jobAlerts.location || ''
         };
+        console.log('Updated job alerts field:', fieldsToUpdate.settings.jobAlerts);
       }
     }
     
-    console.log('Fields to update:', fieldsToUpdate);
+    console.log('Fields to update:', JSON.stringify(fieldsToUpdate, null, 2));
     
     // Update the user data
     const updatedUser = await User.findByIdAndUpdate(userId, fieldsToUpdate, {
