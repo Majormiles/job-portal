@@ -236,15 +236,71 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await api.post('/auth/register', userData);
+      let response;
+      
+      if (userData.tokenId) {
+        // Google OAuth registration
+        console.log('Attempting Google OAuth registration');
+        response = await api.post('/auth/google', {
+          tokenId: userData.tokenId
+        });
+      } else {
+        // Regular registration
+        console.log('Attempting regular registration');
+        response = await api.post('/auth/register', userData);
+      }
+
+      console.log('Registration response:', {
+        success: response.data.success,
+        hasData: !!response.data.data,
+        hasToken: !!(response.data.token || (response.data.data && response.data.data.token)),
+        responseStructure: response.data
+      });
 
       if (response.data.success) {
-        const { token, user } = response.data;
-        localStorage.setItem('token', token);
+        // Extract token and user from response - handle both old and new formats
+        let token, user;
+        
+        // New response format (data property containing user and token)
+        if (response.data.data && response.data.data.token) {
+          token = response.data.data.token;
+          user = response.data.data.user || {};
+        } 
+        // Old response format (direct token and user properties)
+        else if (response.data.token) {
+          token = response.data.token;
+          user = response.data.user || {};
+        }
+        // Regular registration format (no token, just user)
+        else if (response.data.user) {
+          user = response.data.user;
+          // For regular registration, we don't get a token immediately
+          // as the user needs to verify their email first
+          token = null;
+        }
+        // Unexpected format
+        else {
+          console.error('Invalid response format - missing user:', response.data);
+          throw new Error('Invalid response format from server');
+        }
+
+        // Store token and update state if we have a token
+        if (token) {
+          localStorage.setItem('token', token);
+          setToken(token);
+          setIsAuthenticated(true);
+        }
+        
+        // Always update user state
         setUser(user);
-        setToken(token);
-        setIsAuthenticated(true);
-        return response.data;
+        
+        return {
+          success: true,
+          token,
+          user
+        };
+      } else {
+        throw new Error(response.data.message || 'Registration failed');
       }
     } catch (error) {
       console.error('Register error:', error);

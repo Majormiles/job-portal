@@ -1,80 +1,109 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Bookmark } from 'lucide-react';
 import '../css/JobListings.css';
-
 
 const JobListings = () => {
   // Sample job data based on the image
   const [jobs, setJobs] = useState([
     {
       id: 1,
-      title: "Forward Security Director",
-      company: "Bauch, Schuppe and Schulist Co",
-      category: "Hotels & Tourism",
-      jobType: "Full time",
-      salary: "$40000-$42000",
-      location: "Northern Region, Ghana",
-      postedAgo: "10 min ago",
-      logo: "logo-placeholder-1.png"
+      title: "Senior UI/UX Designer",
+      company: "Amazon",
+      date: "20 May, 2023",
+      tags: ["Part time", "Senior level", "Distant"],
+      workType: "Project work",
+      salary: "$250/hr",
+      location: "San Francisco, CA",
+      logoText: "a", // Amazon logo placeholder
+      bookmarked: false
     },
     {
       id: 2,
-      title: "Regional Creative Facilitator",
-      company: "Wisozk - Becker Co",
-      category: "Media",
-      jobType: "Part time",
-      salary: "$28000-$32000",
-      location: "Greater Accra, Ghana",
-      postedAgo: "12 min ago",
-      logo: "logo-placeholder-2.png"
+      title: "Junior UI/UX Designer",
+      company: "Google",
+      date: "4 Feb, 2023",
+      tags: ["Full time", "Junior level", "Distant"],
+      workType: ["Project work", "Flexible Schedule"],
+      salary: "$150/hr",
+      location: "California, CA",
+      logoText: "G", // Google logo placeholder
+      bookmarked: true
     },
     {
       id: 3,
-      title: "Internal Integration Planner",
-      company: "Mraz, Quigley and Feast Inc.",
-      category: "Construction",
-      jobType: "Full time",
-      salary: "$48000-$50000",
-      location: "Volta Region, Ghana",
-      postedAgo: "15 min ago",
-      logo: "logo-placeholder-3.png"
+      title: "Senior Motion Designer",
+      company: "Dribbble",
+      date: "29 Jan, 2023",
+      tags: ["Part time", "Senior level", "Full Day"],
+      workType: "Shift work",
+      salary: "$260/hr",
+      location: "New York, NY",
+      logoText: "D", // Dribbble logo placeholder
+      bookmarked: false
     },
     {
       id: 4,
-      title: "District Intranet Director",
-      company: "VonRueden - Weber Co",
-      category: "Commerce",
-      jobType: "Full time",
-      salary: "$42000-$48000",
-      location: "Ashanti Region, Ghana",
-      postedAgo: "24 min ago",
-      logo: "logo-placeholder-4.png"
+      title: "UX Designer",
+      company: "Twitter",
+      date: "11 Apr, 2023",
+      tags: ["Full time", "Middle level", "Distant"],
+      workType: "Project work",
+      salary: "$120/hr",
+      location: "California, CA",
+      logoText: "t", // Twitter logo placeholder
+      bookmarked: false
     },
     {
       id: 5,
-      title: "Corporate Tactics Facilitator",
-      company: "Cormier, Turner and Flatley Inc",
-      category: "Commerce",
-      jobType: "Full time",
-      salary: "$38000-$40000",
-      location: "Greater Accra, Ghana",
-      postedAgo: "26 min ago",
-      logo: "logo-placeholder-5.png"
+      title: "Graphic Designer",
+      company: "Airbnb",
+      date: "2 Apr, 2023",
+      tags: ["Part time", "Senior level"],
+      workType: "",
+      salary: "$300/hr",
+      location: "New York, NY",
+      logoText: "a", // Airbnb logo placeholder
+      bookmarked: false
     },
     {
       id: 6,
-      title: "Forward Accounts Consultant",
-      company: "Miller Group",
-      category: "Financial services",
-      jobType: "Full time",
-      salary: "$45000-$48000",
-      location: "Greater Accra, Ghana",
-      postedAgo: "30 min ago",
-      logo: "logo-placeholder-6.png"
+      title: "Graphic Designer",
+      company: "Apple",
+      date: "18 Jan, 2023",
+      tags: ["Part time", "Distant"],
+      workType: "",
+      salary: "$140/hr",
+      location: "San Francisco, CA",
+      logoText: "a", // Apple logo placeholder
+      bookmarked: false
     }
   ]);
 
+  // Get company-specific styles for logos
+  const getCompanyLogoStyle = (company) => {
+    const logoStyles = {
+      'Amazon': { background: '#FFF1E6', color: '#000', borderRadius: '4px' },
+      'Google': { background: '#E6F7F1', color: '#000', borderRadius: '50%' },
+      'Dribbble': { background: '#F3E6F7', color: '#EA4C89', borderRadius: '50%' },
+      'Twitter': { background: '#E6F2FF', color: '#1DA1F2', borderRadius: '50%' },
+      'Airbnb': { background: '#FFE6EC', color: '#FF5A5F', borderRadius: '50%' },
+      'Apple': { background: '#F5F5F7', color: '#000', borderRadius: '50%' }
+    };
+    
+    return logoStyles[company] || { background: '#f0f0f0', color: '#333', borderRadius: '4px' };
+  };
+
+  // Function to toggle bookmark status
+  const toggleBookmark = (id) => {
+    setJobs(
+      jobs.map(job => 
+        job.id === id ? { ...job, bookmarked: !job.bookmarked } : job
+      )
+    );
+  };
+
+  // Rest of your existing code...
   // Filter categories with counts
   const categories = [
     { name: "Commerce", count: 10 },
@@ -120,24 +149,19 @@ const JobListings = () => {
 
   // Handle job details button click
   const handleJobDetailsClick = () => {
-    // You can add navigation logic here if needed
-    // For example: navigate(`/job-details/${jobId}`);
-
-    // Scroll to top
     scrollToTop();
   };
 
   // Handle pagination click
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // The useEffect above will handle scrolling to the top
   };
 
   // Handle sticky behavior
   useEffect(() => {
     const handleScroll = () => {
       const offset = window.scrollY;
-      setIsSticky(offset > 100); // Start sticking after scrolling 100px
+      setIsSticky(offset > 100);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -155,7 +179,7 @@ const JobListings = () => {
       </button>
 
       <div className="job-listings-content">
-        {/* Left sidebar with filters */}
+        {/* Left sidebar with filters - same as before */}
         <div
           className={`filters-sidebar ${showFilters ? 'show' : ''} ${isSticky ? 'sticky' : ''}`}
           style={{
@@ -168,6 +192,7 @@ const JobListings = () => {
             scrollbarColor: '#D3D3D3 transparent' 
           }}
         >
+          {/* Filter sections remain the same */}
           {/* Search by job title */}
           <div className="filter-section">
             <h3 className="filter-title">Search by Job Title</h3>
@@ -260,7 +285,7 @@ const JobListings = () => {
           </div>
         </div>
 
-        {/* Right side job listings */}
+        {/* Right side job listings - REDESIGNED */}
         <div className="job-listings-results">
           {/* Results header */}
           <div className="results-header">
@@ -274,44 +299,65 @@ const JobListings = () => {
             </div>
           </div>
 
-          {/* Job listings */}
-          <div className="jobs-container">
+          {/* REDESIGNED job cards grid */}
+          <div className="job-cards-grid">
             {jobs.map((job) => (
-              <div key={job.id} className="job-card">
-                <div className="job-card-left">
-                  <div className="job-posted-time">{job.postedAgo}</div>
-                  <div className="job-header">
-                    <div className="job-logo">
-                      <div className="logo-placeholder"></div>
-                    </div>
-                    <div className="job-title-company">
-                      <h3 className="job-title">{job.title}</h3>
-                      <p className="company-name">{job.company}</p>
-                    </div>
+              <div key={job.id} className="job-card-modern">
+                {/* Date and bookmark row */}
+                <div className="job-card-header">
+                  <div className="job-date">{job.date}</div>
+                  <button 
+                    className="bookmark-btn-modern"
+                    onClick={() => toggleBookmark(job.id)}
+                  >
+                    {job.bookmarked ? 
+                      <Bookmark size={18} fill="#000" color="#000" /> : 
+                      <Bookmark size={18} color="#000" />
+                    }
+                  </button>
+                </div>
+                
+                {/* Company and job title section */}
+                <div className="job-company-info">
+                  <div 
+                    className="company-logo" 
+                    style={getCompanyLogoStyle(job.company)}
+                  >
+                    {job.company === 'Google' && <span>G</span>}
+                    {job.company === 'Apple' && <span>♫</span>}
+                    {job.company === 'Twitter' && <span>t</span>}
+                    {job.company === 'Dribbble' && <span>●</span>}
+                    {job.company === 'Amazon' && <span>a</span>}
+                    {job.company === 'Airbnb' && <span>◎</span>}
                   </div>
-                  <div className="job-details">
-                    <div className="job-detail-item">
-                      <span className="detail-icon">🏢</span>
-                      <span className="detail-text">{job.category}</span>
-                    </div>
-                    <div className="job-detail-item">
-                      <span className="detail-icon">⏱️</span>
-                      <span className="detail-text">{job.jobType}</span>
-                    </div>
-                    <div className="job-detail-item">
-                      <span className="detail-icon">💰</span>
-                      <span className="detail-text">{job.salary}</span>
-                    </div>
-                    <div className="job-detail-item">
-                      <span className="detail-icon">📍</span>
-                      <span className="detail-text">{job.location}</span>
-                    </div>
+                  <div className="job-title-company-info">
+                    <div className="company-name">{job.company}</div>
+                    <h3 className="job-title-modern">{job.title}</h3>
                   </div>
                 </div>
-                <div className="job-card-right">
-                  <button className="bookmark-btn">🔖</button>
-
-                  <Link to='/job-detail'><button className="job-details-btn" onClick={handleJobDetailsClick}>Job Details</button></Link>
+                
+                {/* Tags section */}
+                <div className="job-tags">
+                  {Array.isArray(job.tags) && job.tags.map((tag, index) => (
+                    <span key={index} className="job-tag">{tag}</span>
+                  ))}
+                  {Array.isArray(job.workType) ? 
+                    job.workType.map((type, index) => (
+                      <span key={`work-${index}`} className="job-tag work-type">{type}</span>
+                    )) : 
+                    job.workType && <span className="job-tag work-type">{job.workType}</span>
+                  }
+                </div>
+                
+                {/* Salary and location section */}
+                <div className="job-footer">
+                  <div className="job-salary">{job.salary}</div>
+                  <div className="job-location">{job.location}</div>
+                  <Link to='/job-detail' className="details-link">
+                    <button className="details-btn" onClick={handleJobDetailsClick}>
+                      Details
+                    </button>
+                  </Link>
                 </div>
               </div>
             ))}

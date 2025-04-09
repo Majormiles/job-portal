@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Monitor, 
   Command,
@@ -20,6 +20,7 @@ import {
 
 function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openMenus, setOpenMenus] = useState({
     manageResumes: false,
@@ -42,36 +43,60 @@ function Sidebar({ isOpen, onClose }) {
     return location.pathname === path ? 'bg-blue-100 text-blue-600' : '';
   };
 
-  const renderMenuItem = (Icon, text, path, subItems = []) => {
+  const handleLogout = () => {
+    // Clear admin tokens and data
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    
+    // Redirect to admin login
+    navigate('/admin/login');
+  };
+
+  const renderMenuItem = (Icon, text, path, subItems = [], onClick = null) => {
     const hasSubItems = subItems.length > 0;
     const isMenuOpen = openMenus[text.replace(/\s+/g, '').toLowerCase()];
 
     return (
       <div>
-        <Link 
-          to={path} 
-          className={`flex items-center p-2 hover:bg-gray-100 ${isActive(path)} ${isCollapsed ? 'justify-center' : ''}`}
-          onClick={(e) => {
-            if (hasSubItems) {
-              e.preventDefault();
-              toggleMenu(text.replace(/\s+/g, '').toLowerCase());
-            }
-            onClose?.();
-          }}
-        >
-          <Icon className="w-5 h-5" />
-          {!isCollapsed && (
-            <span className="ml-3 flex-1">
-              {text}
-              {hasSubItems && (
-                <ChevronsRight 
-                  className={`inline-block ml-2 transform transition-transform duration-200 ${isMenuOpen ? 'rotate-90' : ''}`} 
-                  size={16} 
-                />
-              )}
-            </span>
-          )}
-        </Link>
+        {onClick ? (
+          <button 
+            className={`flex items-center p-2 w-full text-left hover:bg-gray-100 ${isCollapsed ? 'justify-center' : ''}`}
+            onClick={() => {
+              onClick();
+              onClose?.();
+            }}
+          >
+            <Icon className="w-5 h-5" />
+            {!isCollapsed && (
+              <span className="ml-3 flex-1">{text}</span>
+            )}
+          </button>
+        ) : (
+          <Link 
+            to={path} 
+            className={`flex items-center p-2 hover:bg-gray-100 ${isActive(path)} ${isCollapsed ? 'justify-center' : ''}`}
+            onClick={(e) => {
+              if (hasSubItems) {
+                e.preventDefault();
+                toggleMenu(text.replace(/\s+/g, '').toLowerCase());
+              }
+              onClose?.();
+            }}
+          >
+            <Icon className="w-5 h-5" />
+            {!isCollapsed && (
+              <span className="ml-3 flex-1">
+                {text}
+                {hasSubItems && (
+                  <ChevronsRight 
+                    className={`inline-block ml-2 transform transition-transform duration-200 ${isMenuOpen ? 'rotate-90' : ''}`} 
+                    size={16} 
+                  />
+                )}
+              </span>
+            )}
+          </Link>
+        )}
         {!isCollapsed && hasSubItems && isMenuOpen && (
           <div className="pl-8 mt-1">
             {subItems.map((item, index) => (
@@ -131,7 +156,7 @@ function Sidebar({ isOpen, onClose }) {
         
         {renderMenuItem(Settings, 'Settings', '/admin/settings')}
         
-        {renderMenuItem(LogOut, 'Logout', '/admin/logout')}
+        {renderMenuItem(LogOut, 'Logout', '', [], handleLogout)}
       </nav>
     </div>
   );

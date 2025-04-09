@@ -133,4 +133,3 @@ This application was developed by Major Myles.
 
 © 2025 Major Myles. All Rights Reserved.
 
-This software is the property of Major Myles and is protected by copyright law. Unauthorized reproduction or distribution of this software, or any portion of it, may result in severe civil and criminal penalties.

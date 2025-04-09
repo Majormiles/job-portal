@@ -54,7 +54,9 @@ const AccountSettings = () => {
 
   const [deleteConfirmation, setDeleteConfirmation] = useState({
     open: false,
-    email: ''
+    email: '',
+    reason: '',
+    customReason: ''
   });
 
   useEffect(() => {
@@ -206,23 +208,33 @@ const AccountSettings = () => {
     }
   };
 
-  const handleDeleteConfirmation = () => {
-    setDeleteConfirmation({
-      open: true,
-      email: ''
-    });
-  };
-
   const handleDeleteAccount = async () => {
     // Validate email confirmation
     if (deleteConfirmation.email !== user.email) {
       toast.error('Email does not match your account email');
       return;
     }
+
+    // Validate deletion reason
+    if (!deleteConfirmation.reason) {
+      toast.error('Please select a reason for deleting your account');
+      return;
+    }
+
+    // Validate custom reason if 'Other' is selected
+    if (deleteConfirmation.reason === 'Other' && !deleteConfirmation.customReason.trim()) {
+      toast.error('Please provide a reason for deleting your account');
+      return;
+    }
     
     try {
-      // Call the delete endpoint directly using the API from context
-      const response = await api.delete('/users/me');
+      // Call the delete endpoint with the reason
+      const response = await api.delete('/users/me', {
+        data: {
+          deletionReason: deleteConfirmation.reason,
+          customReason: deleteConfirmation.reason === 'Other' ? deleteConfirmation.customReason : undefined
+        }
+      });
       
       if (response.data.success) {
         toast.success('Account deleted successfully');
@@ -622,15 +634,49 @@ const AccountSettings = () => {
                 <input
                   type="email"
                   value={deleteConfirmation.email}
-                  onChange={(e) => setDeleteConfirmation({...deleteConfirmation, email: e.target.value})}
+                  onChange={(e) => setDeleteConfirmation(prev => ({...prev, email: e.target.value}))}
                   className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Enter your email address"
                 />
+
+                <div>
+                  <label className="block text-sm font-medium text-red-700 mb-2">
+                    Why are you deleting your account?
+                  </label>
+                  <select
+                    value={deleteConfirmation.reason}
+                    onChange={(e) => setDeleteConfirmation(prev => ({...prev, reason: e.target.value}))}
+                    className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="">Select a reason</option>
+                    <option value="Found a job">I found a job</option>
+                    <option value="Not finding relevant jobs">Not finding relevant jobs</option>
+                    <option value="Technical issues">Technical issues with the platform</option>
+                    <option value="Privacy concerns">Privacy concerns</option>
+                    <option value="Creating a new account">Creating a new account</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                {deleteConfirmation.reason === 'Other' && (
+                  <div>
+                    <label className="block text-sm font-medium text-red-700 mb-2">
+                      Please specify your reason
+                    </label>
+                    <textarea
+                      value={deleteConfirmation.customReason}
+                      onChange={(e) => setDeleteConfirmation(prev => ({...prev, customReason: e.target.value}))}
+                      className="w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Tell us why you're deleting your account..."
+                      rows={3}
+                    />
+                  </div>
+                )}
                 
-                <div className="flex space-x-3">
+                <div className="flex justify-end space-x-4">
                   <button
                     type="button"
-                    onClick={() => setDeleteConfirmation({open: false, email: ''})}
+                    onClick={() => setDeleteConfirmation({open: false, email: '', reason: '', customReason: ''})}
                     className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                   >
                     Cancel
@@ -639,7 +685,7 @@ const AccountSettings = () => {
                   <button
                     type="button"
                     onClick={handleDeleteAccount}
-                    disabled={isSaving || deleteConfirmation.email !== user.email}
+                    disabled={isSaving || deleteConfirmation.email !== user.email || !deleteConfirmation.reason || (deleteConfirmation.reason === 'Other' && !deleteConfirmation.customReason.trim())}
                     className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
                   >
                     {isSaving ? 'Deleting...' : 'Confirm Delete'}
@@ -649,7 +695,7 @@ const AccountSettings = () => {
             ) : (
               <button
                 type="button"
-                onClick={handleDeleteConfirmation}
+                onClick={() => setDeleteConfirmation({open: true, email: '', reason: '', customReason: ''})}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
                 Delete My Account
