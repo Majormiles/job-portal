@@ -27,7 +27,7 @@ const HomePage = () => {
       <CompanySection />
       <CallToAction />
       {/* <Testimonials /> */}
-      <FaqDropdown />
+      {/* <FaqDropdown /> */}
       <Footer />
 
       {/* Removed JobListings from here */}

@@ -110,6 +110,7 @@ body {
   display: block;
 }
 
+
 .desktop-nav .nav-links {
   display: flex;
   list-style-type: none;
@@ -119,6 +120,7 @@ body {
 
 .desktop-nav .nav-links li {
   margin: 0 15px;
+  list-style: none;
 }
 
 .desktop-nav .nav-links li a {
