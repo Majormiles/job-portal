@@ -1,0 +1,13 @@
+{
+  "name": "job-portal-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for job portal maintenance",
+  "type": "module",
+  "scripts": {
+    "fix-profile-resume": "node fixProfileAndResume.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.5"
+  }
+} 

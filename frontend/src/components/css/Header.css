@@ -1,0 +1,399 @@
+/* Header.css */
+
+.header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 20px 0;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.briefcase-icon {
+  color: white;
+  margin-right: 10px;
+}
+
+.logo-text {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.nav-container {
+  display: flex;
+  align-items: center;
+}
+
+.navigation {
+  display: flex;
+  margin-right: 40px;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  margin: 0 15px;
+  font-size: 1rem;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  opacity: 1;
+}
+
+.auth-buttons {
+  display: flex;
+}
+
+.login-btn,
+.register-btn {
+  text-decoration: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.register-btn:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* User Profile Styles */
+.user-profile {
+  position: relative;
+  z-index: 1001;
+}
+.user-profile button {
+  background: linear-gradient(to right, hsl(172, 76%, 46%), hsl(180, 99%, 26%));
+  color: rgb(255, 255, 255);
+  font-size: 16px;
+  position: relative;
+  overflow: hidden;
+  animation: crystalShimmer 3s infinite;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+@keyframes crystalShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Add these for enhanced crystal effect */
+.user-profile button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 20%, 
+    rgba(255, 255, 255, 0.1) 20%, 
+    rgba(255, 255, 255, 0.1) 40%, 
+    transparent 40%
+  );
+  transform: rotate(30deg);
+  animation: crystalRefract 2s linear infinite;
+}
+
+@keyframes crystalRefract {
+  0% {
+    transform: rotate(30deg) translateY(10%);
+  }
+  50% {
+    transform: rotate(30deg) translateY(-10%);
+  }
+  100% {
+    transform: rotate(30deg) translateY(10%);
+  }
+}
+.profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.profile-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.profile-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ffffff;
+  padding: 2px;
+}
+
+.username {
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.chevron-icon {
+  transition: transform 0.2s ease;
+}
+
+.chevron-icon.rotate {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  z-index: 1001;
+  opacity: 1;
+  visibility: visible;
+  transform-origin: top right;
+  animation: dropdownAppear 0.2s ease;
+}
+
+@keyframes dropdownAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  color: #333333;
+  font-size: 14px;
+  font-family: inherit;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdown-icon {
+  color: #666666;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #eeeeee;
+  margin: 8px 0;
+}
+
+/* Mobile Menu Styles */
+.mobile-user-menu {
+  padding: 16px;
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #333333;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.mobile-menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.mobile-menu-item.logout-btn {
+  color: #dc3545;
+}
+
+@media (max-width: 768px) {
+  .user-profile {
+    display: none;
+  }
+  
+  .mobile-user-menu {
+    display: block;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .nav-container {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    height: 100vh;
+    width: 250px;
+    background-color: #2a9d8f;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 80px 20px 20px;
+    transition: right 0.3s ease;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .nav-container.nav-open {
+    right: 0;
+  }
+  
+  .navigation {
+    flex-direction: column;
+    margin-right: 0;
+    width: 100%;
+  }
+  
+  .nav-link {
+    margin: 10px 0;
+    font-size: 1.1rem;
+  }
+  
+  .auth-buttons {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .login-btn, 
+  .register-btn {
+    text-align: center;
+    margin: 5px 0;
+    padding: 10px;
+  }
+  
+  .login-btn {
+    margin-right: 0;
+  }
+  
+  /* Mobile dropdown styles */
+  .user-profile {
+    width: 100%;
+  }
+  
+  .profile-btn {
+    width: 100%;
+    justify-content: space-between;
+    padding: 10px;
+  }
+  
+  .dropdown-menu {
+    position: relative;
+    width: 100%;
+    top: 5px;
+    box-shadow: none;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-menu-toggle {
+    display: block;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1002;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-text {
+    font-size: 1.25rem;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .profile-image {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .username {
+    font-size: 0.9rem;
+  }
+}
+
+/* Hero Section */
+.hero {
+  background-image: linear-gradient(rgba(42, 157, 143, 0.85), rgba(42, 157, 143, 0.85)), url('/src/assets/images/jobsearch.png');
+  background-size: cover;
+  background-position: center;
+  height: 90px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.hero-title {
+  color: white;
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin: 0;
+  text-align: center;
+}
+
+span .logo-text {
+  color: white;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  color: white;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  margin-left: 15px;
+  font-size: 24px;
+}

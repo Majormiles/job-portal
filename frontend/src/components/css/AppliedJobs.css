@@ -1,0 +1,253 @@
+/* AppliedJobs.css - Component specific styles */
+.applied-jobs-container {
+  max-width:1300px;
+  margin: 0 auto ;
+  padding: 2px 45px;
+  background-color: white;
+}
+
+.applied-jobs-container .recent-applications {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.recent-header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eaedf2;
+}
+
+.recent-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.view-all {
+  color: #667085;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.applications-table {
+  width: 100%;
+  overflow-x: auto; /* Add horizontal scroll for small screens */
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 3fr 1fr 1fr 1fr;
+  padding: 12px 20px;
+  font-size: 14px;
+  color: #667085;
+  border-bottom: 1px solid #eaedf2;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr 1fr 1fr;
+  padding: 16px 20px;
+  align-items: center;
+  border-bottom: 1px solid #eaedf2;
+  transition: background-color 0.2s ease;
+}
+
+.table-row:hover {
+  background-color: #f9f9fb;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-row.highlighted {
+  background-color: #f9f9fb;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+}
+
+.job-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.company-logo {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: bold;
+  color: white;
+}
+
+.logo.upwork {
+  background-color: #14a800;
+}
+
+.logo.design {
+  background-color: #ff5722;
+}
+
+.logo.apple {
+  background-color: #000000;
+}
+
+.logo.microsoft {
+  background-color: #0078d4;
+}
+
+.job-details h4 {
+  font-size: 15px;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.job-type {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: normal;
+  background-color: #e5e7eb;
+}
+
+.job-type.remote {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.job-type.full-time {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.job-type.temporary {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.job-type.contract-base {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+.job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #667085;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.status-badge.active {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.view-details-btn {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.view-details-btn:hover {
+  background-color: #e0e7ff;
+}
+
+.dashboard-footer {
+  text-align: center;
+  padding: 16px;
+  color: #667085;
+  font-size: 13px;
+}
+
+/* Responsive styles */
+@media (max-width: 992px) {
+  .table-header, .table-row {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-header {
+    display: none;
+  }
+  
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .column-date, .column-status, .column-action {
+    padding-left: 52px;
+  }
+  
+  .column-date:before {
+    content: "Date Applied: ";
+    font-weight: 500;
+  }
+  
+  .column-status:before {
+    content: "Status: ";
+    font-weight: 500;
+  }
+  
+  .job-meta {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .recent-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .view-details-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .job-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

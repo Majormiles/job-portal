@@ -1,0 +1,253 @@
+/* HeroSection.css */
+
+.hero-container {
+  width: 100%;
+  min-height: 80vh;
+  background: linear-gradient(rgba(42, 157, 143, 0.85), rgba(0, 77, 64, 0.85)), url('/src/assets/images/jobsearch.png');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  top: 90px;
+  margin-bottom: 40px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 60px 20px 0;
+  position: relative;
+}
+  .hero-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+    width: 100%;
+  }
+  
+  .hero-title {
+    font-size: 4rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.25rem;
+    color: #ffffff;
+    margin-bottom: 40px;
+    font-weight: 400;
+  }
+  
+  .search-container {
+    max-width: 1000px;
+    margin: 0 auto 60px;
+  }
+  
+  .search-box {
+    display: flex;
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .search-input {
+    flex: 1;
+    border: none;
+    padding: 16px 20px;
+    font-size: 1rem;
+    outline: none;
+  }
+  
+  .dropdown-container {
+    position: relative;
+    border-left: 1px solid #e0e0e0;
+  }
+  
+  .dropdown-button {
+    background: white;
+    border: none;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    color: #757575;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  
+  .dropdown-icon {
+    width: 24px;
+    height: 24px;
+    margin-left: 8px;
+    fill: #757575;
+  }
+  
+  .search-button {
+    background-color: #2A9D8F;
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.3s;
+  }
+  
+  .search-button:hover {
+    background-color: #238579;
+  }
+  
+  .search-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    fill: white;
+  }
+  
+  .stats-container {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin-bottom: 20px;
+  }
+  
+  .stat-item {
+    display: flex;
+    align-items: center;
+    color: white;
+  }
+  
+  .stat-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+  }
+  
+  .stat-icon svg {
+    width: 32px;
+    height: 32px;
+    fill: white;
+  }
+  
+  .stat-icon.briefcase {
+    background-color: #2A9D8F;
+  }
+  
+  .stat-icon.people {
+    background-color: #2A9D8F;
+  }
+  
+  .stat-icon.building {
+    background-color: #2A9D8F;
+  }
+  
+  .stat-text {
+    text-align: left;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .stat-label {
+    margin: 0;
+    font-size: 1rem;
+  }
+  
+  .partners-container {
+    background-color: black;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 24px 0;
+    width: 100%;
+  }
+  
+  .partner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .partner img{
+    width: 16%;
+  }
+  
+  .partner-logo {
+    height: 15px;
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+    transition: opacity 0.3s;
+  }
+  
+  .partner-logo:hover {
+    opacity: 1;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .hero-title {
+      font-size: 3rem;
+    }
+    
+    .search-box {
+      flex-direction: column;
+    }
+    
+    .dropdown-container {
+      border-left: none;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .search-button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1rem;
+    }
+    
+    .stats-container {
+      flex-direction: column;
+      gap: 30px;
+    }
+    
+    .partners-container {
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .partner {
+      width: 30%;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .hero-title {
+      font-size: 2rem;
+    }
+    
+    .dropdown-button {
+      justify-content: center;
+      padding: 14px;
+    }
+    
+    .search-input {
+      text-align: center;
+    }
+    
+    .partner {
+      width: 45%;
+    }
+  }

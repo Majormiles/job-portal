@@ -1,0 +1,198 @@
+{
+  "DJxG5wnsC8VkCLpbAAAB": [],
+  "SbxjYL5OduG8XpaAAAAD": [],
+  "DFhMC2Tyc884P3j5AAAF": [],
+  "VtzEkfwkPPfiucwzAAAB": [
+    {
+      "role": "user",
+      "content": "hello",
+      "timestamp": 1744308954371
+    },
+    {
+      "role": "assistant",
+      "content": "Hello Guest! How can I help with your job search today?",
+      "timestamp": 1744308955416
+    }
+  ],
+  "DgN7NGRDQ8u3_Q3qAAAD": [
+    {
+      "role": "user",
+      "content": "hello",
+      "timestamp": 1744308972978
+    },
+    {
+      "role": "assistant",
+      "content": "Hello Major Myles! How can I help with your job search today?",
+      "timestamp": 1744308974442
+    },
+    {
+      "role": "user",
+      "content": "i want to know more about this website",
+      "timestamp": 1744308991037
+    },
+    {
+      "role": "assistant",
+      "content": "This is Job Portal, A platform connecting job seekers with employers. \nOur platform offers 6 main features:\n• Job listings from various industries\n• User profiles with skills and experience\n• Application tracking system\n• Job alerts and recommendations\n• Resume builder and management\n• Company profiles and reviews\n\nWe connect job seekers with employers across multiple industries including \nTechnology, Healthcare, Finance, Education, Marketing, Engineering, and more.",
+      "timestamp": 1744308991416
+    }
+  ],
+  "Kb2-SAQXOR6KZigOAAAF": [],
+  "quVSquxQDuV6p0ibAAAB": [
+    {
+      "role": "user",
+      "content": "Can I update my resume?",
+      "timestamp": 1744309350453
+    },
+    {
+      "role": "assistant",
+      "content": "Go to your dashboard and click on the 'Profile' tab to edit your information.",
+      "timestamp": 1744309351047
+    }
+  ],
+  "Rsmycs-DWYsE56VBAAAD": [],
+  "TmOnMSR45XngkzSOAAAF": [],
+  "G1Ba3DRvSHhSZL95AAAH": [
+    {
+      "role": "user",
+      "content": "how can i contanct th eadmin",
+      "timestamp": 1744309609467
+    },
+    {
+      "role": "assistant",
+      "content": "You can contact our admin team in several ways:\n\n• Email: admin@jobportal.com\n• Phone: +1 (555) 123-4567 (Mon-Fri, 9AM-5PM EST)\n• Support ticket: Click the 'Support' link in the footer of any page\n• Live chat: Available during business hours through the chat icon in the bottom right corner",
+      "timestamp": 1744309610631
+    }
+  ],
+  "FcTr4Z1xaqX5Jn0AAAAB": [
+    {
+      "role": "user",
+      "content": "hello",
+      "timestamp": 1744309631450
+    },
+    {
+      "role": "assistant",
+      "content": "Hello Guest! How can I help with your job search today?",
+      "timestamp": 1744309632335
+    },
+    {
+      "role": "user",
+      "content": "how can i contact the admin",
+      "timestamp": 1744309641365
+    },
+    {
+      "role": "assistant",
+      "content": "You can contact our admin team in several ways:\n\n• Email: admin@jobportal.com\n• Phone: +1 (555) 123-4567 (Mon-Fri, 9AM-5PM EST)\n• Support ticket: Click the 'Support' link in the footer of any page\n• Live chat: Available during business hours through the chat icon in the bottom right corner",
+      "timestamp": 1744309641834
+    }
+  ],
+  "tlgVNjwQt20ilWqEAAAB": [],
+  "8fXJzfdpreJS0irPAAAD": [
+    {
+      "role": "user",
+      "content": "how can i chat the admin",
+      "timestamp": 1744309781644
+    },
+    {
+      "role": "assistant",
+      "content": "You can contact our admin team in several ways:\n\n• Email: admin@jobportal.com\n• Phone:  (+233) 247 466 205 (Mon-Fri, 9AM-5PM EST)\n• Support ticket: Click the 'Support' link in the footer of any page\n• Live chat: Available during business hours through the chat icon in the bottom right corner",
+      "timestamp": 1744309782376
+    },
+    {
+      "role": "user",
+      "content": "i want to reach the admin",
+      "timestamp": 1744309810980
+    },
+    {
+      "role": "assistant",
+      "content": "You can contact our admin team in several ways:\n\n• Email: admin@jobportal.com\n• Phone:  (+233) 247 466 205 (Mon-Fri, 9AM-5PM EST)\n• Support ticket: Click the 'Support' link in the footer of any page\n• Live chat: Available during business hours through the chat icon in the bottom right corner",
+      "timestamp": 1744309812486
+    }
+  ],
+  "qeNiZhxW1PzsZUPrAAAB": [
+    {
+      "role": "user",
+      "content": "i want to reach admin",
+      "timestamp": 1744309829994
+    },
+    {
+      "role": "assistant",
+      "content": "You can contact our admin team in several ways:\n\n• Email: admin@major.com\n• Phone:  (+233) 247 466 205 (Mon-Fri, 9AM-5PM EST)\n• Support ticket: Click the 'Support' link in the footer of any page\n• Live chat: Available during business hours through the chat icon in the bottom right corner",
+      "timestamp": 1744309830327
+    }
+  ],
+  "HLdegONOEjj0HvjwAAAD": [],
+  "--WNeh5WQ7hQADl7AAAF": [
+    {
+      "role": "user",
+      "content": "How do I search for jobs?",
+      "timestamp": 1744309911702
+    },
+    {
+      "role": "assistant",
+      "content": "Use the search bar on the homepage or navigate to the 'Jobs' page to browse all listings.",
+      "timestamp": 1744309912363
+    }
+  ],
+  "6ft79RVtkEFO5UdRAAAH": [
+    {
+      "role": "user",
+      "content": "How do I search for jobs?",
+      "timestamp": 1744309929931
+    },
+    {
+      "role": "assistant",
+      "content": "Use the search bar on the homepage or navigate to the 'Jobs' page to browse all listings.",
+      "timestamp": 1744309931039
+    },
+    {
+      "role": "user",
+      "content": "hello",
+      "timestamp": 1744309944696
+    },
+    {
+      "role": "assistant",
+      "content": "Hello Guest! How can I help with your job search today?",
+      "timestamp": 1744309945870
+    }
+  ],
+  "ohEScU2XuAKRP6LIAAAJ": [
+    {
+      "role": "user",
+      "content": "What are the top job categories?",
+      "timestamp": 1744310881334
+    },
+    {
+      "role": "assistant",
+      "content": "Popular categories include Technology, Healthcare, Finance, Education, Marketing, Engineering, and Customer Service.",
+      "timestamp": 1744310882298
+    },
+    {
+      "role": "user",
+      "content": "How do I search for jobs?",
+      "timestamp": 1744310894732
+    },
+    {
+      "role": "assistant",
+      "content": "Use the search bar on the homepage or navigate to the 'Jobs' page to browse all listings.",
+      "timestamp": 1744310896193
+    }
+  ],
+  "Qp-jDNx-bTCYN_KXAAAL": [],
+  "f4YO_-IJ6Cc4qKHdAAAN": [],
+  "H-6pvULeLwUzlsGzAAAP": [],
+  "fRwf5y10YXOuwfUCAAAR": [],
+  "gy1lQR9z3_5rNfF0AAAT": [],
+  "SgTdiBc7IoTD7ZP5AAAV": [
+    {
+      "role": "user",
+      "content": "hello",
+      "timestamp": 1744311298168
+    },
+    {
+      "role": "assistant",
+      "content": "Hello Junior Morgan! How can I help with your job search today?",
+      "timestamp": 1744311298761
+    }
+  ],
+  "EBxxSvkKIzXjKZoJAAAX": []
+}
