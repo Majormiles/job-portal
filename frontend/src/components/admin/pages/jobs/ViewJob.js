@@ -18,6 +18,61 @@ import { getJobById } from '../../../../services/jobService';
 import { getCategoryById } from '../../../../services/categoryService';
 import { formatDate, formatSalary } from '../../../../utils/formatters';
 
+// Add CSS styles for the job description content
+const descriptionStyles = `
+  .job-description-content h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+    color: #222;
+  }
+  
+  .job-description-content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+  }
+  
+  .job-description-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.2rem;
+    margin-bottom: 0.8rem;
+    color: #444;
+  }
+  
+  .job-description-content p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+  
+  .job-description-content ul, 
+  .job-description-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .job-description-content li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .job-description-content a {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+  
+  .job-description-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border-radius: 4px;
+  }
+`;
+
 const ViewJob = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -199,9 +254,11 @@ const ViewJob = () => {
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Job Description</h3>
               <div className="prose max-w-none text-gray-600">
-                {job.description.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-3">{paragraph}</p>
-                ))}
+                <style dangerouslySetInnerHTML={{ __html: descriptionStyles }} />
+                <div 
+                  className="job-description-content" 
+                  dangerouslySetInnerHTML={{ __html: job.description }}
+                />
               </div>
             </div>
           </div>

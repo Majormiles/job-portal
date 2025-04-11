@@ -253,6 +253,7 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/job-detail" element={<JobDetail />} />
+        <Route path="/job-detail/:id" element={<JobDetail />} />
         <Route path="/pricing-plan" element={<PricingPlan />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
