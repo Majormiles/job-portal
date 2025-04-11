@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 dotenv.config();
 
 // Set MongoDB URI with fallback
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://major:Almighty0247466205@cluster0.bedjf.mongodb.net/';
+const MONGODB_URI = process.env.MONGODB_URI || 'your_mongodb_url_here/';
 
 console.log('Using MongoDB URI:', MONGODB_URI ? 'URI is defined' : 'URI is undefined');
 
