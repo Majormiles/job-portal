@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 dotenv.config();
 
 // Set MongoDB URI with fallback
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://major:Almighty0247466205@cluster0.bedjf.mongodb.net/';
+const MONGODB_URI = process.env.MONGODB_URI || 'your_mongodb_url_here';
 
 console.log('Using MongoDB URI:', MONGODB_URI ? 'URI is defined' : 'URI is undefined');
 
@@ -87,8 +87,8 @@ async function updateAdminPassword(email, passwordHash) {
 }
 
 // The pre-generated password hash for 'Almighty'
-const passwordHash = '$2a$10$K6cuMt1Cxe.UM4Oi1p73kunoeNAvJlkUSz7sc4oYDsWT3NbFtjLY6';
-const email = process.argv[2] || 'major@gmail.com';
+const passwordHash = 'hashed_password_here';
+const email = process.argv[2] || 'your_email_here';
 
 console.log(`Updating admin password for user: ${email}`);
 updateAdminPassword(email, passwordHash); 
