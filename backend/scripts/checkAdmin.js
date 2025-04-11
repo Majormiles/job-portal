@@ -81,7 +81,7 @@ async function checkAdminUser(email) {
 }
 
 // Get email from command line arguments or use default
-const email = process.argv[2] || 'major@gmail.com';
+const email = process.argv[2] || 'your_email_here';
 
 // Check admin user with provided or default email
 checkAdminUser(email); 
