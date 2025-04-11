@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Monitor, 
   Command,
   Mail,
   Anchor,
-  ChevronsRight,
-  ChevronsLeft,
+  ChevronRight,
+  ChevronLeft,
   FileText,
   Clipboard,
   Users,
@@ -15,18 +15,39 @@ import {
   Calendar,
   List,
   Eye,
-  User
-} from 'react-feather';
+  User,
+  Grid,
+  Menu,
+  X,
+  ChevronDown
+} from 'lucide-react';
+import '../../css/scrollbar.css';
 
 function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [openMenus, setOpenMenus] = useState({
-    manageResumes: false,
-    manageCategories: false,
-    manageJobs: false
-  });
+  const [openMenus, setOpenMenus] = useState({});
+  const sidebarRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  
+  // Initialize openMenus based on current path
+  useEffect(() => {
+    const path = location.pathname;
+    const newOpenMenus = { ...openMenus };
+    
+    if (path.includes('/admin/categories')) {
+      newOpenMenus.manageCategories = true;
+    }
+    if (path.includes('/admin/resume') || path.includes('/admin/calendar')) {
+      newOpenMenus.manageResumes = true;
+    }
+    if (path.includes('/admin/jobs') || path.includes('/admin/profile') || path.includes('/admin/invoice')) {
+      newOpenMenus.manageJobs = true;
+    }
+    
+    setOpenMenus(newOpenMenus);
+  }, [location.pathname]);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -40,7 +61,7 @@ function Sidebar({ isOpen, onClose }) {
   };
 
   const isActive = (path) => {
-    return location.pathname === path ? 'bg-blue-100 text-blue-600' : '';
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
   const handleLogout = () => {
@@ -52,63 +73,162 @@ function Sidebar({ isOpen, onClose }) {
     navigate('/admin/login');
   };
 
-  const renderMenuItem = (Icon, text, path, subItems = [], onClick = null) => {
-    const hasSubItems = subItems.length > 0;
-    const isMenuOpen = openMenus[text.replace(/\s+/g, '').toLowerCase()];
+  const menuItems = [
+    {
+      icon: Monitor,
+      text: 'Dashboard',
+      path: '/admin/dashboard',
+      subItems: []
+    },
+    {
+      icon: Command,
+      text: 'Manage Resumes',
+      path: '/admin/resume',
+      menuKey: 'manageResumes',
+      subItems: [
+        { text: 'Resumes', path: '/admin/resume' },
+        { text: 'Calendar', path: '/admin/calendar' }
+      ]
+    },
+    {
+      icon: Mail,
+      text: 'Manage Categories',
+      path: '/admin/categories',
+      menuKey: 'manageCategories',
+      subItems: [
+        { text: 'All Categories', path: '/admin/categories' },
+        { text: 'Create Category', path: '/admin/categories/create' }
+      ]
+    },
+    {
+      icon: Anchor,
+      text: 'Manage Jobs',
+      path: '/admin/jobs',
+      menuKey: 'manageJobs',
+      subItems: [
+        { text: 'All Jobs', path: '/admin/jobs' },
+        { text: 'Create Job', path: '/admin/jobs/create' },
+        { text: 'Profile', path: '/admin/profile' },
+        { text: 'Invoice', path: '/admin/invoice' }
+      ]
+    },
+    {
+      icon: Users,
+      text: 'Job Seekers',
+      path: '/admin/job-seekers',
+      subItems: []
+    },
+    {
+      icon: Clipboard,
+      text: 'Applications',
+      path: '/admin/manage-applications',
+      subItems: []
+    },
+    {
+      icon: Settings,
+      text: 'Settings',
+      path: '/admin/settings',
+      subItems: []
+    }
+  ];
+
+  const renderMenuItem = (item) => {
+    const { icon: Icon, text, path, subItems, menuKey, onClick } = item;
+    const hasSubItems = subItems && subItems.length > 0;
+    const isMenuOpen = menuKey ? openMenus[menuKey] : false;
+    const isPathActive = isActive(path);
 
     return (
-      <div>
+      <div key={text} className="mb-1">
         {onClick ? (
           <button 
-            className={`flex items-center p-2 w-full text-left hover:bg-gray-100 ${isCollapsed ? 'justify-center' : ''}`}
+            className={`flex items-center p-2 w-full text-left rounded-md transition-colors duration-200
+              ${isCollapsed ? 'justify-center' : ''}
+              ${isPathActive ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-100'}`}
             onClick={() => {
               onClick();
               onClose?.();
             }}
           >
-            <Icon className="w-5 h-5" />
+            <Icon className={`w-5 h-5 ${isPathActive ? 'text-blue-600' : 'text-gray-500'}`} />
             {!isCollapsed && (
               <span className="ml-3 flex-1">{text}</span>
             )}
           </button>
         ) : (
-          <Link 
-            to={path} 
-            className={`flex items-center p-2 hover:bg-gray-100 ${isActive(path)} ${isCollapsed ? 'justify-center' : ''}`}
+          <div
+            className={`cursor-pointer flex items-center p-2 rounded-md transition-colors duration-200
+              ${isCollapsed ? 'justify-center' : ''}
+              ${isPathActive ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-100'}`}
             onClick={(e) => {
               if (hasSubItems) {
                 e.preventDefault();
-                toggleMenu(text.replace(/\s+/g, '').toLowerCase());
+                toggleMenu(menuKey);
+              } else {
+                navigate(path);
+                onClose?.();
               }
-              onClose?.();
             }}
           >
-            <Icon className="w-5 h-5" />
+            <Icon className={`flex-shrink-0 w-5 h-5 ${isPathActive ? 'text-blue-600' : 'text-gray-500'}`} />
+            
             {!isCollapsed && (
-              <span className="ml-3 flex-1">
-                {text}
+              <>
+                <span className="ml-3 flex-1">{text}</span>
                 {hasSubItems && (
-                  <ChevronsRight 
-                    className={`inline-block ml-2 transform transition-transform duration-200 ${isMenuOpen ? 'rotate-90' : ''}`} 
-                    size={16} 
+                  <ChevronDown 
+                    className={`transition-transform duration-300 ease-in-out ${isMenuOpen ? 'rotate-180' : ''}`} 
+                    size={18} 
                   />
                 )}
-              </span>
+              </>
             )}
-          </Link>
+          </div>
         )}
-        {!isCollapsed && hasSubItems && isMenuOpen && (
-          <div className="pl-8 mt-1">
-            {subItems.map((item, index) => (
+        
+        {/* Submenu with transition */}
+        {!isCollapsed && hasSubItems && (
+          <div 
+            className={`pl-10 overflow-hidden transition-all duration-300 ease-in-out scrollbar-extra-light ${
+              isMenuOpen ? 'max-h-48 mt-1 mb-1' : 'max-h-0'
+            }`}
+          >
+            {subItems.map((subItem, index) => (
               <Link 
                 key={index}
-                to={item.path} 
-                className={`block py-1 hover:text-blue-600 ${isActive(item.path)}`}
+                to={subItem.path} 
+                className={`block py-2 text-sm transition-colors duration-200 hover:text-blue-600 ${
+                  isActive(subItem.path) 
+                    ? 'text-blue-600 font-medium' 
+                    : 'text-gray-600'
+                }`}
                 onClick={onClose}
               >
-                {item.text}
+                {subItem.text}
               </Link>
             ))}
+          </div>
+        )}
+        
+        {/* Tooltip for collapsed menu */}
+        {isCollapsed && hasSubItems && (
+          <div className="relative group">
+            <div className="absolute left-full ml-2 top-0 z-50 transform -translate-y-1/2 hidden group-hover:block">
+              <div className="bg-white border shadow-md rounded-md py-2 px-3 min-w-[160px]">
+                {subItems.map((subItem, index) => (
+                  <Link 
+                    key={index}
+                    to={subItem.path} 
+                    className={`block py-2 text-sm transition-colors hover:text-blue-600 ${
+                      isActive(subItem.path) ? 'text-blue-600 font-medium' : 'text-gray-600'
+                    }`}
+                    onClick={onClose}
+                  >
+                    {subItem.text}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -116,49 +236,69 @@ function Sidebar({ isOpen, onClose }) {
   };
 
   return (
-    <div 
-      className={`bg-white h-screen border-r transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'} ${
-        // Always show on large screens, show/hide based on isOpen prop on small screens
-        isOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden lg:block'
-      }`}
-    >
-      <div className="flex items-center justify-between p-4 border-b">
-        {!isCollapsed && <span className="font-bold text-lg">Job Portal</span>}
-        <button onClick={toggleSidebar} className="p-1 hover:bg-gray-100 rounded">
-          {isCollapsed ? <ChevronsRight /> : <ChevronsLeft />}
-        </button>
-      </div>
-
-      <nav className="p-2 space-y-1">
-        {renderMenuItem(Monitor, 'Admin Dashboard', '/admin/dashboard')}
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={onClose}
+        ></div>
+      )}
+      
+      {/* Sidebar */}
+      <aside 
+        ref={sidebarRef}
+        className={`bg-white h-screen border-r shadow-md transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'w-16' : 'w-64'
+        } ${
+          isOpen ? 'fixed inset-y-0 left-0 z-50 translate-x-0' : 'fixed -translate-x-full lg:translate-x-0 lg:sticky lg:top-0 z-30'
+        } flex flex-col`}
+      >
+        {/* Sidebar header */}
+        <div className="flex items-center justify-between p-4 border-b h-16 flex-shrink-0">
+          {!isCollapsed && (
+            <div className="font-bold text-lg text-blue-600">Job Portal</div>
+          )}
+          <div className="flex items-center">
+            <button 
+              onClick={toggleSidebar} 
+              className="p-1 hover:bg-gray-100 rounded-md text-gray-500 transition-colors lg:block hidden"
+            >
+              {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            </button>
+            <button 
+              onClick={onClose} 
+              className="p-1 hover:bg-gray-100 rounded-md text-gray-500 transition-colors lg:hidden ml-2"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
         
-        {renderMenuItem(Command, 'Manage Resumes', '/admin/resume', [
-          { text: 'Resumes', path: '/admin/resume' },
-          { text: 'Calendar', path: '/admin/calendar' }
-        ])}
+        {/* Scrollable content */}
+        <div 
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto sidebar-scroll scrollbar-extra-light p-3"
+        >
+          <nav className="space-y-1">
+            {menuItems.map(renderMenuItem)}
+          </nav>
+        </div>
         
-        {renderMenuItem(Mail, 'Manage Categories', '/admin/categories', [
-          { text: 'Create Category', path: '/admin/categories/create' },
-          { text: 'Categories', path: '/admin/categories' },
-          { text: 'Read', path: '/admin/categories/read' }
-        ])}
-        
-        {renderMenuItem(Anchor, 'Manage Jobs', '/admin/jobs', [
-          { text: 'Create Jobs', path: '/admin/jobs/create' },
-          { text: 'Jobs', path: '/admin/jobs' },
-          { text: 'Profile', path: '/admin/profile' },
-          { text: 'Invoice', path: '/admin/invoice' }
-        ])}
-        
-        {renderMenuItem(Users, 'Job Seekers', '/admin/job-seekers')}
-        
-        {renderMenuItem(Clipboard, 'Manage Applications', '/admin/manage-applications')}
-        
-        {renderMenuItem(Settings, 'Settings', '/admin/settings')}
-        
-        {renderMenuItem(LogOut, 'Logout', '', [], handleLogout)}
-      </nav>
-    </div>
+        {/* Logout button at the bottom */}
+        <div className="p-3 border-t mt-auto">
+          <button 
+            onClick={handleLogout} 
+            className={`flex items-center p-2 w-full text-left rounded-md hover:bg-red-50 hover:text-red-600 transition-colors duration-200 ${
+              isCollapsed ? 'justify-center' : ''
+            }`}
+          >
+            <LogOut className="w-5 h-5 text-gray-500" />
+            {!isCollapsed && <span className="ml-3">Logout</span>}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 

@@ -49,9 +49,11 @@ import AdminResume from './components/admin/pages/Resume';
 import AdminCalendar from './components/admin/pages/Calendar';
 import AdminCategories from './components/admin/pages/categories/Categories';
 import AdminCreateCategory from './components/admin/pages/categories/CreateCategory';
-import AdminReadCategory from './components/admin/pages/categories/ReadCategory';
+import AdminViewCategory from './components/admin/pages/categories/ViewCategory';
 import AdminJobs from './components/admin/pages/jobs/Jobs';
 import AdminCreateJob from './components/admin/pages/jobs/CreateJob';
+import AdminViewJob from './components/admin/pages/jobs/ViewJob';
+import AdminEditJob from './components/admin/pages/jobs/EditJob';
 import AdminProfile from './components/admin/pages/Profile';
 import AdminInvoice from './components/admin/pages/Invoice';
 import AdminTimeline from './components/admin/pages/Timeline';
@@ -366,9 +368,12 @@ const AppContent = () => {
           <Route path="calendar" element={<AdminCalendar />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="categories/create" element={<AdminCreateCategory />} />
-          <Route path="categories/:id" element={<AdminReadCategory />} />
+          <Route path="categories/view/:id" element={<AdminViewCategory />} />
+          <Route path="categories/edit/:id" element={<AdminCreateCategory />} />
           <Route path="jobs" element={<AdminJobs />} />
           <Route path="jobs/create" element={<AdminCreateJob />} />
+          <Route path="jobs/view/:id" element={<AdminViewJob />} />
+          <Route path="jobs/edit/:id" element={<AdminEditJob />} />
           <Route path="profile" element={<AdminProfile />} />
           <Route path="invoice" element={<AdminInvoice />} />
           <Route path="timeline" element={<AdminTimeline />} />

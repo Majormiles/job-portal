@@ -6,6 +6,7 @@ import authRouter from './routes/auth.routes.js';
 import userRouter from './routes/user.routes.js';
 import jobRouter from './routes/job.routes.js';
 import dashboardRouter from './routes/dashboard.routes.js';
+import categoryRouter from './routes/category.routes.js';
 import errorHandler from './middleware/error.middleware.js';
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/jobs', jobRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/categories', categoryRouter);
 
 // Error handling
 app.use(errorHandler);
