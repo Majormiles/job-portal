@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const companySchema = new mongoose.Schema({
   name: {
@@ -97,4 +97,4 @@ companySchema.methods.getStats = async function() {
 
 const Company = mongoose.model('Company', companySchema);
 
-module.exports = Company; 
+export default Company; 

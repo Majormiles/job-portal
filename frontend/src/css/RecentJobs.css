@@ -1,0 +1,149 @@
+/* Add loading indicator style */
+.loading-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  font-size: 18px;
+  color: #666;
+  position: relative;
+  padding-left: 30px;
+}
+
+.loading-indicator:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(74, 144, 226, 0.3);
+  border-radius: 50%;
+  border-top-color: #4a90e2;
+  animation: spin 1s infinite linear;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error message styling */
+.error-message {
+  text-align: center;
+  padding: 40px 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 40px auto;
+}
+
+.error-message h2 {
+  color: #e53935;
+  margin-bottom: 15px;
+  font-size: 1.5rem;
+}
+
+.error-message p {
+  color: #666;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.retry-button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.retry-button:hover {
+  background-color: #3a7bc8;
+}
+
+/* No jobs message styling */
+.no-jobs-message {
+  text-align: center;
+  padding: 40px 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 40px auto;
+}
+
+.no-jobs-message h2 {
+  color: #4a90e2;
+  margin-bottom: 15px;
+  font-size: 1.5rem;
+}
+
+.no-jobs-message p {
+  color: #666;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.browse-all-link {
+  display: inline-block;
+  background-color: #4a90e2;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.browse-all-link:hover {
+  background-color: #3a7bc8;
+}
+
+/* No related jobs and no categories styling */
+.no-related-jobs,
+.no-categories {
+  padding: 15px;
+  text-align: center;
+  color: #777;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+/* Header styles */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-button {
+  background: none;
+  border: none;
+  color: #4a90e2;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  background-color: rgba(74, 144, 226, 0.1);
+  transform: rotate(15deg);
+}
+
+.refresh-button:active {
+  transform: rotate(180deg);
+}
+
+.refresh-button svg {
+  color: #4a90e2;
+} 

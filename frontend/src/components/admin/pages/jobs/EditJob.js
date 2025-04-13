@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import CreateJob from './CreateJob';
+import '../../styles/category.css';
 
 /**
  * EditJob is a wrapper around CreateJob that sets edit mode

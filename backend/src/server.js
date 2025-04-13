@@ -25,11 +25,21 @@ console.log('Environment check:', {
 const port = process.env.PORT || 5000;
 
 // Connect to MongoDB
+console.log('Attempting to connect to MongoDB at:', process.env.MONGODB_URI);
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log('Successfully connected to MongoDB');
+    // Log connection info
+    const conn = mongoose.connection;
+    console.log(`MongoDB Connection Details: 
+    - Host: ${conn.host}
+    - Name: ${conn.name}
+    - Port: ${conn.port}
+    - Connected: ${conn.readyState === 1}`);
+    
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
+      console.log(`API is available at http://localhost:${port}/api`);
     });
   })
   .catch((error) => {

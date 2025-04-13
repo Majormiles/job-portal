@@ -173,7 +173,7 @@ const JobDetailPage = () => {
               <span>{job?.type?.replace('-', ' ') || "Full time"}</span>
             </div>
             <div className="meta-item">
-              <DollarSign size={16} />
+              {/* <DollarSign size={16} /> */}
               <span>{formattedSalary}</span>
             </div>
             <div className="meta-item">
@@ -525,7 +525,7 @@ const JobDetailPage = () => {
         .submit-btn {
           width: 100%;
           padding: 12px;
-          background-color: #ff7b00;
+          background-color: #2A9D8F;
           color: white;
           border: none;
           border-radius: 4px;
@@ -535,7 +535,7 @@ const JobDetailPage = () => {
         }
         
         .submit-btn:hover {
-          background-color: #e67000;
+          background-color:rgb(26, 119, 108);
         }
       `}</style>
     </>

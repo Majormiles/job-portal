@@ -1,6 +1,5 @@
-const express = require('express');
-const router = express.Router();
-const {
+import express from 'express';
+import { 
   createCompany,
   getCompanies,
   getCompany,
@@ -8,14 +7,16 @@ const {
   deleteCompany,
   addEmployee,
   removeEmployee
-} = require('../controllers/company.controller');
-const { protect, authorize } = require('../middleware/auth.middleware');
+} from '../controllers/company.controller.js';
+import { protect, authorize } from '../middleware/auth.middleware.js';
+
+const router = express.Router();
 
 // Public routes
 router.get('/', getCompanies);
 router.get('/:id', getCompany);
 
-// Protected routes (Employers only)
+// Protected routes
 router.post('/', protect, authorize('employer'), createCompany);
 router.put('/:id', protect, authorize('employer'), updateCompany);
 router.delete('/:id', protect, authorize('employer'), deleteCompany);
@@ -24,4 +25,4 @@ router.delete('/:id', protect, authorize('employer'), deleteCompany);
 router.post('/:id/employees', protect, authorize('employer'), addEmployee);
 router.delete('/:id/employees/:userId', protect, authorize('employer'), removeEmployee);
 
-module.exports = router; 
+export default router; 

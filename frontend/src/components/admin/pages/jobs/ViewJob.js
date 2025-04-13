@@ -17,6 +17,7 @@ import {
 import { getJobById } from '../../../../services/jobService';
 import { getCategoryById } from '../../../../services/categoryService';
 import { formatDate, formatSalary } from '../../../../utils/formatters';
+import '../../styles/category.css';
 
 // Add CSS styles for the job description content
 const descriptionStyles = `
@@ -124,7 +125,7 @@ const ViewJob = () => {
   
   if (loading) {
     return (
-      <div className="ml-64 p-6 flex justify-center items-center h-screen">
+      <div className="admin-job-container flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -132,7 +133,7 @@ const ViewJob = () => {
   
   if (error) {
     return (
-      <div className="ml-64 p-6">
+      <div className="admin-job-container">
         <div className="bg-red-50 p-4 rounded-md flex items-center mb-4">
           <AlertCircle className="text-red-500 mr-3" size={24} />
           <p className="text-red-700">{error}</p>
@@ -150,7 +151,7 @@ const ViewJob = () => {
   
   if (!job) {
     return (
-      <div className="ml-64 p-6">
+      <div className="admin-job-container">
         <div className="bg-yellow-50 p-4 rounded-md mb-4">
           <p className="text-yellow-700">Job not found</p>
         </div>
@@ -166,7 +167,7 @@ const ViewJob = () => {
   }
   
   return (
-    <div className="ml-64 p-6">
+    <div className="admin-job-container">
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-4 mb-5">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">

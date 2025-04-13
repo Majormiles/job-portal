@@ -1,10 +1,10 @@
-const Company = require('../models/company.model');
-const User = require('../models/user.model');
+import Company from '../models/company.model.js';
+import User from '../models/user.model.js';
 
 // @desc    Create a new company
 // @route   POST /api/companies
 // @access  Private (Employers only)
-exports.createCompany = async (req, res) => {
+export const createCompany = async (req, res) => {
   try {
     // Check if user already owns a company
     const existingCompany = await Company.findOne({ owner: req.user.id });
@@ -42,7 +42,7 @@ exports.createCompany = async (req, res) => {
 // @desc    Get all companies
 // @route   GET /api/companies
 // @access  Public
-exports.getCompanies = async (req, res) => {
+export const getCompanies = async (req, res) => {
   try {
     const { industry, size, location } = req.query;
     const query = { status: 'active' };
@@ -73,7 +73,7 @@ exports.getCompanies = async (req, res) => {
 // @desc    Get company by ID
 // @route   GET /api/companies/:id
 // @access  Public
-exports.getCompany = async (req, res) => {
+export const getCompany = async (req, res) => {
   try {
     const company = await Company.findById(req.params.id)
       .populate('owner', 'name email')
@@ -103,7 +103,7 @@ exports.getCompany = async (req, res) => {
 // @desc    Update company
 // @route   PUT /api/companies/:id
 // @access  Private (Company owner only)
-exports.updateCompany = async (req, res) => {
+export const updateCompany = async (req, res) => {
   try {
     const company = await Company.findById(req.params.id);
 
@@ -147,7 +147,7 @@ exports.updateCompany = async (req, res) => {
 // @desc    Delete company
 // @route   DELETE /api/companies/:id
 // @access  Private (Company owner only)
-exports.deleteCompany = async (req, res) => {
+export const deleteCompany = async (req, res) => {
   try {
     const company = await Company.findById(req.params.id);
 
@@ -189,7 +189,7 @@ exports.deleteCompany = async (req, res) => {
 // @desc    Add employee to company
 // @route   POST /api/companies/:id/employees
 // @access  Private (Company owner only)
-exports.addEmployee = async (req, res) => {
+export const addEmployee = async (req, res) => {
   try {
     const company = await Company.findById(req.params.id);
 
@@ -248,7 +248,7 @@ exports.addEmployee = async (req, res) => {
 // @desc    Remove employee from company
 // @route   DELETE /api/companies/:id/employees/:userId
 // @access  Private (Company owner only)
-exports.removeEmployee = async (req, res) => {
+export const removeEmployee = async (req, res) => {
   try {
     const company = await Company.findById(req.params.id);
 

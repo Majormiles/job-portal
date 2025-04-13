@@ -21,6 +21,7 @@ import { getJobs, deleteJob } from '../../../../services/jobService';
 import { getCategories } from '../../../../services/categoryService';
 import { formatDate, formatSalary } from '../../../../utils/formatters';
 import { toast } from 'react-toastify';
+import '../../styles/category.css';
 
 const Jobs = () => {
   const navigate = useNavigate();
@@ -218,7 +219,7 @@ const Jobs = () => {
   };
 
   return (
-    <div className="ml-64 p-6">
+    <div className="admin-jobs-container">
       <div className="bg-white rounded-lg shadow p-4 mb-5">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>

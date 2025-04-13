@@ -7,6 +7,7 @@ import { uploadImage } from '../../../../services/uploadService';
 import { PlusCircle, MinusCircle, AlertCircle, Save, ArrowLeft, Bold, Italic, List, ListOrdered, Link as LinkIcon, Image, Code, Loader } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import '../../styles/category.css';
 
 // Add custom CSS for the Quill editor
 const quillStyles = `
@@ -587,559 +588,557 @@ const CreateJob = () => {
   }
 
   return (
-    <>
-      <div className="ml-64 p-6">
-        <div className="bg-white rounded-lg shadow p-4 mb-5">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-800">
-                {isEditMode ? 'Edit Job' : 'Create New Job'}
-              </h1>
-              {formChanged && (
-                <span className="ml-3 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-md">
-                  Unsaved changes
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => navigateWithConfirmation('/admin/jobs')}
-              className="flex items-center text-blue-600 hover:text-blue-800"
-            >
-              <ArrowLeft size={16} className="mr-1" />
-              Back to Jobs
-            </button>
+    <div className="admin-job-container">
+      <div className="bg-white rounded-lg shadow p-4 mb-5">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center">
+            <h1 className="text-xl font-bold text-gray-800">
+              {isEditMode ? 'Edit Job' : 'Create New Job'}
+            </h1>
+            {formChanged && (
+              <span className="ml-3 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-md">
+                Unsaved changes
+              </span>
+            )}
           </div>
+          <button
+            onClick={() => navigateWithConfirmation('/admin/jobs')}
+            className="flex items-center text-blue-600 hover:text-blue-800"
+          >
+            <ArrowLeft size={16} className="mr-1" />
+            Back to Jobs
+          </button>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="bg-gray-50 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Main Content Area - 3 columns wide on large screens */}
-              <div className="lg:col-span-3 bg-white p-6">
-                <div className="space-y-5">
-                  {/* Basic Info Section */}
-                  <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
-                    <h2 className="text-base font-semibold mb-3 text-gray-700 pb-2 border-b border-gray-100">Basic Information</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Job Title */}
-                      <div className="col-span-full">
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                          Job Title*
-                        </label>
-                        <input
-                          type="text"
-                          id="title"
-                          name="title"
-                          value={formData.title}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-md ${
-                            errors.title ? 'border-red-500' : 'border-gray-300'
-                          } focus:outline-none focus:ring focus:ring-blue-200`}
-                          placeholder="e.g. Senior Software Engineer"
-                        />
-                        {errors.title && (
-                          <p className="mt-1 text-sm text-red-500 error-message">{errors.title}</p>
-                        )}
-                      </div>
-                      
-                      {/* Job Category */}
-                      <div>
-                        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                          Category*
-                        </label>
-                        <select
-                          id="category"
-                          name="category"
-                          value={formData.category}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-md ${
-                            errors.category ? 'border-red-500' : 'border-gray-300'
-                          } focus:outline-none focus:ring focus:ring-blue-200`}
-                        >
-                          <option value="">Select a category</option>
-                          {categories.map(category => (
-                            <option key={category._id} value={category._id}>
-                              {category.name}
-                            </option>
-                          ))}
-                        </select>
-                        {errors.category && (
-                          <p className="mt-1 text-sm text-red-500 error-message">{errors.category}</p>
-                        )}
-                      </div>
-                      
-                      {/* Job Type */}
-                      <div>
-                        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-                          Job Type*
-                        </label>
-                        <select
-                          id="type"
-                          name="type"
-                          value={formData.type}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                        >
-                          <option value="full-time">Full-time</option>
-                          <option value="part-time">Part-time</option>
-                          <option value="contract">Contract</option>
-                          <option value="internship">Internship</option>
-                        </select>
-                      </div>
-                      
-                      {/* Experience Level */}
-                      <div>
-                        <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1">
-                          Experience Level*
-                        </label>
-                        <select
-                          id="experience"
-                          name="experience"
-                          value={formData.experience}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                        >
-                          <option value="entry">Entry Level</option>
-                          <option value="mid">Mid Level</option>
-                          <option value="senior">Senior Level</option>
-                          <option value="lead">Lead / Principal</option>
-                          <option value="manager">Manager</option>
-                        </select>
-                      </div>
-                      
-                      {/* Job Location */}
-                      <div>
-                        <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-                          Location*
-                        </label>
-                        <input
-                          type="text"
-                          id="location"
-                          name="location"
-                          value={formData.location}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-md ${
-                            errors.location ? 'border-red-500' : 'border-gray-300'
-                          } focus:outline-none focus:ring focus:ring-blue-200`}
-                          placeholder="e.g. New York, NY or Remote"
-                        />
-                        {errors.location && (
-                          <p className="mt-1 text-sm text-red-500 error-message">{errors.location}</p>
-                        )}
-                      </div>
-                      
-                      {/* Job Status */}
-                      <div>
-                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                          Status
-                        </label>
-                        <select
-                          id="status"
-                          name="status"
-                          value={formData.status}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                        >
-                          <option value="active">Active</option>
-                          <option value="draft">Draft</option>
-                          <option value="closed">Closed</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
+      <form onSubmit={handleSubmit}>
+        <div className="bg-gray-50 rounded-lg overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Main Content Area - 3 columns wide on large screens */}
+            <div className="lg:col-span-3 bg-white p-6">
+              <div className="space-y-5">
+                {/* Basic Info Section */}
+                <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
+                  <h2 className="text-base font-semibold mb-3 text-gray-700 pb-2 border-b border-gray-100">Basic Information</h2>
                   
-                  {/* Salary Section */}
-                  <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
-                    <h2 className="text-base font-semibold mb-3 text-gray-700 pb-2 border-b border-gray-100">Salary Information</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Min Salary */}
-                      <div>
-                        <label htmlFor="salary.min" className="block text-sm font-medium text-gray-700 mb-1">
-                          Minimum Salary*
-                        </label>
-                        <input
-                          type="text"
-                          id="salary.min"
-                          name="salary.min"
-                          value={formData.salary.min}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-md ${
-                            errors['salary.min'] ? 'border-red-500' : 'border-gray-300'
-                          } focus:outline-none focus:ring focus:ring-blue-200`}
-                          placeholder="e.g. 50000"
-                        />
-                        {errors['salary.min'] && (
-                          <p className="mt-1 text-sm text-red-500 error-message">{errors['salary.min']}</p>
-                        )}
-                      </div>
-                      
-                      {/* Max Salary */}
-                      <div>
-                        <label htmlFor="salary.max" className="block text-sm font-medium text-gray-700 mb-1">
-                          Maximum Salary*
-                        </label>
-                        <input
-                          type="text"
-                          id="salary.max"
-                          name="salary.max"
-                          value={formData.salary.max}
-                          onChange={handleChange}
-                          className={`w-full px-3 py-2 border rounded-md ${
-                            errors['salary.max'] ? 'border-red-500' : 'border-gray-300'
-                          } focus:outline-none focus:ring focus:ring-blue-200`}
-                          placeholder="e.g. 70000"
-                        />
-                        {errors['salary.max'] && (
-                          <p className="mt-1 text-sm text-red-500 error-message">{errors['salary.max']}</p>
-                        )}
-                      </div>
-                      
-                      {/* Currency */}
-                      <div>
-                        <label htmlFor="salary.currency" className="block text-sm font-medium text-gray-700 mb-1">
-                          Currency
-                        </label>
-                        <select
-                          id="salary.currency"
-                          name="salary.currency"
-                          value={formData.salary.currency}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                        >
-                          <option value="USD">USD - US Dollar</option>
-                          <option value="EUR">EUR - Euro</option>
-                          <option value="GBP">GBP - British Pound</option>
-                          <option value="CAD">CAD - Canadian Dollar</option>
-                          <option value="AUD">AUD - Australian Dollar</option>
-                          <option value="GHS">GHS - Ghanaian Cedi</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Description Section */}
-                  <div id="description-section" className="bg-white p-4 rounded border border-gray-100 shadow-sm">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100">Job Description</h2>
-                      <button
-                        type="button"
-                        onClick={togglePreview}
-                        className="px-3 py-1 text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 rounded-md text-sm font-medium flex items-center transition-colors"
-                      >
-                        {showPreview ? (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                            Edit Mode
-                          </>
-                        ) : (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            Preview
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                        Job Description*
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Job Title */}
+                    <div className="col-span-full">
+                      <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                        Job Title*
                       </label>
-                      
-                      {showPreview ? (
-                        <div className="border rounded-md p-4 bg-white min-h-[300px] shadow-inner overflow-auto">
-                          <style dangerouslySetInnerHTML={{ __html: previewStyles }} />
-                          <div className="preview-container" dangerouslySetInnerHTML={{ __html: formData.description }} />
-                        </div>
-                      ) : (
-                        <div className={`border rounded-md ${
-                          errors.description ? 'border-red-500' : 'border-gray-300'
-                        }`}>
-                          <style dangerouslySetInnerHTML={{ __html: quillStyles }} />
-                          <div className="relative min-h-[300px]">
-                            {imageUploading && (
-                              <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
-                                <div className="flex items-center space-x-2">
-                                  <Loader size={20} className="animate-spin text-blue-500" />
-                                  <span>Uploading image...</span>
-                                </div>
-                              </div>
-                            )}
-                            <ReactQuill
-                              key={`editor-${id || 'new'}-${Date.now()}`}
-                              ref={quillRef}
-                              theme="snow"
-                              value={formData.description}
-                              onChange={handleDescriptionChange}
-                              modules={modules}
-                              formats={formats}
-                              placeholder="Enter a detailed job description..."
-                            />
-                          </div>
-                        </div>
+                      <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 border rounded-md ${
+                          errors.title ? 'border-red-500' : 'border-gray-300'
+                        } focus:outline-none focus:ring focus:ring-blue-200`}
+                        placeholder="e.g. Senior Software Engineer"
+                      />
+                      {errors.title && (
+                        <p className="mt-1 text-sm text-red-500 error-message">{errors.title}</p>
                       )}
-                      
-                      {errors.description && (
-                        <p className="mt-1 text-sm text-red-500 error-message">{errors.description}</p>
+                    </div>
+                    
+                    {/* Job Category */}
+                    <div>
+                      <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                        Category*
+                      </label>
+                      <select
+                        id="category"
+                        name="category"
+                        value={formData.category}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 border rounded-md ${
+                          errors.category ? 'border-red-500' : 'border-gray-300'
+                        } focus:outline-none focus:ring focus:ring-blue-200`}
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map(category => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.category && (
+                        <p className="mt-1 text-sm text-red-500 error-message">{errors.category}</p>
                       )}
-                      
-                      <div className={`mt-8 text-sm text-gray-600 ${showPreview ? 'hidden' : 'block'} bg-blue-50 p-3 rounded border border-blue-100`}>
-                        <h4 className="font-medium mb-1">Formatting Tips:</h4>
-                        <ul className="list-disc pl-5 space-y-1">
-                          <li>Use headings to organize your content</li>
-                          <li>Highlight important information with <strong>bold</strong> or <em>italic</em> text</li>
-                          <li>Create bullet points or numbered lists for requirements and responsibilities</li>
-                          <li>Add links to relevant resources or application instructions</li>
-                          <li>Keep paragraphs short and focused for better readability</li>
-                          <li>Click the 'Preview' button to see how your description will look</li>
-                        </ul>
-                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Requirements Section */}
-                  <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
-                    <div className="flex justify-between items-center mb-3">
-                      <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100 w-full">Job Requirements*</h2>
-                      <button
-                        type="button"
-                        onClick={() => addArrayItem('requirements')}
-                        className="inline-flex items-center text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
+                    
+                    {/* Job Type */}
+                    <div>
+                      <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+                        Job Type*
+                      </label>
+                      <select
+                        id="type"
+                        name="type"
+                        value={formData.type}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
                       >
-                        <PlusCircle size={16} className="mr-1" />
-                        Add
-                      </button>
+                        <option value="full-time">Full-time</option>
+                        <option value="part-time">Part-time</option>
+                        <option value="contract">Contract</option>
+                        <option value="internship">Internship</option>
+                      </select>
                     </div>
                     
-                    {errors.requirements && (
-                      <div className="mb-4 flex items-center px-3 py-2 bg-red-50 text-red-800 rounded-md">
-                        <AlertCircle size={16} className="mr-2" />
-                        <p className="text-sm error-message">{errors.requirements}</p>
-                      </div>
-                    )}
-                    
-                    {formData.requirements.map((requirement, index) => (
-                      <div key={`req-${index}`} className="flex items-center gap-2 mb-3">
-                        <input
-                          type="text"
-                          value={requirement}
-                          onChange={(e) => handleArrayChange(e, index, 'requirements')}
-                          className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                          placeholder="e.g. Bachelor's degree in Computer Science or related field"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeArrayItem(index, 'requirements')}
-                          className={`text-red-500 hover:text-red-700 ${formData.requirements.length === 1 ? 'invisible' : ''}`}
-                          disabled={formData.requirements.length === 1}
-                        >
-                          <MinusCircle size={20} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Responsibilities Section */}
-                  <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
-                    <div className="flex justify-between items-center mb-3">
-                      <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100 w-full">Job Responsibilities*</h2>
-                      <button
-                        type="button"
-                        onClick={() => addArrayItem('responsibilities')}
-                        className="inline-flex items-center text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
+                    {/* Experience Level */}
+                    <div>
+                      <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1">
+                        Experience Level*
+                      </label>
+                      <select
+                        id="experience"
+                        name="experience"
+                        value={formData.experience}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
                       >
-                        <PlusCircle size={16} className="mr-1" />
-                        Add
-                      </button>
+                        <option value="entry">Entry Level</option>
+                        <option value="mid">Mid Level</option>
+                        <option value="senior">Senior Level</option>
+                        <option value="lead">Lead / Principal</option>
+                        <option value="manager">Manager</option>
+                      </select>
                     </div>
                     
-                    {errors.responsibilities && (
-                      <div className="mb-4 flex items-center px-3 py-2 bg-red-50 text-red-800 rounded-md">
-                        <AlertCircle size={16} className="mr-2" />
-                        <p className="text-sm error-message">{errors.responsibilities}</p>
-                      </div>
-                    )}
+                    {/* Job Location */}
+                    <div>
+                      <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                        Location*
+                      </label>
+                      <input
+                        type="text"
+                        id="location"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 border rounded-md ${
+                          errors.location ? 'border-red-500' : 'border-gray-300'
+                        } focus:outline-none focus:ring focus:ring-blue-200`}
+                        placeholder="e.g. New York, NY or Remote"
+                      />
+                      {errors.location && (
+                        <p className="mt-1 text-sm text-red-500 error-message">{errors.location}</p>
+                      )}
+                    </div>
                     
-                    {formData.responsibilities.map((responsibility, index) => (
-                      <div key={`resp-${index}`} className="flex items-center gap-2 mb-3">
-                        <input
-                          type="text"
-                          value={responsibility}
-                          onChange={(e) => handleArrayChange(e, index, 'responsibilities')}
-                          className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                          placeholder="e.g. Design and develop web applications"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeArrayItem(index, 'responsibilities')}
-                          className={`text-red-500 hover:text-red-700 ${formData.responsibilities.length === 1 ? 'invisible' : ''}`}
-                          disabled={formData.responsibilities.length === 1}
-                        >
-                          <MinusCircle size={20} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Skills Section */}
-                  <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
-                    <div className="flex justify-between items-center mb-3">
-                      <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100 w-full">Required Skills*</h2>
-                      <button
-                        type="button"
-                        onClick={() => addArrayItem('skills')}
-                        className="inline-flex items-center text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
+                    {/* Job Status */}
+                    <div>
+                      <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                        Status
+                      </label>
+                      <select
+                        id="status"
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
                       >
-                        <PlusCircle size={16} className="mr-1" />
-                        Add
-                      </button>
+                        <option value="active">Active</option>
+                        <option value="draft">Draft</option>
+                        <option value="closed">Closed</option>
+                      </select>
                     </div>
-                    
-                    {errors.skills && (
-                      <div className="mb-4 flex items-center px-3 py-2 bg-red-50 text-red-800 rounded-md">
-                        <AlertCircle size={16} className="mr-2" />
-                        <p className="text-sm error-message">{errors.skills}</p>
-                      </div>
-                    )}
-                    
-                    {formData.skills.map((skill, index) => (
-                      <div key={`skill-${index}`} className="flex items-center gap-2 mb-3">
-                        <input
-                          type="text"
-                          value={skill}
-                          onChange={(e) => handleArrayChange(e, index, 'skills')}
-                          className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                          placeholder="e.g. JavaScript"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeArrayItem(index, 'skills')}
-                          className={`text-red-500 hover:text-red-700 ${formData.skills.length === 1 ? 'invisible' : ''}`}
-                          disabled={formData.skills.length === 1}
-                        >
-                          <MinusCircle size={20} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Benefits Section */}
-                  <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
-                    <div className="flex justify-between items-center mb-3">
-                      <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100 w-full">Job Benefits*</h2>
-                      <button
-                        type="button"
-                        onClick={() => addArrayItem('benefits')}
-                        className="inline-flex items-center text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
-                      >
-                        <PlusCircle size={16} className="mr-1" />
-                        Add
-                      </button>
-                    </div>
-                    
-                    {errors.benefits && (
-                      <div className="mb-4 flex items-center px-3 py-2 bg-red-50 text-red-800 rounded-md">
-                        <AlertCircle size={16} className="mr-2" />
-                        <p className="text-sm error-message">{errors.benefits}</p>
-                      </div>
-                    )}
-                    
-                    {formData.benefits.map((benefit, index) => (
-                      <div key={`benefit-${index}`} className="flex items-center gap-2 mb-3">
-                        <input
-                          type="text"
-                          value={benefit}
-                          onChange={(e) => handleArrayChange(e, index, 'benefits')}
-                          className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                          placeholder="e.g. Health insurance"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeArrayItem(index, 'benefits')}
-                          className={`text-red-500 hover:text-red-700 ${formData.benefits.length === 1 ? 'invisible' : ''}`}
-                          disabled={formData.benefits.length === 1}
-                        >
-                          <MinusCircle size={20} />
-                        </button>
-                      </div>
-                    ))}
                   </div>
                 </div>
-              </div>
-              
-              {/* Sidebar - 1 column wide on large screens */}
-              <div className="bg-white p-6 shadow-sm rounded-lg h-fit lg:sticky lg:top-6">
-                <h2 className="text-base font-semibold mb-4 text-gray-700">Actions</h2>
                 
-                <div className="space-y-4">
-                  <div className="flex flex-col">
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                      Job Status
-                    </label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
-                    >
-                      <option value="active">Active</option>
-                      <option value="draft">Draft</option>
-                      <option value="closed">Closed</option>
-                    </select>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Only active jobs are visible to applicants
-                    </p>
-                  </div>
+                {/* Salary Section */}
+                <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
+                  <h2 className="text-base font-semibold mb-3 text-gray-700 pb-2 border-b border-gray-100">Salary Information</h2>
                   
-                  <div className="pt-4 border-t border-gray-200">
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none flex justify-center items-center"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader size={16} className="animate-spin mr-2" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save size={16} className="mr-2" />
-                          {isEditMode ? 'Update Job' : 'Create Job'}
-                        </>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Min Salary */}
+                    <div>
+                      <label htmlFor="salary.min" className="block text-sm font-medium text-gray-700 mb-1">
+                        Minimum Salary*
+                      </label>
+                      <input
+                        type="text"
+                        id="salary.min"
+                        name="salary.min"
+                        value={formData.salary.min}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 border rounded-md ${
+                          errors['salary.min'] ? 'border-red-500' : 'border-gray-300'
+                        } focus:outline-none focus:ring focus:ring-blue-200`}
+                        placeholder="e.g. 50000"
+                      />
+                      {errors['salary.min'] && (
+                        <p className="mt-1 text-sm text-red-500 error-message">{errors['salary.min']}</p>
                       )}
-                    </button>
+                    </div>
                     
+                    {/* Max Salary */}
+                    <div>
+                      <label htmlFor="salary.max" className="block text-sm font-medium text-gray-700 mb-1">
+                        Maximum Salary*
+                      </label>
+                      <input
+                        type="text"
+                        id="salary.max"
+                        name="salary.max"
+                        value={formData.salary.max}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 border rounded-md ${
+                          errors['salary.max'] ? 'border-red-500' : 'border-gray-300'
+                        } focus:outline-none focus:ring focus:ring-blue-200`}
+                        placeholder="e.g. 70000"
+                      />
+                      {errors['salary.max'] && (
+                        <p className="mt-1 text-sm text-red-500 error-message">{errors['salary.max']}</p>
+                      )}
+                    </div>
+                    
+                    {/* Currency */}
+                    <div>
+                      <label htmlFor="salary.currency" className="block text-sm font-medium text-gray-700 mb-1">
+                        Currency
+                      </label>
+                      <select
+                        id="salary.currency"
+                        name="salary.currency"
+                        value={formData.salary.currency}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                      >
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="CAD">CAD - Canadian Dollar</option>
+                        <option value="AUD">AUD - Australian Dollar</option>
+                        <option value="GHS">GHS - Ghanaian Cedi</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Description Section */}
+                <div id="description-section" className="bg-white p-4 rounded border border-gray-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100">Job Description</h2>
                     <button
                       type="button"
-                      onClick={() => navigateWithConfirmation('/admin/jobs')}
-                      className="w-full mt-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none flex justify-center items-center"
+                      onClick={togglePreview}
+                      className="px-3 py-1 text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 rounded-md text-sm font-medium flex items-center transition-colors"
                     >
-                      <ArrowLeft size={16} className="mr-2" />
-                      Cancel
+                      {showPreview ? (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                          Edit Mode
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          Preview
+                        </>
+                      )}
                     </button>
                   </div>
                   
-                  {formChanged && (
-                    <div className="p-3 bg-yellow-50 border border-yellow-100 rounded-md flex items-center text-yellow-800 text-sm">
-                      <AlertCircle size={16} className="mr-2 flex-shrink-0" />
-                      <span>You have unsaved changes</span>
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                      Job Description*
+                    </label>
+                    
+                    {showPreview ? (
+                      <div className="border rounded-md p-4 bg-white min-h-[300px] shadow-inner overflow-auto">
+                        <style dangerouslySetInnerHTML={{ __html: previewStyles }} />
+                        <div className="preview-container" dangerouslySetInnerHTML={{ __html: formData.description }} />
+                      </div>
+                    ) : (
+                      <div className={`border rounded-md ${
+                        errors.description ? 'border-red-500' : 'border-gray-300'
+                      }`}>
+                        <style dangerouslySetInnerHTML={{ __html: quillStyles }} />
+                        <div className="relative min-h-[300px]">
+                          {imageUploading && (
+                            <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
+                              <div className="flex items-center space-x-2">
+                                <Loader size={20} className="animate-spin text-blue-500" />
+                                <span>Uploading image...</span>
+                              </div>
+                            </div>
+                          )}
+                          <ReactQuill
+                            key={`editor-${id || 'new'}-${Date.now()}`}
+                            ref={quillRef}
+                            theme="snow"
+                            value={formData.description}
+                            onChange={handleDescriptionChange}
+                            modules={modules}
+                            formats={formats}
+                            placeholder="Enter a detailed job description..."
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {errors.description && (
+                      <p className="mt-1 text-sm text-red-500 error-message">{errors.description}</p>
+                    )}
+                    
+                    <div className={`mt-8 text-sm text-gray-600 ${showPreview ? 'hidden' : 'block'} bg-blue-50 p-3 rounded border border-blue-100`}>
+                      <h4 className="font-medium mb-1">Formatting Tips:</h4>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Use headings to organize your content</li>
+                        <li>Highlight important information with <strong>bold</strong> or <em>italic</em> text</li>
+                        <li>Create bullet points or numbered lists for requirements and responsibilities</li>
+                        <li>Add links to relevant resources or application instructions</li>
+                        <li>Keep paragraphs short and focused for better readability</li>
+                        <li>Click the 'Preview' button to see how your description will look</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Requirements Section */}
+                <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-3">
+                    <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100 w-full">Job Requirements*</h2>
+                    <button
+                      type="button"
+                      onClick={() => addArrayItem('requirements')}
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
+                    >
+                      <PlusCircle size={16} className="mr-1" />
+                      Add
+                    </button>
+                  </div>
+                  
+                  {errors.requirements && (
+                    <div className="mb-4 flex items-center px-3 py-2 bg-red-50 text-red-800 rounded-md">
+                      <AlertCircle size={16} className="mr-2" />
+                      <p className="text-sm error-message">{errors.requirements}</p>
                     </div>
                   )}
+                  
+                  {formData.requirements.map((requirement, index) => (
+                    <div key={`req-${index}`} className="flex items-center gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={requirement}
+                        onChange={(e) => handleArrayChange(e, index, 'requirements')}
+                        className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                        placeholder="e.g. Bachelor's degree in Computer Science or related field"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeArrayItem(index, 'requirements')}
+                        className={`text-red-500 hover:text-red-700 ${formData.requirements.length === 1 ? 'invisible' : ''}`}
+                        disabled={formData.requirements.length === 1}
+                      >
+                        <MinusCircle size={20} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Responsibilities Section */}
+                <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-3">
+                    <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100 w-full">Job Responsibilities*</h2>
+                    <button
+                      type="button"
+                      onClick={() => addArrayItem('responsibilities')}
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
+                    >
+                      <PlusCircle size={16} className="mr-1" />
+                      Add
+                    </button>
+                  </div>
+                  
+                  {errors.responsibilities && (
+                    <div className="mb-4 flex items-center px-3 py-2 bg-red-50 text-red-800 rounded-md">
+                      <AlertCircle size={16} className="mr-2" />
+                      <p className="text-sm error-message">{errors.responsibilities}</p>
+                    </div>
+                  )}
+                  
+                  {formData.responsibilities.map((responsibility, index) => (
+                    <div key={`resp-${index}`} className="flex items-center gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={responsibility}
+                        onChange={(e) => handleArrayChange(e, index, 'responsibilities')}
+                        className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                        placeholder="e.g. Design and develop web applications"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeArrayItem(index, 'responsibilities')}
+                        className={`text-red-500 hover:text-red-700 ${formData.responsibilities.length === 1 ? 'invisible' : ''}`}
+                        disabled={formData.responsibilities.length === 1}
+                      >
+                        <MinusCircle size={20} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Skills Section */}
+                <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-3">
+                    <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100 w-full">Required Skills*</h2>
+                    <button
+                      type="button"
+                      onClick={() => addArrayItem('skills')}
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
+                    >
+                      <PlusCircle size={16} className="mr-1" />
+                      Add
+                    </button>
+                  </div>
+                  
+                  {errors.skills && (
+                    <div className="mb-4 flex items-center px-3 py-2 bg-red-50 text-red-800 rounded-md">
+                      <AlertCircle size={16} className="mr-2" />
+                      <p className="text-sm error-message">{errors.skills}</p>
+                    </div>
+                  )}
+                  
+                  {formData.skills.map((skill, index) => (
+                    <div key={`skill-${index}`} className="flex items-center gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={skill}
+                        onChange={(e) => handleArrayChange(e, index, 'skills')}
+                        className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                        placeholder="e.g. JavaScript"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeArrayItem(index, 'skills')}
+                        className={`text-red-500 hover:text-red-700 ${formData.skills.length === 1 ? 'invisible' : ''}`}
+                        disabled={formData.skills.length === 1}
+                      >
+                        <MinusCircle size={20} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Benefits Section */}
+                <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-3">
+                    <h2 className="text-base font-semibold text-gray-700 pb-2 border-b border-gray-100 w-full">Job Benefits*</h2>
+                    <button
+                      type="button"
+                      onClick={() => addArrayItem('benefits')}
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 ml-2 whitespace-nowrap"
+                    >
+                      <PlusCircle size={16} className="mr-1" />
+                      Add
+                    </button>
+                  </div>
+                  
+                  {errors.benefits && (
+                    <div className="mb-4 flex items-center px-3 py-2 bg-red-50 text-red-800 rounded-md">
+                      <AlertCircle size={16} className="mr-2" />
+                      <p className="text-sm error-message">{errors.benefits}</p>
+                    </div>
+                  )}
+                  
+                  {formData.benefits.map((benefit, index) => (
+                    <div key={`benefit-${index}`} className="flex items-center gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={benefit}
+                        onChange={(e) => handleArrayChange(e, index, 'benefits')}
+                        className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                        placeholder="e.g. Health insurance"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeArrayItem(index, 'benefits')}
+                        className={`text-red-500 hover:text-red-700 ${formData.benefits.length === 1 ? 'invisible' : ''}`}
+                        disabled={formData.benefits.length === 1}
+                      >
+                        <MinusCircle size={20} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
+            
+            {/* Sidebar - 1 column wide on large screens */}
+            <div className="bg-white p-6 shadow-sm rounded-lg h-fit lg:sticky lg:top-6">
+              <h2 className="text-base font-semibold mb-4 text-gray-700">Actions</h2>
+              
+              <div className="space-y-4">
+                <div className="flex flex-col">
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                    Job Status
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                  >
+                    <option value="active">Active</option>
+                    <option value="draft">Draft</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Only active jobs are visible to applicants
+                  </p>
+                </div>
+                
+                <div className="pt-4 border-t border-gray-200">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none flex justify-center items-center"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader size={16} className="animate-spin mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} className="mr-2" />
+                        {isEditMode ? 'Update Job' : 'Create Job'}
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => navigateWithConfirmation('/admin/jobs')}
+                    className="w-full mt-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none flex justify-center items-center"
+                  >
+                    <ArrowLeft size={16} className="mr-2" />
+                    Cancel
+                  </button>
+                </div>
+                
+                {formChanged && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-100 rounded-md flex items-center text-yellow-800 text-sm">
+                    <AlertCircle size={16} className="mr-2 flex-shrink-0" />
+                    <span>You have unsaved changes</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </form>
-      </div>
-    </>
+        </div>
+      </form>
+    </div>
   );
 };
 

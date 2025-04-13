@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboardingStatus } from '../../hooks/useOnboardingStatus';
 import '../css/Header_one.css';
 import { toast } from 'react-toastify';
+import { searchJobs, getCategorySuggestions, getLocationSuggestions, getSearchSuggestions } from '../../services/searchService';
+import { getPortalStats } from '../../services/statsService';
 
 const JobPortal = () => {
   const navigate = useNavigate();
@@ -13,6 +15,30 @@ const JobPortal = () => {
   const [scrolled, setScrolled] = useState(false);
   const [heroAnimation, setHeroAnimation] = useState(false);
   const [logoAnimation, setLogoAnimation] = useState(false);
+  
+  // Add search-related state
+  const [query, setQuery] = useState('');
+  const [location, setLocation] = useState('');
+  const [category, setCategory] = useState('');
+  const [locationOptions, setLocationOptions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Add stats-related state
+  const [stats, setStats] = useState({
+    jobs: 0,
+    candidates: 0,
+    companies: 0
+  });
+  const [statsLoaded, setStatsLoaded] = useState(false);
+  
+  // Refs for counter animation
+  const jobsCounterRef = useRef(null);
+  const candidatesCounterRef = useRef(null);
+  const companiesCounterRef = useRef(null);
 
   // Handle scroll effects and animations
   useEffect(() => {
@@ -36,6 +62,277 @@ const JobPortal = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Fetch portal statistics data
+  useEffect(() => {
+    console.log('Starting stats fetch...');
+    
+    const fetchStats = async () => {
+      try {
+        console.log('Fetching stats data...');
+        const response = await getPortalStats();
+        console.log('Stats API response:', response);
+        
+        if (response.success) {
+          console.log('Setting stats data:', response.data);
+          // Check if we have real data (not all zeros)
+          const hasRealData = 
+            response.data.jobs > 0 || 
+            response.data.candidates > 0 || 
+            response.data.companies > 0;
+          
+          if (hasRealData) {
+            console.log('REAL DATA FOUND IN DATABASE:', response.data);
+          } else {
+            toast.info('No portal statistics found in database.');
+          }
+          
+          // Log the refs to see if they're properly initialized
+          console.log('Refs status:', {
+            jobsRef: !!jobsCounterRef.current,
+            candidatesRef: !!candidatesCounterRef.current, 
+            companiesRef: !!companiesCounterRef.current
+          });
+          
+          setStats(response.data);
+          setStatsLoaded(true);
+          
+          // Initialize data-count attributes on counter elements after stats are loaded
+          if (jobsCounterRef.current) {
+            console.log('Setting jobs count:', response.data.jobs);
+            jobsCounterRef.current.setAttribute('data-count', response.data.jobs || 0);
+            jobsCounterRef.current.textContent = response.data.jobs || 0;
+          } else {
+            console.warn('Jobs counter ref is null');
+          }
+          
+          if (candidatesCounterRef.current) {
+            console.log('Setting candidates count:', response.data.candidates);
+            candidatesCounterRef.current.setAttribute('data-count', response.data.candidates || 0);
+            candidatesCounterRef.current.textContent = response.data.candidates || 0;
+          } else {
+            console.warn('Candidates counter ref is null');
+          }
+          
+          if (companiesCounterRef.current) {
+            console.log('Setting companies count:', response.data.companies);
+            companiesCounterRef.current.setAttribute('data-count', response.data.companies || 0);
+            companiesCounterRef.current.textContent = response.data.companies || 0;
+          } else {
+            console.warn('Companies counter ref is null');
+          }
+        } else {
+          console.error('Failed to fetch stats data:', response.message);
+          toast.error('Failed to load portal statistics');
+          
+          // Still set the data we got, even if it's zeros
+          setStats(response.data);
+          setStatsLoaded(true);
+          
+          if (jobsCounterRef.current) {
+            jobsCounterRef.current.setAttribute('data-count', response.data.jobs || 0);
+            jobsCounterRef.current.textContent = response.data.jobs || 0;
+          }
+          
+          if (candidatesCounterRef.current) {
+            candidatesCounterRef.current.setAttribute('data-count', response.data.candidates || 0);
+            candidatesCounterRef.current.textContent = response.data.candidates || 0;
+          }
+          
+          if (companiesCounterRef.current) {
+            companiesCounterRef.current.setAttribute('data-count', response.data.companies || 0);
+            companiesCounterRef.current.textContent = response.data.companies || 0;
+          }
+        }
+      } catch (error) {
+        console.error('Error in stats fetching:', error);
+        toast.error('Failed to load portal statistics');
+        
+        // Set empty stats in case of error
+        setStats({
+          jobs: 0,
+          candidates: 0,
+          companies: 0
+        });
+        setStatsLoaded(true);
+      }
+    };
+
+    // Wait a bit for the DOM to render before fetching stats
+    const timer = setTimeout(() => {
+      fetchStats();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle counter animation for stats
+  useEffect(() => {
+    if (statsLoaded) {
+      console.log('Stats loaded, setting up counter animation');
+      console.log('REAL DATABASE STATS:', stats);
+      
+      const animateCounter = (countElement, targetValue) => {
+        if (!countElement) {
+          console.warn('Counter element is null, cannot animate');
+          return;
+        }
+        
+        console.log(`Animating counter for target value: ${targetValue}`);
+        const count = parseInt(targetValue) || 0;
+        
+        // Don't animate if the count is zero (would look weird)
+        if (count === 0) {
+          countElement.textContent = '0';
+          return;
+        }
+        
+        let current = 0;
+        const increment = count > 1000 ? Math.ceil(count / 50) : Math.ceil(count / 25);
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= count) {
+            countElement.textContent = count.toLocaleString();
+            clearInterval(timer);
+          } else {
+            countElement.textContent = current.toLocaleString();
+          }
+        }, 30);
+      };
+
+      // Create an intersection observer to start animation when stats section is visible
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            console.log('Stats section is visible, starting animations');
+            // Start animations for each counter
+            animateCounter(jobsCounterRef.current, stats.jobs);
+            animateCounter(candidatesCounterRef.current, stats.candidates);
+            animateCounter(companiesCounterRef.current, stats.companies);
+            
+            // Stop observing after animation starts
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.25 });
+      
+      // Find the stats section container and observe it
+      const statsSection = document.querySelector('.stats-section');
+      if (statsSection) {
+        console.log('Found stats section, starting observation');
+        observer.observe(statsSection);
+      } else {
+        console.warn('Stats section not found in DOM');
+      }
+      
+      return () => {
+        if (statsSection) {
+          observer.unobserve(statsSection);
+        }
+      };
+    }
+  }, [statsLoaded, stats]);
+
+  // Fetch location and category options on component mount
+  useEffect(() => {
+    const fetchSearchOptions = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch both location and category data in parallel
+        const [locationsData, categoriesData] = await Promise.all([
+          getLocationSuggestions(),
+          getCategorySuggestions()
+        ]);
+        
+        // Check if we received valid data for locations
+        if (Array.isArray(locationsData) && locationsData.length > 0) {
+          setLocationOptions(locationsData);
+          console.log('Loaded locations:', locationsData.length);
+        } else {
+          console.error('Invalid location data received:', locationsData);
+          toast.error('Failed to load location options');
+        }
+        
+        // Check if we received valid data for categories
+        if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+          setCategoryOptions(categoriesData);
+          console.log('Loaded categories:', categoriesData.length);
+        } else {
+          console.error('Invalid category data received:', categoriesData);
+          toast.error('Failed to load category options');
+        }
+      } catch (error) {
+        console.error('Error fetching search options:', error);
+        toast.error('Failed to load search options');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSearchOptions();
+  }, []);
+
+  // Handle input changes for search query
+  const handleSearchQueryChange = async (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    
+    if (value.trim() !== '') {
+      try {
+        const results = await getSearchSuggestions(value);
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+      } catch (error) {
+        console.error('Error getting search suggestions:', error);
+      }
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle selection of a suggestion
+  const handleSuggestionClick = (suggestion) => {
+    setQuery(suggestion);
+    setShowSuggestions(false);
+  };
+
+  // Handle search form submission
+  const handleSearchSubmit = () => {
+    if (!query && !location && !category) {
+      toast.info('Please enter at least one search parameter');
+      return;
+    }
+    
+    setIsSearching(true);
+    
+    try {
+      // Construct search parameters - using standardized parameter names
+      const searchParams = {
+        query: query,
+        location: location,
+        category: category,
+        page: 1,
+        limit: 10
+      };
+      
+      // Create URL search parameters with consistent naming
+      const urlParams = new URLSearchParams();
+      if (query) urlParams.set('query', query);
+      if (location) urlParams.set('location', location);
+      if (category) urlParams.set('category', category);
+      
+      // Navigate to jobs page with search params
+      navigate('/jobs', { 
+        state: { searchParams },
+        search: urlParams.toString()
+      });
+    } catch (error) {
+      console.error('Error during search:', error);
+      toast.error('An error occurred during search. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -196,16 +493,62 @@ const JobPortal = () => {
           <div className="search-container slide-up">
             <div className="search-form">
               <div className="search-input">
-                <input type="text" placeholder="Job Title or Company" />
+                <input 
+                  type="text" 
+                  placeholder="Job Title or Company" 
+                  value={query}
+                  onChange={handleSearchQueryChange}
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="search-suggestions" style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    borderRadius: '0 0 4px 4px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    zIndex: 10,
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}>
+                    {suggestions.map((suggestion, index) => (
+                      <div 
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        style={{
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #eee',
+                          color: '#333',
+                          transition: 'background-color 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className="search-select">
-                <select>
+                <select
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  disabled={isLoading}
+                >
                   <option value="">Select Location</option>
-                  <option value="new-york">New York</option>
-                  <option value="london">London</option>
-                  <option value="tokyo">Tokyo</option>
-                  <option value="remote">Remote</option>
+                  {isLoading ? (
+                    <option value="" disabled>Loading locations...</option>
+                  ) : (
+                    locationOptions.map((location, index) => (
+                      <option key={index} value={location.value}>
+                        {location.label}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <div className="select-arrow">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -215,12 +558,21 @@ const JobPortal = () => {
               </div>
               
               <div className="search-select">
-                <select>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  disabled={isLoading}
+                >
                   <option value="">Select Category</option>
-                  <option value="technology">Technology</option>
-                  <option value="finance">Finance</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="education">Education</option>
+                  {isLoading ? (
+                    <option value="" disabled>Loading categories...</option>
+                  ) : (
+                    categoryOptions.map((category, index) => (
+                      <option key={index} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <div className="select-arrow">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -229,11 +581,15 @@ const JobPortal = () => {
                 </div>
               </div>
               
-              <button className="search-button">
+              <button 
+                className="search-button"
+                onClick={handleSearchSubmit}
+                disabled={isSearching || isLoading}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                 </svg>
-                Search Job
+                {isLoading ? 'Loading...' : isSearching ? 'Searching...' : 'Search Job'}
               </button>
             </div>
           </div>
@@ -247,7 +603,7 @@ const JobPortal = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Stats Section - Updated with refs and add logging to verify counter values */}
       <section className="stats-section">
         <div className="stats-container">
           <div className="stat-item">
@@ -257,7 +613,7 @@ const JobPortal = () => {
               </svg>
             </div>
             <div className="stat-content">
-              <h3 className="counter" data-count="25850">0</h3>
+              <h3 className="counter" ref={jobsCounterRef} data-count={stats.jobs || 0}>{stats.jobs || 0}</h3>
               <p>Jobs</p>
             </div>
           </div>
@@ -269,7 +625,7 @@ const JobPortal = () => {
               </svg>
             </div>
             <div className="stat-content">
-              <h3 className="counter" data-count="10250">0</h3>
+              <h3 className="counter" ref={candidatesCounterRef} data-count={stats.candidates || 0}>{stats.candidates || 0}</h3>
               <p>Candidates</p>
             </div>
           </div>
@@ -281,47 +637,12 @@ const JobPortal = () => {
               </svg>
             </div>
             <div className="stat-content">
-              <h3 className="counter" data-count="18400">0</h3>
+              <h3 className="counter" ref={companiesCounterRef} data-count={stats.companies || 0}>{stats.companies || 0}</h3>
               <p>Companies</p>
             </div>
           </div>
         </div>
       </section>
-      
-      {/* Animation & stats counter JS */}
-      <script type="text/javascript" dangerouslySetInnerHTML={{
-        __html: `
-          // Counter animation for stats
-          document.addEventListener('DOMContentLoaded', function() {
-            const counterElements = document.querySelectorAll('.counter');
-            
-            const observer = new IntersectionObserver((entries) => {
-              entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                  const target = entry.target;
-                  const count = parseInt(target.getAttribute('data-count'));
-                  let current = 0;
-                  const increment = count > 1000 ? Math.ceil(count / 50) : Math.ceil(count / 25);
-                  const timer = setInterval(() => {
-                    current += increment;
-                    if (current >= count) {
-                      target.textContent = count.toLocaleString();
-                      clearInterval(timer);
-                    } else {
-                      target.textContent = current.toLocaleString();
-                    }
-                  }, 30);
-                  observer.unobserve(target);
-                }
-              });
-            }, { threshold: 0.25 });
-            
-            counterElements.forEach(counter => {
-              observer.observe(counter);
-            });
-          });
-        `
-      }}></script>
     </div>
   );
 };

@@ -15,6 +15,7 @@ import {
   ListFilter
 } from 'lucide-react';
 import { createCategory, getCategoryById, updateCategory } from '../../../../services/categoryService';
+import '../../styles/category.css';
 
 const CreateCategory = () => {
   const navigate = useNavigate();
@@ -396,7 +397,7 @@ const CreateCategory = () => {
   }
   
   return (
-    <>
+    <div className="admin-category-container">
       <div className="bg-white rounded-lg shadow p-4 mb-5">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h1 className="text-xl font-bold text-gray-800">
@@ -545,6 +546,47 @@ const CreateCategory = () => {
           {/* Sidebar - 2 columns wide on medium screens and above */}
           <div className="md:col-span-2 bg-white p-6 border-l border-gray-100">
             <div className="sticky top-6">
+              {/* Status Selector */}
+              <div className="mb-6">
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="draft">Draft</option>
+                </select>
+                <p className="mt-1 text-sm text-gray-500">
+                  Set the category visibility status
+                </p>
+              </div>
+              
+              {/* Featured Checkbox */}
+              <div className="mb-6">
+                <div className="flex items-center">
+                  <input
+                    id="featured"
+                    name="featured"
+                    type="checkbox"
+                    checked={formData.featured}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="featured" className="ml-2 block text-sm text-gray-700">
+                    Featured Category
+                  </label>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 ml-6">
+                  Featured categories will be highlighted on the frontend
+                </p>
+              </div>
+              
               {/* Action Buttons */}
               <div className="flex flex-col gap-3">
                 <button
@@ -604,7 +646,7 @@ const CreateCategory = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

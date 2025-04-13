@@ -1,10 +1,10 @@
-const Application = require('../models/application.model');
-const Job = require('../models/job.model');
+import Application from '../models/application.model.js';
+import Job from '../models/job.model.js';
 
 // @desc    Get all applications for a job
 // @route   GET /api/applications/job/:jobId
 // @access  Private (Employers only)
-exports.getJobApplications = async (req, res) => {
+export const getJobApplications = async (req, res) => {
   try {
     const job = await Job.findById(req.params.jobId);
 
@@ -43,7 +43,7 @@ exports.getJobApplications = async (req, res) => {
 // @desc    Get user's applications
 // @route   GET /api/applications/my-applications
 // @access  Private
-exports.getMyApplications = async (req, res) => {
+export const getMyApplications = async (req, res) => {
   try {
     const applications = await Application.find({ applicant: req.user.id })
       .populate('job', 'title company location type')
@@ -65,7 +65,7 @@ exports.getMyApplications = async (req, res) => {
 // @desc    Update application status
 // @route   PUT /api/applications/:id/status
 // @access  Private (Employers only)
-exports.updateApplicationStatus = async (req, res) => {
+export const updateApplicationStatus = async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
 
@@ -112,7 +112,7 @@ exports.updateApplicationStatus = async (req, res) => {
 // @desc    Get application details
 // @route   GET /api/applications/:id
 // @access  Private
-exports.getApplication = async (req, res) => {
+export const getApplication = async (req, res) => {
   try {
     const application = await Application.findById(req.params.id)
       .populate('job', 'title company location type')
@@ -152,7 +152,7 @@ exports.getApplication = async (req, res) => {
 // @desc    Delete application
 // @route   DELETE /api/applications/:id
 // @access  Private
-exports.deleteApplication = async (req, res) => {
+export const deleteApplication = async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
 

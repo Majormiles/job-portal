@@ -6,15 +6,17 @@ import adminApi from '../utils/adminApi';
  */
 
 /**
- * Get all jobs with optional filtering
+ * Get jobs (Admin only)
  * @param {Object} params - Query parameters for filtering, pagination, etc.
  * @returns {Promise} - The API response
  */
 export const getJobs = async (params = {}) => {
   try {
-    const response = await api.get('/jobs', { params });
+    const response = await adminApi.get('/jobs', { params });
+    console.log('Fetching jobs with URL:', adminApi.defaults.baseURL + '/jobs');
     return response.data;
   } catch (error) {
+    console.error('Jobs fetch error:', error);
     throw error.response?.data || { message: 'Failed to fetch jobs' };
   }
 };
@@ -42,12 +44,33 @@ export const getJobById = async (id) => {
  */
 export const getRelatedJobs = async (jobId, categoryId, limit = 3) => {
   try {
+    console.log(`Fetching related jobs for job ID: ${jobId}, category: ${categoryId}, limit: ${limit}`);
     const response = await api.get(`/jobs/related/${jobId}`, {
       params: { category: categoryId, limit }
     });
-    return response.data;
+    
+    if (response.data && response.data.success) {
+      return {
+        success: true,
+        data: response.data.data || [],
+        message: 'Related jobs fetched successfully'
+      };
+    }
+    
+    return {
+      success: false,
+      data: [],
+      message: response.data?.message || 'Failed to fetch related jobs'
+    };
   } catch (error) {
-    throw error.response?.data || { message: 'Failed to fetch related jobs' };
+    console.error('Error fetching related jobs:', error.response || error);
+    
+    return {
+      success: false,
+      data: [],
+      message: error.response?.data?.message || error.message || 'Error fetching related jobs',
+      error: error.response?.data || error
+    };
   }
 };
 
@@ -181,6 +204,106 @@ export const getFeaturedJobs = async (limit = 6) => {
 };
 
 /**
+ * Get recent job postings sorted by date
+ * @param {number} limit - The number of recent jobs to fetch
+ * @returns {Promise} - The API response with recent jobs
+ */
+export const getRecentJobs = async (limit = 6) => {
+  try {
+    console.log('Fetching recent jobs...');
+    
+    // First, try to use the dedicated API endpoint
+    try {
+      const response = await api.get('/jobs', { 
+        params: { 
+          limit, 
+          sort: 'latest',
+          page: 1
+        } 
+      });
+      
+      if (response.data && response.data.success) {
+        console.log('Successfully fetched recent jobs from API:', response.data);
+        return {
+          success: true,
+          data: response.data.data || [],
+          message: 'Recent jobs fetched successfully'
+        };
+      }
+    } catch (endpointError) {
+      console.warn('First attempt to fetch recent jobs failed, trying alternative endpoint:', endpointError.message);
+    }
+    
+    // If the dedicated endpoint fails, try regular search endpoint
+    try {
+      const response = await api.get('/jobs/search', { 
+        params: { 
+          limit, 
+          sort: 'latest',
+          page: 1
+        } 
+      });
+      
+      if (response.data && response.data.success) {
+        console.log('Successfully fetched recent jobs from search API:', response.data);
+        return {
+          success: true,
+          data: Array.isArray(response.data.data) 
+            ? response.data.data 
+            : response.data.data?.jobs || [],
+          message: 'Recent jobs fetched successfully'
+        };
+      }
+    } catch (searchError) {
+      console.warn('Second attempt to fetch recent jobs failed:', searchError.message);
+    }
+    
+    // If both API methods fail, fallback to fetching all jobs and sorting client-side
+    console.log('Falling back to fetching all jobs and sorting client-side');
+    const allJobsResponse = await api.get('/jobs');
+    
+    if (allJobsResponse.data && (allJobsResponse.data.success || Array.isArray(allJobsResponse.data))) {
+      // Extract jobs array from response
+      let jobs = Array.isArray(allJobsResponse.data) 
+        ? allJobsResponse.data 
+        : allJobsResponse.data.data || [];
+      
+      // Sort by date (newest first)
+      jobs = jobs.sort((a, b) => {
+        const dateA = new Date(a.createdAt || a.datePosted || 0);
+        const dateB = new Date(b.createdAt || b.datePosted || 0);
+        return dateB - dateA;
+      });
+      
+      // Limit the number of jobs
+      const recentJobs = jobs.slice(0, limit);
+      
+      console.log(`Successfully sorted and limited to ${recentJobs.length} most recent jobs`);
+      return {
+        success: true,
+        data: recentJobs,
+        message: 'Recent jobs sorted client-side'
+      };
+    }
+    
+    // If we got here, all methods failed
+    console.warn('All attempts to fetch recent jobs failed');
+    return {
+      success: false,
+      data: [],
+      message: 'Failed to fetch recent jobs after multiple attempts'
+    };
+  } catch (error) {
+    console.error('Error in getRecentJobs:', error);
+    return {
+      success: false,
+      data: [],
+      message: error.message || 'Error fetching recent jobs'
+    };
+  }
+};
+
+/**
  * Get job statistics (Admin only)
  * @returns {Promise} - The API response
  */
@@ -206,5 +329,6 @@ export default {
   searchJobs,
   updateJobStatus,
   getFeaturedJobs,
-  getJobStats
+  getJobStats,
+  getRecentJobs
 }; 

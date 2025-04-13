@@ -1,0 +1,45 @@
+/* Admin Category Container Styles */
+.admin-category-container,
+.admin-job-container,
+.admin-jobs-container {
+  width: 80%;
+  margin-left: auto;
+  position: relative;
+  float: right;
+  clear: none;
+  padding-left: 20px;
+  box-sizing: border-box;
+  margin-right: 0;
+}
+
+/* Ensure container doesn't go below sidebar on smaller screens */
+@media (max-width: 1023px) {
+  .admin-category-container,
+  .admin-job-container,
+  .admin-jobs-container {
+    width: 100%;
+    float: none;
+    margin-left: 0;
+    padding-left: 0;
+  }
+}
+
+/* Fix potential overflow issues */
+.admin-category-container .bg-gray-50,
+.admin-job-container .bg-gray-50,
+.admin-jobs-container .bg-gray-50 {
+  overflow: auto;
+}
+
+/* Ensure proper spacing between sidebar and content */
+.admin-category-container form,
+.admin-job-container form,
+.admin-jobs-container form {
+  max-width: 100%;
+}
+
+/* Ensure editor fits properly */
+.admin-job-container .quill {
+  width: 100%;
+  max-width: 100%;
+} 

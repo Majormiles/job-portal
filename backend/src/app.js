@@ -7,6 +7,10 @@ import userRouter from './routes/user.routes.js';
 import jobRouter from './routes/job.routes.js';
 import dashboardRouter from './routes/dashboard.routes.js';
 import categoryRouter from './routes/category.routes.js';
+import applicationRouter from './routes/application.routes.js';
+import adminRouter from './routes/admin.routes.js';
+import statsRouter from './routes/stats.routes.js';
+import companyRouter from './routes/company.routes.js';
 import errorHandler from './middleware/error.middleware.js';
 
 dotenv.config();
@@ -30,6 +34,10 @@ app.use('/api/users', userRouter);
 app.use('/api/jobs', jobRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/categories', categoryRouter);
+app.use('/api/applications', applicationRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/stats', statsRouter);
+app.use('/api/companies', companyRouter);
 
 // Error handling
 app.use(errorHandler);
