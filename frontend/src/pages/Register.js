@@ -12,6 +12,7 @@ const RegisterPage = () => {
     email: '',
     phoneNumber: '',
     location: '',
+    customLocation: '',
     jobType: '',
     jobTypeId: '',
     file: null,
@@ -29,8 +30,11 @@ const RegisterPage = () => {
   // State for job categories/types
   const [jobCategories, setJobCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  // State for company types
+  const [companyTypes, setCompanyTypes] = useState([]);
+  const [loadingCompanyTypes, setLoadingCompanyTypes] = useState(false);
 
-  // Fetch locations, roles, and job categories when component mounts
+  // Fetch locations, roles, job categories, and company types when component mounts
   useEffect(() => {
     // Define some default locations in case the API fails
     const defaultLocations = [
@@ -56,6 +60,19 @@ const RegisterPage = () => {
       { _id: 'agriculture', name: 'Agriculture' },
       { _id: 'transportation', name: 'Transportation & Logistics' },
       { _id: 'media', name: 'Media & Communication' },
+      { _id: 'other', name: 'Other' }
+    ];
+
+    // Default company types if API fails
+    const defaultCompanyTypes = [
+      { _id: 'corporation', name: 'Corporation' },
+      { _id: 'limited-liability', name: 'Limited Liability Company (LLC)' },
+      { _id: 'partnership', name: 'Partnership' },
+      { _id: 'sole-proprietorship', name: 'Sole Proprietorship' },
+      { _id: 'non-profit', name: 'Non-Profit Organization' },
+      { _id: 'startup', name: 'Startup' },
+      { _id: 'government', name: 'Government Agency' },
+      { _id: 'educational', name: 'Educational Institution' },
       { _id: 'other', name: 'Other' }
     ];
 
@@ -99,6 +116,50 @@ const RegisterPage = () => {
         setJobCategories(defaultJobCategories);
       } finally {
         setLoadingCategories(false);
+      }
+    };
+
+    // Fetch company types for employer registration
+    const fetchCompanyTypes = async () => {
+      setLoadingCompanyTypes(true);
+      try {
+        // Try different endpoints that might contain company types
+        const endpoints = [
+          '/company-types',
+          '/industries', 
+          '/categories/industries',
+          '/employer/industries'
+        ];
+        
+        let companyTypesData = null;
+        
+        for (const endpoint of endpoints) {
+          try {
+            console.log(`Attempting to fetch company types from ${API_URL}${endpoint}`);
+            const response = await axios.get(`${API_URL}${endpoint}`);
+            if (response.data && (response.data.success || response.data.data)) {
+              companyTypesData = response.data.data || response.data;
+              console.log('Successfully fetched company types:', companyTypesData);
+              break;
+            }
+          } catch (err) {
+            // Try the next endpoint
+            console.log(`Endpoint ${endpoint} failed:`, err.message);
+          }
+        }
+        
+        if (companyTypesData && Array.isArray(companyTypesData) && companyTypesData.length > 0) {
+          setCompanyTypes(companyTypesData);
+        } else {
+          // Use job categories as company types if no dedicated endpoint exists
+          console.log('Using job categories as company types');
+          setCompanyTypes(defaultCompanyTypes);
+        }
+      } catch (error) {
+        console.error('Error fetching company types:', error);
+        setCompanyTypes(defaultCompanyTypes);
+      } finally {
+        setLoadingCompanyTypes(false);
       }
     };
 
@@ -146,6 +207,7 @@ const RegisterPage = () => {
     // Execute the fetch functions
     fetchLocations();
     fetchJobCategories();
+    fetchCompanyTypes();
     fetchRoles();
   }, []);
 
@@ -227,6 +289,12 @@ const RegisterPage = () => {
       return false;
     }
 
+    // Validate custom location if "Other/custom" is selected
+    if (formData.location === 'custom' && !formData.customLocation.trim()) {
+      toast.error('Please enter your custom location');
+      return false;
+    }
+
     if (!formData.jobType.trim()) {
       toast.error('Please enter your job type');
       return false;
@@ -251,8 +319,28 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      // Find selected location details
-      const selectedLocation = locations.find(loc => loc._id === formData.location);
+      // Process location data
+      let locationData = {};
+      
+      if (formData.location === 'custom') {
+        // Handle custom location
+        if (!formData.customLocation.trim()) {
+          toast.error('Please enter your custom location');
+          setLoading(false);
+          return;
+        }
+        locationData.customLocation = formData.customLocation;
+      } else {
+        // Handle selected location from dropdown
+        const selectedLocation = locations.find(loc => loc._id === formData.location);
+        if (selectedLocation) {
+          if (selectedLocation._id.length === 24 && /^[0-9a-f]{24}$/i.test(selectedLocation._id)) {
+            locationData.location = selectedLocation._id;
+          } else {
+            locationData.customLocation = `${selectedLocation.name}, ${selectedLocation.region}`;
+          }
+        }
+      }
       
       // Create registration data
       const registrationData = {
@@ -262,20 +350,11 @@ const RegisterPage = () => {
         // Add a default password to satisfy the backend requirement
         password: 'Password123!',
         // Add a flag to skip email verification in development
-        skipEmailVerification: true
+        skipEmailVerification: true,
+        // Add location data
+        ...locationData
       };
       
-      // Handle location data
-      if (selectedLocation) {
-        if (selectedLocation._id.length === 24 && /^[0-9a-f]{24}$/i.test(selectedLocation._id)) {
-          registrationData.location = selectedLocation._id;
-        } else {
-          registrationData.customLocation = `${selectedLocation.name}, ${selectedLocation.region}`;
-        }
-      } else {
-        registrationData.customLocation = formData.location;
-      }
-
       // Explicitly set the role and user type based on selection
       registrationData.userType = userType;
       registrationData.role = userType;
@@ -298,6 +377,7 @@ const RegisterPage = () => {
           registrationData.categoryId = formData.jobTypeId;
         }
         registrationData.companySize = formData.companySize;
+        registrationData.companyType = formData.jobType; // Store jobType as companyType for employers
       } else if (userType === 'talent') {
         if (talentType === 'trainer') {
           registrationData.organization = formData.fullName;
@@ -341,7 +421,9 @@ const RegisterPage = () => {
                 jobType: formData.jobType,
                 jobTypeId: formData.jobTypeId,
                 userType: userType,
-                talentType: talentType
+                talentType: talentType,
+                location: formData.location,
+                customLocation: formData.customLocation
               };
               
               // Add employer-specific data if applicable
@@ -349,6 +431,7 @@ const RegisterPage = () => {
                 storageData.companySize = formData.companySize;
                 storageData.companyName = formData.fullName;
                 storageData.industry = formData.jobType;
+                storageData.companyType = formData.jobType;
               }
               
               localStorage.setItem('registrationData', JSON.stringify(storageData));
@@ -357,12 +440,10 @@ const RegisterPage = () => {
               sessionStorage.setItem('registrationData', JSON.stringify(storageData));
               
               console.log('Stored registration data in storage with jobType:', formData.jobType);
-              console.log('Stored categoryId:', formData.jobTypeId);
-              if (userType === 'employer') {
-                console.log('Stored employer data - companySize:', formData.companySize);
-                console.log('Stored employer data - companyName:', formData.fullName);
-                console.log('Stored employer data - industry:', formData.jobType);
-              }
+              console.log('Stored location data:', {
+                location: formData.location,
+                customLocation: formData.customLocation
+              });
             } catch (storageError) {
               console.log('Error storing registration data:', storageError);
             }
@@ -901,6 +982,7 @@ const RegisterPage = () => {
                           <option value="takoradi">Takoradi</option>
                         </>
                       )}
+                      <option value="custom">Other (Custom Location)</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                       <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -910,17 +992,60 @@ const RegisterPage = () => {
                   </div>
                 </div>
                 
-                <div>
-                  {userType === 'employer' ? (
+                {/* Custom Location field - Only shown when "Other" is selected */}
+                {formData.location === 'custom' && (
+                  <div>
                     <input
                       type="text"
-                      name="jobType"
-                      placeholder="Company Type"
-                      value={formData.jobType}
+                      name="customLocation"
+                      placeholder="Enter your location"
+                      value={formData.customLocation}
                       onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                  </div>
+                )}
+                
+                <div>
+                  {userType === 'employer' ? (
+                    <div className="relative">
+                      <select
+                        name="jobType"
+                        value={formData.jobType}
+                        onChange={handleChange}
+                        className="w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">
+                          {loadingCompanyTypes ? 'Loading company types...' : 'Select Company Type'}
+                        </option>
+                        {companyTypes.length > 0 ? (
+                          companyTypes.map(type => (
+                            <option key={type._id} value={type.name}>
+                              {type.name}
+                            </option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="Corporation">Corporation</option>
+                            <option value="Limited Liability Company">Limited Liability Company (LLC)</option>
+                            <option value="Partnership">Partnership</option>
+                            <option value="Sole Proprietorship">Sole Proprietorship</option>
+                            <option value="Non-Profit Organization">Non-Profit Organization</option>
+                            <option value="Startup">Startup</option>
+                            <option value="Government Agency">Government Agency</option>
+                            <option value="Educational Institution">Educational Institution</option>
+                            <option value="Other">Other</option>
+                          </>
+                        )}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   ) : userType === 'talent' && talentType === 'trainer' ? (
                     <input
                       type="text"
