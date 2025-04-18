@@ -45,10 +45,10 @@ export const protect = asyncHandler(async (req, res, next) => {
     }
 
     // Check if token contains role and if it matches user role
-    if (decoded.role && decoded.role === 'admin' && user.role !== 'admin') {
+    if (decoded.role && decoded.role === 'admin' && user.roleName !== 'admin') {
       console.log('Token has admin role but user in DB does not, updating user...');
-      // Update user role in DB to match token
-      user.role = 'admin';
+      // Update user roleName in DB to match token
+      user.roleName = 'admin';
       await user.save();
     }
 
@@ -72,7 +72,7 @@ export const authorize = (...roles) => {
     }
     
     // Get role from user object or from token
-    const userRole = req.user.role;
+    const userRole = req.user.roleName;
     
     // Check if user role is in allowed roles
     if (!roles.includes(userRole)) {
@@ -98,7 +98,7 @@ export const checkOwnership = (Model) => {
     }
 
     // Check if user is the owner or admin
-    if (resource.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (resource.user.toString() !== req.user.id && req.user.roleName !== 'admin') {
       return next(new ApiError(403, 'Not authorized to modify this resource'));
     }
 

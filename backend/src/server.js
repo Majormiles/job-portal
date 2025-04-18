@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import http from 'http';
 import app from './app.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import notificationService from './services/notificationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +26,9 @@ console.log('Environment check:', {
 
 const port = process.env.PORT || 5000;
 
+// Create HTTP server
+const server = http.createServer(app);
+
 // Connect to MongoDB
 console.log('Attempting to connect to MongoDB at:', process.env.MONGODB_URI);
 mongoose.connect(process.env.MONGODB_URI)
@@ -37,9 +42,15 @@ mongoose.connect(process.env.MONGODB_URI)
     - Port: ${conn.port}
     - Connected: ${conn.readyState === 1}`);
     
-    app.listen(port, () => {
+    // Initialize WebSocket server
+    const wss = notificationService.initializeWebSocketServer(server);
+    console.log('WebSocket server is running');
+    
+    // Start HTTP server
+    server.listen(port, () => {
       console.log(`Server is running on port ${port}`);
       console.log(`API is available at http://localhost:${port}/api`);
+      console.log(`WebSocket server is available at ws://localhost:${port}`);
     });
   })
   .catch((error) => {

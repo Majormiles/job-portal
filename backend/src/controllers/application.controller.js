@@ -1,5 +1,6 @@
 import Application from '../models/application.model.js';
 import Job from '../models/job.model.js';
+import notificationService from '../services/notificationService.js';
 
 // @desc    Get all applications for a job
 // @route   GET /api/applications/job/:jobId
@@ -67,7 +68,11 @@ export const getMyApplications = async (req, res) => {
 // @access  Private (Employers only)
 export const updateApplicationStatus = async (req, res) => {
   try {
-    const application = await Application.findById(req.params.id);
+    const { status } = req.body;
+
+    const application = await Application.findById(req.params.id)
+      .populate('job')
+      .populate('applicant', 'name email');
 
     if (!application) {
       return res.status(404).json({
@@ -76,25 +81,30 @@ export const updateApplicationStatus = async (req, res) => {
       });
     }
 
-    const job = await Job.findById(application.job);
-
-    // Check if user is the job owner
-    if (job.company.toString() !== req.user.id) {
+    // Check if user is authorized to update this application
+    if (application.job.company.toString() !== req.user.id) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to update this application'
       });
     }
 
-    application.status = req.body.status;
-    if (req.body.interviewDate) {
-      application.interviewDate = req.body.interviewDate;
-    }
-    if (req.body.notes) {
-      application.notes = req.body.notes;
-    }
-
+    application.status = status;
+    application.statusUpdateDate = Date.now();
     await application.save();
+
+    // Send notification to the applicant about status change
+    try {
+      await notificationService.sendApplicationStatusNotification(
+        application._id.toString(),
+        status,
+        application.applicant._id.toString()
+      );
+      console.log(`Application status notification sent to ${application.applicant.name}`);
+    } catch (error) {
+      console.error('Failed to send application status notification:', error);
+      // Don't fail the API call if notification fails
+    }
 
     res.json({
       success: true,

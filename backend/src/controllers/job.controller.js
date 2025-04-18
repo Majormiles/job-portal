@@ -1,6 +1,7 @@
 import Job from '../models/job.model.js';
 import Application from '../models/application.model.js';
 import cloudinary from '../utils/cloudinary.js';
+import notificationService from '../services/notificationService.js';
 
 // @desc    Create a new job
 // @route   POST /api/jobs
@@ -36,6 +37,20 @@ export const createJob = async (req, res) => {
     }
 
     const job = await Job.create(req.body);
+
+    // Send notification to all users about the new job
+    try {
+      await notificationService.sendJobNotification(
+        job._id.toString(),
+        job.title,
+        `New job posted: ${job.title}`,
+        // Optional: specific user IDs to notify
+      );
+      console.log('Job creation notification sent successfully');
+    } catch (error) {
+      console.error('Failed to send job notification:', error);
+      // Don't fail the API call if notification fails
+    }
 
     res.status(201).json({
       success: true,
@@ -189,6 +204,21 @@ export const updateJob = async (req, res) => {
       new: true,
       runValidators: true
     });
+
+    // Send notification about job update
+    try {
+      await notificationService.sendJobNotification(
+        job._id.toString(),
+        job.title,
+        `Job updated: ${job.title}`,
+        // Only notify users who have applied to this job
+        job.applications ? job.applications.map(app => app.applicant.toString()) : []
+      );
+      console.log('Job update notification sent successfully');
+    } catch (error) {
+      console.error('Failed to send job update notification:', error);
+      // Don't fail the API call if notification fails
+    }
 
     res.json({
       success: true,

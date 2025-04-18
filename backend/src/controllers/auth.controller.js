@@ -585,7 +585,7 @@ const googleLogin = async (req, res) => {
 
       // Generate token
       console.log('Generating JWT token for user:', user._id);
-      const token = generateToken(user._id, user.role);
+      const token = generateToken(user._id, user.roleName);
       
       // Remove password from response
       user.password = undefined;
@@ -676,13 +676,14 @@ const login = async (req, res) => {
       });
     }
 
-    console.log(`User found with email: ${email}, role: ${user.role}, isVerified: ${user.isVerified}`);
+    console.log(`User found with email: ${email}, role: ${user.role}, roleName: ${user.roleName}, isVerified: ${user.isVerified}`);
 
     // For admin login, check if user has admin role first
     if (isAdmin) {
-      console.log(`Admin login attempt for user: ${email}, role: ${user.role}`);
-      if (user.role !== 'admin') {
-        console.log(`Admin access denied for user: ${email} (role: ${user.role})`);
+      console.log(`Admin login attempt for user: ${email}, roleName: ${user.roleName}`);
+      
+      if (user.roleName !== 'admin') {
+        console.log(`Admin access denied for user: ${email} (roleName: ${user.roleName})`);
         return res.status(401).json({
           success: false,
           message: 'Unauthorized. Admin access denied.'
@@ -737,7 +738,7 @@ const login = async (req, res) => {
     }
     
     // Generate token
-    const token = generateToken(user._id, user.role);
+    const token = generateToken(user._id, user.roleName);
 
     // Create a safe user object without password
     const safeUserObj = user.toObject();

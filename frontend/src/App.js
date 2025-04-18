@@ -25,6 +25,7 @@ import GoogleOAuthTest from './components/GoogleOAuthTest';
 import { GoogleOAuthProvider } from './contexts/GoogleOAuthContext';
 import EmailVerificationTest from './components/EmailVerificationTest';
 import VerifyEmail from './pages/VerifyEmail';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // Dashboard Components for different user roles
 import DashboardEmployer from './components/ui/DashboardEmployer';
@@ -471,11 +472,6 @@ const AppContent = () => {
 
 // Main App component
 const App = () => {
-  // Define a list of routes that need the SettingsProvider
-  const needsSettingsProvider = (pathname) => {
-    return pathname.startsWith('/settings') || pathname.includes('settings');
-  };
-
   return (
     <ErrorBoundary fallback={<ErrorBoundaryComponent />}>
       <Router>
@@ -493,19 +489,24 @@ const App = () => {
 
 // Component that conditionally wraps routes with SettingsProvider
 const SettingsWrappedRoutes = () => {
-  const location = useLocation();
-  const needsSettings = location.pathname.startsWith('/settings') || location.pathname.includes('settings');
+  const { pathname } = useLocation();
   
-  // Wrap with SettingsProvider for settings pages, otherwise render directly
-  const content = (
-    <AppContent />
-  );
+  // Define which routes need the SettingsProvider
+  const needsSettingsProvider = (path) => {
+    return path.startsWith('/settings') || path.includes('settings');
+  };
   
-  return needsSettings ? (
+  return needsSettingsProvider(pathname) ? (
     <SettingsProvider>
-      {content}
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
     </SettingsProvider>
-  ) : content;
+  ) : (
+    <NotificationProvider>
+      <AppContent />
+    </NotificationProvider>
+  );
 };
 
 export default App;

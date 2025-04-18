@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Bell, Search, Settings, ExternalLink, Menu, X, User } from 'react-feather';
 import { useAuth } from '../../contexts/AuthContext';
+import NotificationBell from './NotificationBell';
 // CSS is handled via Tailwind classes, no need for a separate CSS file
 
 const Header = () => {
@@ -117,6 +118,11 @@ const Header = () => {
                 About
               </NavLink>
 
+              {/* Add NotificationBell */}
+              <div className={isScrolled ? 'text-gray-700' : 'text-white'}>
+                <NotificationBell />
+              </div>
+
               <Link to="/"
                 className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-md"
               >
@@ -179,6 +185,13 @@ const Header = () => {
               >
                 About
               </NavLink>
+              
+              {/* Add NotificationBell to mobile menu */}
+              <div className="flex items-center px-3 py-2">
+                <span className="mr-2">Notifications</span>
+                <NotificationBell />
+              </div>
+              
               <Link to="/"
                 className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-md font-medium"
               >
