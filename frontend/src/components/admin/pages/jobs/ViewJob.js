@@ -83,6 +83,21 @@ const ViewJob = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Helper function to get image URL safely
+  const getImageUrl = (imageData) => {
+    if (!imageData) return null;
+    
+    if (typeof imageData === 'string') {
+      return imageData;
+    } else if (imageData.url) {
+      return imageData.url;
+    } else if (imageData.src) {
+      return imageData.src;
+    }
+    
+    return null;
+  };
+  
   useEffect(() => {
     const fetchJobDetails = async () => {
       setLoading(true);
@@ -92,6 +107,12 @@ const ViewJob = () => {
         const response = await getJobById(id);
         
         if (response.success && response.data) {
+          console.log('Job data loaded:', response.data);
+          console.log('Job image data:', response.data.image);
+          if (response.data.image) {
+            const imageUrl = getImageUrl(response.data.image);
+            console.log('Resolved image URL:', imageUrl);
+          }
           setJob(response.data);
           
           // Fetch category details if categoryId exists
@@ -199,53 +220,80 @@ const ViewJob = () => {
           {/* Job Title and Basic Info */}
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">{job.title}</h2>
-              
-              <div className="flex flex-wrap gap-4 mb-6">
-                {category && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Building size={16} className="mr-1 text-gray-400" />
-                    <span>{category.name}</span>
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">{job.title}</h2>
+                  
+                  <div className="flex flex-wrap gap-4 mb-6">
+                    {category && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Building size={16} className="mr-1 text-gray-400" />
+                        <span>{category.name}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center text-sm text-gray-600">
+                      <MapPin size={16} className="mr-1 text-gray-400" />
+                      <span>{job.location}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Clock size={16} className="mr-1 text-gray-400" />
+                      <span className="capitalize">{job.type.replace('-', ' ')}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Award size={16} className="mr-1 text-gray-400" />
+                      <span className="capitalize">
+                        {job.experience === 'entry' ? 'Entry Level' :
+                         job.experience === 'mid' ? 'Mid Level' :
+                         job.experience === 'senior' ? 'Senior Level' :
+                         job.experience === 'lead' ? 'Lead / Principal' : 'Manager'}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Calendar size={16} className="mr-1 text-gray-400" />
+                      <span>Posted {formatDate(job.createdAt)}</span>
+                    </div>
                   </div>
-                )}
-                <div className="flex items-center text-sm text-gray-600">
-                  <MapPin size={16} className="mr-1 text-gray-400" />
-                  <span>{job.location}</span>
+                  
+                  <div className="flex items-center mb-4">
+                    <DollarSign size={20} className="mr-2 text-green-500" />
+                    <span className="text-lg font-semibold text-gray-700">
+                      {formatSalary(job.salary?.min, job.salary?.max, job.salary?.currency)}
+                    </span>
+                  </div>
+                  
+                  <div className="py-2">
+                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                      job.status === 'active' ? 'bg-green-100 text-green-800' : 
+                      job.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Clock size={16} className="mr-1 text-gray-400" />
-                  <span className="capitalize">{job.type.replace('-', ' ')}</span>
+                
+                {/* Image display with placeholder when no image */}
+                <div className="md:w-1/2 lg:w-1/3 flex-shrink-0">
+                  <div className="rounded-lg overflow-hidden shadow-sm h-full border border-gray-200 bg-gray-50">
+                    {job.image && getImageUrl(job.image) ? (
+                      <img 
+                        src={getImageUrl(job.image)} 
+                        alt={`${job.title}`}
+                        className="w-full h-full object-cover"
+                        style={{ maxHeight: '250px' }}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full min-h-[200px] w-full p-4 text-center">
+                        <div className="text-gray-400">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p className="text-sm font-medium">No image available</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Award size={16} className="mr-1 text-gray-400" />
-                  <span className="capitalize">
-                    {job.experience === 'entry' ? 'Entry Level' :
-                     job.experience === 'mid' ? 'Mid Level' :
-                     job.experience === 'senior' ? 'Senior Level' :
-                     job.experience === 'lead' ? 'Lead / Principal' : 'Manager'}
-                  </span>
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Calendar size={16} className="mr-1 text-gray-400" />
-                  <span>Posted {formatDate(job.createdAt)}</span>
-                </div>
-              </div>
-              
-              <div className="flex items-center mb-4">
-                <DollarSign size={20} className="mr-2 text-green-500" />
-                <span className="text-lg font-semibold text-gray-700">
-                  {formatSalary(job.salary?.min, job.salary?.max, job.salary?.currency)}
-                </span>
-              </div>
-              
-              <div className="py-2">
-                <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                  job.status === 'active' ? 'bg-green-100 text-green-800' : 
-                  job.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
-                </span>
               </div>
             </div>
           </div>

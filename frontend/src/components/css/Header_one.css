@@ -10,8 +10,8 @@ body {
 
 .job-portal {
   width: 100%;
-  min-height: 55vh;
-  background-image: url('/src/assets/images/business-woman.jpg');
+  min-height: 40vh; /* Reduced height */
+  /* background-image: url('/src/assets/images/business-woman.jpg'); */
   background-size: cover;
   background-position: center;
   position: relative;
@@ -25,9 +25,9 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #2A9D8F;
+  background-image: url('/src/assets/images/hero_banner.png');
   opacity: 0.95;
-  backdrop-filter: blur(5px);
+  ffffffop-filter: blur(5px);
   z-index: 1;
 }
 
@@ -35,11 +35,12 @@ body {
   position: relative;
   z-index: 2;
 }
-
 /* Header Styles */
 .main-header {
   padding: 15px 0;
   color: white;
+  /* background-image: url('/src/assets/images/navbar_image.png'); */
+  background-color: #4b59f7;
   width: 100%;
   position: fixed;
   top: 0;
@@ -49,8 +50,40 @@ body {
 }
 
 .main-header.scrolled {
-  background-color: rgba(42, 157, 143, 0.95);
+  background-image: none; /* Remove the background image when scrolled */
+  background-color: #ffffff; /* Apply white background when scrolled */
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+.main-header.scrolled .logo-link,
+.main-header.scrolled .nav-links li a,
+.main-header.scrolled .login-btn,
+.main-header.scrolled .register-btn ,
+.main-header.scrolled .username {
+  color: #333333; /* Dark text on white background for better visibility */
+}
+
+.main-header.scrolled .login-btn,
+.main-header.scrolled .register-btn {
+  border: 1px solid #4b59f7;
+}
+
+.main-header.scrolled .briefcase-icon {
+  color: #333333;
+}
+
+.main-header.scrolled .hamburger-menu span {
+  background-color: #333333;
+}
+
+.main-header.scrolled .login-btn {
+  color: #ffffff;
+  border-color: rgba(51, 51, 51, 0.3);
+}
+
+.main-header.scrolled .login-btn:hover {
+  background-color: rgba(51, 51, 51, 0.1);
 }
 
 .header-container {
@@ -110,7 +143,6 @@ body {
   display: block;
 }
 
-
 .desktop-nav .nav-links {
   display: flex;
   list-style-type: none;
@@ -131,22 +163,23 @@ body {
   font-weight: 500;
   position: relative;
   padding: 5px 0;
+  border: none;
+  background: none;
 }
 
-.desktop-nav .nav-links li a::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: 0;
-  left: 0;
-  background-color: #FFD52E;
-  transition: width 0.3s ease;
-}
-
-.desktop-nav .nav-links li a:hover::after,
-.desktop-nav .nav-links li a.active::after {
-  width: 100%;
+/* Remove all markers and underlines */
+.desktop-nav .nav-links li a::before,
+.desktop-nav .nav-links li a::after,
+.desktop-nav .nav-links li a.active::before,
+.desktop-nav .nav-links li a.active::after,
+.desktop-nav .nav-links li a:hover::before,
+.desktop-nav .nav-links li a:hover::after {
+  display: none !important;
+  content: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 /* Mobile Menu */
@@ -156,7 +189,7 @@ body {
   right: -300px; /* Start off-screen */
   width: 300px;
   height: 100%;
-  background-color: #2A9D8F;
+  background-color: #4b59f7;
   z-index: 1001;
   transition: right 0.3s ease;
   box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
@@ -208,6 +241,7 @@ body {
   display: block;
 }
 
+/* Reset the mobile navigation */
 .main-nav .nav-links {
   display: flex;
   flex-direction: column;
@@ -228,8 +262,11 @@ body {
   font-weight: 500;
   display: block;
   padding: 8px 0;
+  border: none;
+  background: none;
 }
 
+/* Simple hover effect without markers */
 .main-nav .nav-links li a:hover,
 .main-nav .nav-links li a.active {
   opacity: 0.8;
@@ -259,20 +296,27 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.register-btn {
-  background-color: #FFD52E;
-  color: rgb(0, 0, 0);
-}
-
 .login-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
   border-color: white;
 }
 
+.register-btn {
+  color: white;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.register-btn::before {
+  display: none;
+}
+
 .register-btn:hover {
-  background-color: #f5c91e;
+  background-color: #3a49da; /* Slightly lighter blue on hover */
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .hamburger-menu {
@@ -304,300 +348,202 @@ body {
   transform: rotate(-45deg) translate(5px, -5px);
 }
 
-/* Hero Section Styles with Animation */
-.hero-section {
-  padding: 100px 20px 50px;
-  text-align: center;
-  color: white;
-  position: relative;
-  min-height: 70vh;
+/* Header Banner Styles */
+.header-banner {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-}
-
-.hero-content {
+  padding: 80px 20px 50px; /* Reduced top padding from 100px to 80px */
   max-width: 1200px;
   margin: 0 auto;
-  position: relative;
-  z-index: 3;
+  flex-wrap: wrap;
 }
 
-.hero-content h1 {
-  font-size: 3.5rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  opacity: 0;
-  transform: translateX(-30px);
-  transition: all 0.8s ease;
+.banner-content {
+  max-width: 50%;
+  text-align: left;
+  margin-right: 20px;
 }
 
-.hero-content p {
-  font-size: 1.2rem;
+.banner-description {
+  color: #666;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-top: 20px;
   margin-bottom: 30px;
-  font-weight: 400;
-  opacity: 0;
-  transition: all 0.8s ease;
 }
 
-.search-container {
-  max-width: 700px;
-  margin: 0 auto;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.8s ease;
+.hero-container {
+  position: relative;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  z-index: 2;
+  cursor: pointer;
+  overflow: visible;
+  transition: transform 0.3s ease;
+  max-width: 45%;
 }
 
-/* Animation classes */
-.hero-section.animate .slide-in-right {
-  opacity: 1;
-  transform: translateX(0);
+.home-hero-image {
+  max-width: 100%;
+  height: auto;
+  max-height: 400px;
+  animation: floatAnimation 5s ease-in-out infinite;
+  transform-origin: center center;
+  transition: transform 0.5s ease-out, filter 0.3s ease;
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.08));
+  will-change: transform;
 }
 
-.hero-section.animate .fade-in {
-  opacity: 0.9;
-}
-
-.hero-section.animate .slide-up {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Animated circles */
-.animated-circles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.circle {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  animation: float 15s infinite linear;
-}
-
-.circle-1 {
-  width: 200px;
-  height: 200px;
-  top: 10%;
-  left: 10%;
-  animation-duration: 25s;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.circle-2 {
-  width: 400px;
-  height: 400px;
-  top: 40%;
-  right: -100px;
-  animation-duration: 30s;
-  animation-delay: 2s;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.circle-3 {
-  width: 300px;
-  height: 300px;
-  bottom: -50px;
-  left: 30%;
-  animation-duration: 20s;
-  animation-delay: 1s;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-@keyframes float {
+/* Floating animation for the hero image */
+@keyframes floatAnimation {
   0% {
-    transform: translate(0, 0) rotate(0deg);
+    transform: translateY(0) rotateZ(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotateZ(1deg);
   }
   50% {
-    transform: translate(30px, 30px) rotate(180deg);
+    transform: translateY(-15px) rotateZ(0deg);
+  }
+  75% {
+    transform: translateY(-10px) rotateZ(-1deg);
   }
   100% {
-    transform: translate(0, 0) rotate(360deg);
+    transform: translateY(0) rotateZ(0deg);
   }
 }
 
-@keyframes fadeIn {
+/* Add a shine effect on hover */
+.hero-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  transform: rotateZ(0deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.5s ease;
+}
+
+.hero-container:hover::before {
+  opacity: 0.5;
+  animation: shineSweep 2s infinite linear;
+}
+
+@keyframes shineSweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Media queries for responsive behavior */
+@media (max-width: 992px) {
+  .hero-container {
+    max-width: 80%;
+    margin-top: 30px;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-container {
+    max-width: 100%;
+  }
+}
+
+.banner-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #4b59f7;
+  margin: 0;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+.white-bg .banner-title {
+  color: #9d47d7;
+  text-shadow: none;
+}
+
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateX(-10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 }
 
-/* Search Form Styles */
-.search-form {
-  display: flex;
-  background-color: white;
-  border-radius: 10px;
-  color: #7e807f;
-  overflow: hidden;
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
-  transform: translateY(0);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+/* Media queries for the banner */
+@media (max-width: 992px) {
+  .header-banner {
+    flex-direction: column;
+    padding: 70px 20px 40px;
+  }
+  
+  .banner-content {
+    max-width: 100%;
+    margin-right: 0;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  
+  .banner-title {
+    font-size: 3rem;
+  }
+  
+  .banner-description {
+    font-size: 1rem;
+  }
 }
 
-.search-form:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+@media (max-width: 768px) {
+  .header-banner {
+    padding: 60px 20px 40px;
+  }
+  
+  .banner-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-image {
+    max-height: 300px;
+  }
 }
 
-.search-input {
-  flex: 1;
-  border-right: 1px solid #eee;
+@media (max-width: 576px) {
+  .header-banner {
+    padding: 50px 15px 30px;
+  }
+  
+  .banner-title {
+    font-size: 2rem;
+  }
+  
+  .banner-description {
+    font-size: 0.9rem;
+  }
+  
+  .hero-image {
+    max-height: 250px;
+  }
 }
 
-.search-input input {
-  width: 100%;
-  padding: 15px 10px;
-  border: none;
-  outline: none;
-  font-size: 0.9rem;
-}
 
-.search-select {
-  position: relative;
-  flex: 1;
-  border-right: 1px solid #eee;
-}
-
-.search-select select {
-  width: 100%;
-  padding: 25px 40px 15px 20px;
-  border: none;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  font-size: 0.9rem;
-  background-color: transparent;
-  cursor: pointer;
-}
-
-.select-arrow {
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  pointer-events: none;
-  color: #666;
-}
-
-.search-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #2fb3a3;
-  color: white;
-  border: none;
-  padding: 0 30px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-  overflow: hidden;
-  position: relative;
-}
-
-.search-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.7s ease;
-}
-
-.search-button:hover {
-  background-color: #248579;
-}
-
-.search-button:hover::before {
-  left: 100%;
-}
-
-.search-button svg {
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
-}
-
-/* Stats Section Styles */
-.stats-section {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  transform: translateY(-30px);
-  position: relative;
-  z-index: 3;
-}
-
-.stats-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 30px;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  color: white;
-  padding: 15px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.stat-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  width: 55px;
-  height: 55px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 20px;
-  transition: all 0.3s ease;
-}
-
-.stat-item:hover .stat-icon {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
-}
-
-.stat-icon svg {
-  width: 25px;
-  height: 25px;
-}
-
-.stat-content h3 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 5px;
-}
-
-.stat-content p {
-  font-size: 1rem;
-  opacity: 0.9;
-}
 
 /* Mobile auth buttons (only visible in mobile menu) */
 .mobile-auth {
@@ -640,7 +586,7 @@ body {
     padding: 15px;
   }
 
-  .stats-section {
+  .job-stats {
     transform: translateY(0);
   }
   
@@ -757,16 +703,27 @@ body {
 /* Add a smooth transition for menu items */
 .nav-links li a {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  background: none;
+  border: none;
+  text-decoration: none;
 }
 
+.nav-links li a::before,
+.nav-links li a::after {
+  display: none;
+  content: none;
+}
 
-.nav-links li a:hover::before {
-  left: 100%;
+.nav-links li a:hover::before,
+.nav-links li a:hover::after {
+  display: none;
+  content: none;
 }
 
 /* Better button interactions */
 .register-btn {
+  border: 1px solid white;
   position: relative;
   z-index: 1;
   overflow: hidden;
@@ -1113,4 +1070,100 @@ html {
   .mobile-user-menu {
     display: block;
   }
+}
+
+/* Scrolled state styles */
+.main-header.scrolled .desktop-nav .nav-links li a,
+.main-header.scrolled .main-nav .nav-links li a {
+  color: #333333;
+}
+
+/* Clean navigation links with no markers or decorations */
+.nav-link-clean {
+  color: inherit;
+  text-decoration: none;
+  background: none;
+  border: none;
+  position: static;
+  display: inline-block;
+  padding: 5px 0;
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.nav-link-clean::before,
+.nav-link-clean::after {
+  display: none;
+  content: none;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  visibility: hidden;
+  border: none;
+  background: none;
+}
+
+.main-header.scrolled .nav-link-clean {
+  color: #333333;
+}
+
+/* Add specific styles for desktop and mobile */
+.desktop-nav .nav-links li .nav-link-clean {
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: opacity 0.3s;
+}
+
+.main-nav .nav-links li .nav-link-clean {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 500;
+  display: block;
+  padding: 8px 0;
+}
+
+/* Hover effect is just opacity change */
+.nav-link-clean:hover {
+  opacity: 0.8;
+  text-decoration: none;
+}
+
+/* Global style to disable list markers in all cases */
+*, *::before, *::after {
+  text-decoration: none !important;
+}
+
+ul {
+  list-style: none !important;
+  list-style-type: none !important;
+  margin: 0;
+  padding: 0;
+}
+
+ul li {
+  list-style: none !important;
+  list-style-type: none !important;
+}
+
+a, a:hover, a:active, a:visited, a:focus {
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
+}
+
+.nav-links {
+  list-style: none !important;
+  list-style-type: none !important;
+}
+
+.nav-links li {
+  list-style: none !important;
+  list-style-type: none !important;
+}
+
+.nav-links li::before,
+.nav-links li::after {
+  display: none !important;
+  content: none !important;
 }

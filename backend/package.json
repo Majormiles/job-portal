@@ -7,12 +7,12 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/utils/seeder.js"
+    "seed": "node src/utils/seeder.js",
+    "setup-roles": "node scripts/setupRoles.js",
+    "test-email": "node test-email.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
-    "axios": "^1.8.4",
-    "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -29,6 +29,9 @@
     "react-hot-toast": "^2.5.2"
   },
   "devDependencies": {
+    "axios": "^1.8.4",
+    "bcryptjs": "^3.0.2",
+    "inquirer": "^8.2.5",
     "nodemon": "^3.0.1"
   },
   "engines": {

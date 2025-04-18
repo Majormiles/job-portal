@@ -10,9 +10,18 @@ import {
   ChevronRight,
   AlertCircle,
   Loader,
-  Filter
+  Filter,
+  RefreshCw
 } from 'lucide-react';
-import { getCategories, deleteCategory } from '../../../../services/categoryService';
+import { 
+  getCategories, 
+  deleteCategory, 
+  getCategoryStats, 
+  updateCategoryJobCount,
+  getJobsByCategory
+} from '../../../../services/categoryService';
+import api from '../../../../utils/api';
+import { toast } from 'react-hot-toast';
 
 const Categories = () => {
   const navigate = useNavigate();
@@ -31,6 +40,7 @@ const Categories = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterFeatured, setFilterFeatured] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [refreshingJobCounts, setRefreshingJobCounts] = useState(false);
 
   // Function to fetch categories from API
   const fetchCategories = async () => {
@@ -72,10 +82,205 @@ const Categories = () => {
     }
   };
   
+  // Function to update job counts for categories
+  const updateCategoryJobCounts = async () => {
+    try {
+      setRefreshingJobCounts(true);
+      console.log("Starting to update category job counts");
+      
+      // APPROACH 1: Direct call to get all jobs
+      try {
+        console.log("Fetching all jobs to count by category");
+        const jobsResponse = await api.get('/jobs');
+        console.log("Jobs response status:", jobsResponse.status);
+        
+        if (jobsResponse.data && jobsResponse.data.data) {
+          const allJobs = jobsResponse.data.data;
+          console.log(`Retrieved ${allJobs.length} jobs for counting`);
+          
+          // Create a count map for each category
+          const categoryCountMap = {};
+          
+          // Process each job to extract category info
+          allJobs.forEach(job => {
+            if (!job) return;
+            
+            // Different possible formats for the category field
+            let categoryName = null;
+            let categoryId = null;
+            
+            if (typeof job.category === 'string') {
+              categoryName = job.category;
+            } else if (typeof job.category === 'object' && job.category) {
+              // If category is an object with name or _id property
+              categoryName = job.category.name;
+              categoryId = job.category._id;
+            }
+            
+            // Count jobs per category using both name and ID
+            if (categoryName) {
+              categoryCountMap[categoryName] = (categoryCountMap[categoryName] || 0) + 1;
+            }
+            
+            if (categoryId) {
+              categoryCountMap[categoryId] = (categoryCountMap[categoryId] || 0) + 1;
+            }
+          });
+          
+          console.log("Job counts by category:", categoryCountMap);
+          
+          // Update our categories with job counts
+          if (categories.length > 0) {
+            const updatedCategories = categories.map(category => {
+              // Check count by both name and ID
+              const countByName = categoryCountMap[category.name] || 0;
+              const countById = categoryCountMap[category._id] || 0;
+              // Use the higher count (to avoid missing any jobs)
+              const count = Math.max(countByName, countById);
+              
+              return {
+                ...category,
+                jobCount: count
+              };
+            });
+            
+            console.log("Updated categories from approach 1:", updatedCategories.map(c => ({ name: c.name, jobCount: c.jobCount })));
+            setCategories(updatedCategories);
+          }
+        }
+      } catch (error) {
+        console.error("Error in approach 1:", error.message, error.response?.status, error.response?.data);
+      }
+      
+      // APPROACH 2: Fetch by category ID
+      if (categories.length > 0) {
+        try {
+          console.log("Trying direct approach using category endpoints");
+          const updatedCats = await Promise.all(
+            categories.map(async (category) => {
+              try {
+                // Get jobs for each category
+                const response = await getJobsByCategory(category._id);
+                console.log(`Category ${category.name} (${category._id}) response:`, response);
+                
+                let jobCount = 0;
+                // Check different response formats
+                if (response && response.data) {
+                  jobCount = Array.isArray(response.data) ? response.data.length : 0;
+                } else if (response && response.meta && response.meta.total) {
+                  jobCount = response.meta.total;
+                }
+                
+                return {
+                  ...category,
+                  jobCount
+                };
+              } catch (err) {
+                console.error(`Error getting jobs for ${category.name}:`, err.message);
+                return category;
+              }
+            })
+          );
+          
+          // Only update if we got any counts
+          const hasChanges = updatedCats.some(cat => cat.jobCount > 0);
+          if (hasChanges) {
+            console.log("Setting updated categories from approach 2:", updatedCats.map(c => ({ name: c.name, jobCount: c.jobCount })));
+            setCategories(updatedCats);
+          }
+        } catch (error) {
+          console.error("Error in approach 2:", error.message, error.response?.status);
+        }
+      }
+      
+      // APPROACH 3: Try admin stats endpoint
+      try {
+        console.log("Getting counts from admin stats");
+        const statsResponse = await getCategoryStats();
+        console.log("Stats response:", statsResponse);
+        
+        if (statsResponse && statsResponse.data) {
+          // Check if response has category counts
+          const statsData = statsResponse.data;
+          
+          // Try different possible response formats
+          if (statsData.categoryCounts || statsData.counts) {
+            const countData = statsData.categoryCounts || statsData.counts || {};
+            console.log("Category count data:", countData);
+            
+            // Update categories with count data if available
+            setCategories(prevCategories => 
+              prevCategories.map(cat => {
+                // Try both ID and name as keys
+                const count = 
+                  countData[cat._id] || 
+                  countData[cat.name] || 
+                  cat.jobCount;
+                  
+                return { ...cat, jobCount: count };
+              })
+            );
+            
+            console.log("Updated categories from approach 3:", categories.map(c => ({ name: c.name, jobCount: c.jobCount })));
+          }
+        }
+      } catch (statsError) {
+        console.error("Error fetching admin stats:", statsError.message, statsError.response?.status, statsError.response?.data);
+      }
+
+      // Log final results
+      console.log("Final category job counts:", categories.map(c => ({ name: c.name, jobCount: c.jobCount })));
+      
+    } catch (error) {
+      console.error("Error updating job counts:", error);
+      toast.error("Failed to update job counts");
+    } finally {
+      setRefreshingJobCounts(false);
+    }
+  };
+  
+  // Function to manually refresh job counts with user feedback
+  const handleRefreshJobCounts = async () => {
+    try {
+      setRefreshingJobCounts(true);
+      await updateCategoryJobCounts();
+      
+      // Force a complete data refresh from server
+      await fetchCategories();
+    } catch (err) {
+      console.error('Error refreshing job counts:', err);
+    } finally {
+      setRefreshingJobCounts(false);
+    }
+  };
+  
   // Fetch categories on mount and when dependencies change
   useEffect(() => {
     fetchCategories();
   }, [currentPage, itemsPerPage, sortBy, filterStatus, filterFeatured]);
+  
+  // Update job counts after categories are loaded
+  useEffect(() => {
+    if (categories.length > 0 && !loading) {
+      // Add a small delay to ensure UI is responsive
+      const timer = setTimeout(() => {
+        updateCategoryJobCounts();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [categories.length, loading]);
+  
+  // Set up periodic job count refresh (every 2 minutes)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (categories.length > 0) {
+        updateCategoryJobCounts();
+      }
+    }, 120000); // 2 minutes
+    
+    return () => clearInterval(interval);
+  }, [categories.length]);
   
   // Handle search with debouncing
   useEffect(() => {
@@ -256,8 +461,21 @@ const Categories = () => {
 
       {/* Categories List */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="p-4 border-b">
+        <div className="p-4 border-b flex justify-between items-center">
           <h3 className="font-semibold">All Categories</h3>
+          
+          <button 
+            onClick={handleRefreshJobCounts}
+            disabled={refreshingJobCounts || loading}
+            className="flex items-center text-blue-600 hover:text-blue-800 px-2 py-1 rounded text-sm"
+            title="Refresh job counts"
+          >
+            <RefreshCw 
+              size={16} 
+              className={`mr-1 ${refreshingJobCounts ? 'animate-spin' : ''}`} 
+            />
+            <span>Refresh Job Counts</span>
+          </button>
         </div>
         
         {loading ? (
@@ -331,8 +549,17 @@ const Categories = () => {
                         </span>
                       </td>
                       <td className="p-3 text-center">
-                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                          {category.jobCount} jobs
+                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center justify-center gap-1 w-20 mx-auto">
+                          {refreshingJobCounts ? (
+                            <>
+                              <RefreshCw size={12} className="animate-spin" />
+                              <span>...</span>
+                            </>
+                          ) : (
+                            <>
+                              {typeof category.jobCount === 'number' ? `${category.jobCount} jobs` : '0 jobs'}
+                            </>
+                          )}
                         </span>
                       </td>
                       <td className="p-3">

@@ -33,6 +33,14 @@ router.post('/login', (req, res, next) => {
 });
 router.post('/google', googleLogin);
 router.get('/verify-email', verifyEmail);
+router.get('/test-verify', (req, res) => {
+  const { token } = req.query;
+  res.json({
+    success: true,
+    message: 'Test verification endpoint is working',
+    receivedToken: token
+  });
+});
 router.post('/resend-verification', resendVerification);
 router.get('/config', getOAuthConfig);
 

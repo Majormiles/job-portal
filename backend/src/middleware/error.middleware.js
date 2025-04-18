@@ -8,7 +8,7 @@ const errorHandler = (err, req, res, next) => {
       status: err.status,
       error: err,
       message: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      stack: undefined
     });
   }
 
@@ -22,7 +22,7 @@ const errorHandler = (err, req, res, next) => {
         status: 'error'
       },
       message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      stack: undefined
     });
   }
 
@@ -37,7 +37,7 @@ const errorHandler = (err, req, res, next) => {
         status: 'error'
       },
       message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      stack: undefined
     });
   }
 
@@ -50,7 +50,7 @@ const errorHandler = (err, req, res, next) => {
         status: 'error'
       },
       message: 'Invalid token',
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      stack: undefined
     });
   }
 
@@ -62,7 +62,7 @@ const errorHandler = (err, req, res, next) => {
         status: 'error'
       },
       message: 'Token expired',
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      stack: undefined
     });
   }
 
@@ -73,8 +73,8 @@ const errorHandler = (err, req, res, next) => {
       statusCode: 500,
       status: 'error'
     },
-    message: err.message || 'Internal server error',
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    message: err.message || 'Server Error',
+    stack: undefined
   });
 };
 

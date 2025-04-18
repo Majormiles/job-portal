@@ -75,7 +75,7 @@ const JobApplicants = () => {
   };
 
   return (
-    <div className="section">
+    <div className="section-body">
       <div className="section-header">
         <div className="d-flex align-items-center">
           <button 
@@ -212,6 +212,7 @@ const JobApplicants = () => {
           </div>
         </div>
       </div>
+  
     </div>
   );
 };

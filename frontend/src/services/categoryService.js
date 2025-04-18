@@ -98,9 +98,26 @@ export const getJobsByCategory = async (categoryId, params = {}) => {
 export const getCategoryStats = async () => {
   try {
     const response = await adminApi.get('/categories/admin/stats');
+    console.log('Category stats API response:', response.data);
     return response.data;
   } catch (error) {
+    console.error('Error fetching category stats:', error);
     throw error.response?.data || { message: 'Failed to fetch category statistics' };
+  }
+};
+
+/**
+ * Update job count for a category (Admin only)
+ * @param {string} id - The category ID
+ * @param {number} jobCount - The new job count
+ * @returns {Promise} - The API response
+ */
+export const updateCategoryJobCount = async (id, jobCount) => {
+  try {
+    const response = await adminApi.patch(`/categories/${id}/job-count`, { jobCount });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to update category job count' };
   }
 };
 
@@ -111,5 +128,6 @@ export default {
   updateCategory,
   deleteCategory,
   getJobsByCategory,
-  getCategoryStats
+  getCategoryStats,
+  updateCategoryJobCount
 }; 

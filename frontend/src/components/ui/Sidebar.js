@@ -1,19 +1,31 @@
 // components/Sidebar.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import '../css/Sidebar.css';
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
-  const { logout } = useAuth();
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
+  const [dashboardPath, setDashboardPath] = useState('/dashboard-jobseeker');
+  
+  // Determine appropriate dashboard path based on user role
+  useEffect(() => {
+    const isEmployer = user?.role === 'employer' || 
+                      (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+                      user?.userType === 'employer' ||
+                      localStorage.getItem('registrationData') && 
+                      JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
+    
+    setDashboardPath(isEmployer ? '/dashboard-employer' : '/dashboard-jobseeker');
+  }, [user]);
 
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error during logout:', error);
     }
   };
 
@@ -30,9 +42,17 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       
       {/* Sidebar with conditional classes based on isOpen state */}
       <div className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
-        <div className="sidebar-header">EMPLOYEE DASHBOARD</div>
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="M9 12l2 2 4-4"></path>
+          </svg>
+        </div>
+        
+        {/* Sidebar Navigation */}
         <nav className="sidebar-nav">
-          <NavLink to="/dashboard_employee" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+          <NavLink to={dashboardPath} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
             <div className="nav-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="7"></rect>
@@ -41,35 +61,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                 <rect x="3" y="14" width="7" height="7"></rect>
               </svg>
             </div>
-            <span>Overview</span>
+            <span>Dashboard</span>
           </NavLink>
-          <NavLink to="/applied-jobs" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-            <div className="nav-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-              </svg>
-            </div>
-            <span>Applied Jobs</span>
-          </NavLink>
-          <NavLink to="/favorite-jobs" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-            <div className="nav-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-              </svg>
-            </div>
-            <span>Favorite Jobs</span>
-          </NavLink>
-          <NavLink to="/job-alerts" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-            <div className="nav-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-            </div>
-            <span>Job Alert</span>
-            <div className="alert-badge">09</div>
-          </NavLink>
+          
           <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
             <div className="nav-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -80,6 +74,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <span>Settings</span>
           </NavLink>
         </nav>
+        
+        {/* Sidebar Footer with Logout Button */}
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>
             <div className="nav-icon">

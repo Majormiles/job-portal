@@ -129,7 +129,19 @@ export const AuthProvider = ({ children }) => {
       } else {
         // Regular login
         console.log('Attempting regular login', credentials.isAdmin ? '(admin)' : '(user)');
-        response = await api.post('/auth/login', credentials);
+        
+        // For email-only login, ensure we don't send an undefined password
+        const loginData = {
+          email: credentials.email,
+          isAdmin: credentials.isAdmin
+        };
+        
+        // Only include password if provided (required for admin)
+        if (credentials.password) {
+          loginData.password = credentials.password;
+        }
+        
+        response = await api.post('/auth/login', loginData);
       }
 
       console.log('Login response:', {

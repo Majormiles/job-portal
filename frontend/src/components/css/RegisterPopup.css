@@ -28,7 +28,7 @@
   position: absolute;
   top: 16px;
   right: 16px;
-  background: #04b69e;
+  background: linear-gradient(90deg, rgb(127,203,239), rgb(232,204,252));
   border: none;
   border-radius: 50%;
   width: 36px;
@@ -84,8 +84,8 @@
 }
 
 .register-popup-button {
-  background-color: #2A9D8F;
-  color: white;
+  background: linear-gradient(90deg, rgb(127,203,239), rgb(232,204,252));
+  color: rgb(19, 116, 133);
   border: none;
   padding: 14px 28px;
   font-size: 16px;

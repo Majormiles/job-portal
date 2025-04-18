@@ -6,6 +6,7 @@ import '../css/Header_one.css';
 import { toast } from 'react-toastify';
 import { searchJobs, getCategorySuggestions, getLocationSuggestions, getSearchSuggestions } from '../../services/searchService';
 import { getPortalStats } from '../../services/statsService';
+import header_banner_img from '../../assets/images/svg-1.svg';
 
 const JobPortal = () => {
   const navigate = useNavigate();
@@ -40,6 +41,9 @@ const JobPortal = () => {
   const candidatesCounterRef = useRef(null);
   const companiesCounterRef = useRef(null);
 
+  // Ref for the hero image container
+  const heroImageRef = useRef(null);
+
   // Handle scroll effects and animations
   useEffect(() => {
     const handleScroll = () => {
@@ -60,6 +64,42 @@ const JobPortal = () => {
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
+  // Handle cursor movement for the hero image
+  useEffect(() => {
+    const heroContainer = heroImageRef.current;
+    
+    if (!heroContainer) return;
+    
+    const handleMouseMove = (e) => {
+      const { left, top, width, height } = heroContainer.getBoundingClientRect();
+      const x = (e.clientX - left) / width - 0.5;
+      const y = (e.clientY - top) / height - 0.5;
+      
+      // Get the image element inside the container
+      const heroImage = heroContainer.querySelector('.hero-image');
+      if (heroImage) {
+        // Apply transform based on cursor position
+        heroImage.style.transform = `perspective(1000px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg) translateZ(20px)`;
+      }
+    };
+    
+    const handleMouseLeave = () => {
+      const heroImage = heroContainer.querySelector('.hero-image');
+      if (heroImage) {
+        // Reset transform when cursor leaves
+        heroImage.style.transform = '';
+      }
+    };
+    
+    heroContainer.addEventListener('mousemove', handleMouseMove);
+    heroContainer.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      heroContainer.removeEventListener('mousemove', handleMouseMove);
+      heroContainer.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, []);
 
@@ -217,7 +257,7 @@ const JobPortal = () => {
       }, { threshold: 0.25 });
       
       // Find the stats section container and observe it
-      const statsSection = document.querySelector('.stats-section');
+      const statsSection = document.querySelector('.job-stats');
       if (statsSection) {
         console.log('Found stats section, starting observation');
         observer.observe(statsSection);
@@ -358,8 +398,21 @@ const JobPortal = () => {
       const isOnboardingComplete = onboardingStatus?.isComplete;
 
       if (isOnboardingComplete) {
-        // If onboarding is complete, go to dashboard
-        navigate('/dashboard_employee', { replace: true });
+        // Determine which dashboard to redirect to based on user role
+        const isEmployer = user?.role === 'employer' || 
+                          (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+                          user?.userType === 'employer' ||
+                          localStorage.getItem('registrationData') && 
+                          JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
+        
+        console.log('Header-one redirecting to dashboard for role:', isEmployer ? 'employer' : 'job seeker');
+        
+        // Navigate to the appropriate dashboard
+        if (isEmployer) {
+          navigate('/dashboard-employer', { replace: true });
+        } else {
+          navigate('/dashboard-jobseeker', { replace: true });
+        }
       } else {
         // If onboarding is not complete, go to first onboarding step
         navigate('/onboarding/personal-info', { replace: true });
@@ -402,17 +455,16 @@ const JobPortal = () => {
           {/* Desktop Navigation */}
           <nav className="desktop-nav">
             <ul className="nav-links">
-              <li><Link to="/" className="active">Home</Link></li>
-              <li><Link to="/jobs">Jobs</Link></li>
-              <li><Link to="/about">About Us</Link></li>
-              <li><Link to="/contact">Contact Us</Link></li>
+              <li><Link to="/" className="nav-link-clean">Home</Link></li>
+              {/* <li><Link to="/jobs" className="nav-link-clean">Jobs</Link></li> */}
+              <li><Link to="/gallery" className="nav-link-clean">About Us</Link></li>
+              <li><Link to="/contact" className="nav-link-clean">Contact Us</Link></li>
             </ul>
           </nav>
 
           <div className="auth-buttons desktop-auth">
             {!isAuthenticated ? (
               <>
-                <Link to="/login" className="login-btn">Login</Link>
                 <Link to="/register" className="register-btn">Register</Link>
               </>
             ) : (
@@ -453,17 +505,16 @@ const JobPortal = () => {
           
           <nav className="main-nav">
             <ul className="nav-links">
-              <li><Link to="/" className="active" onClick={toggleMobileMenu}>Home</Link></li>
-              <li><Link to="/jobs" onClick={toggleMobileMenu}>Jobs</Link></li>
-              <li><Link to="/about" onClick={toggleMobileMenu}>About Us</Link></li>
-              <li><Link to="/contact" onClick={toggleMobileMenu}>Contact Us</Link></li>
+              <li><Link to="/" className="nav-link-clean" onClick={toggleMobileMenu}>Home</Link></li>
+              {/* <li><Link to="/jobs" className="nav-link-clean" onClick={toggleMobileMenu}>Jobs</Link></li> */}
+              <li><Link to="/gallery" className="nav-link-clean" onClick={toggleMobileMenu}>About Us</Link></li>
+              <li><Link to="/contact" className="nav-link-clean" onClick={toggleMobileMenu}>Contact Us</Link></li>
             </ul>
           </nav>
 
           <div className="auth-buttons mobile-auth">
             {!isAuthenticated ? (
               <>
-                <Link to="/login" className="login-btn" onClick={toggleMobileMenu}>Login</Link>
                 <Link to="/register" className="register-btn" onClick={toggleMobileMenu}>Register</Link>
               </>
             ) : (
@@ -483,164 +534,18 @@ const JobPortal = () => {
         {showMobileMenu && <div className="menu-overlay" onClick={toggleMobileMenu}></div>}
       </header>
 
-      {/* Hero Section */}
-      <section className={`hero-section ${heroAnimation ? 'animate' : ''}`}>
-        <div className="hero-content">
-          <h1 className="slide-in-right">Find Your Dream Job Today!</h1>
-          <p className="fade-in">Connecting Talent with Opportunity: Your Gateway to Career Success</p>
-          
-          {/* Search Form */}
-          <div className="search-container slide-up">
-            <div className="search-form">
-              <div className="search-input">
-                <input 
-                  type="text" 
-                  placeholder="Job Title or Company" 
-                  value={query}
-                  onChange={handleSearchQueryChange}
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="search-suggestions" style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    background: 'white',
-                    borderRadius: '0 0 4px 4px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    zIndex: 10,
-                    maxHeight: '200px',
-                    overflowY: 'auto'
-                  }}>
-                    {suggestions.map((suggestion, index) => (
-                      <div 
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        style={{
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid #eee',
-                          color: '#333',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        {suggestion}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              <div className="search-select">
-                <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  disabled={isLoading}
-                >
-                  <option value="">Select Location</option>
-                  {isLoading ? (
-                    <option value="" disabled>Loading locations...</option>
-                  ) : (
-                    locationOptions.map((location, index) => (
-                      <option key={index} value={location.value}>
-                        {location.label}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="select-arrow">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 10l5 5 5-5z"/>
-                  </svg>
-                </div>
-              </div>
-              
-              <div className="search-select">
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  disabled={isLoading}
-                >
-                  <option value="">Select Category</option>
-                  {isLoading ? (
-                    <option value="" disabled>Loading categories...</option>
-                  ) : (
-                    categoryOptions.map((category, index) => (
-                      <option key={index} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-                <div className="select-arrow">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 10l5 5 5-5z"/>
-                  </svg>
-                </div>
-              </div>
-              
-              <button 
-                className="search-button"
-                onClick={handleSearchSubmit}
-                disabled={isSearching || isLoading}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                </svg>
-                {isLoading ? 'Loading...' : isSearching ? 'Searching...' : 'Search Job'}
-              </button>
-            </div>
-          </div>
+      {/* New Header Banner */}
+      <section className="header-banner">
+        <div className="banner-content">
+          <h1 className="banner-title">Connect Job Seekers, Training centers, Companies</h1>
+          <p className="banner-description">
+            Find the perfect job or hire the best talent with our comprehensive job portal. 
+            Connecting employers, candidates, and training centers in one seamless platform.
+          </p>
         </div>
-        
-        {/* Animated background elements */}
-        <div className="animated-circles">
-          <div className="circle circle-1"></div>
-          <div className="circle circle-2"></div>
-          <div className="circle circle-3"></div>
-        </div>
-      </section>
 
-      {/* Stats Section - Updated with refs and add logging to verify counter values */}
-      <section className="stats-section">
-        <div className="stats-container">
-          <div className="stat-item">
-            <div className="stat-icon briefcase">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM9 4h6v2H9V4zm11 15H4V8h16v11z" />
-              </svg>
-            </div>
-            <div className="stat-content">
-              <h3 className="counter" ref={jobsCounterRef} data-count={stats.jobs || 0}>{stats.jobs || 0}</h3>
-              <p>Jobs</p>
-            </div>
-          </div>
-          
-          <div className="stat-item">
-            <div className="stat-icon people">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-              </svg>
-            </div>
-            <div className="stat-content">
-              <h3 className="counter" ref={candidatesCounterRef} data-count={stats.candidates || 0}>{stats.candidates || 0}</h3>
-              <p>Candidates</p>
-            </div>
-          </div>
-          
-          <div className="stat-item">
-            <div className="stat-icon building">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" />
-              </svg>
-            </div>
-            <div className="stat-content">
-              <h3 className="counter" ref={companiesCounterRef} data-count={stats.companies || 0}>{stats.companies || 0}</h3>
-              <p>Companies</p>
-            </div>
-          </div>
+        <div ref={heroImageRef} className="hero-container">
+          <img src={header_banner_img} alt="Company hero" className="home-hero-image" />
         </div>
       </section>
     </div>

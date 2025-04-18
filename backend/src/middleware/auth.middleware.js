@@ -44,6 +44,14 @@ export const protect = asyncHandler(async (req, res, next) => {
       return next(new AppError('User not found', 404));
     }
 
+    // Check if token contains role and if it matches user role
+    if (decoded.role && decoded.role === 'admin' && user.role !== 'admin') {
+      console.log('Token has admin role but user in DB does not, updating user...');
+      // Update user role in DB to match token
+      user.role = 'admin';
+      await user.save();
+    }
+
     // Attach user to request
     req.user = user;
     next();
@@ -56,14 +64,26 @@ export const protect = asyncHandler(async (req, res, next) => {
 // Grant access to specific roles
 export const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    // Check if the user object exists in req
+    if (!req.user) {
+      return next(
+        new ApiError(401, 'Not authorized to access this route')
+      );
+    }
+    
+    // Get role from user object or from token
+    const userRole = req.user.role;
+    
+    // Check if user role is in allowed roles
+    if (!roles.includes(userRole)) {
       return next(
         new ApiError(
           403,
-          `User role ${req.user.role} is not authorized to access this route`
+          `User role ${userRole} is not authorized to access this route`
         )
       );
     }
+    
     next();
   };
 };

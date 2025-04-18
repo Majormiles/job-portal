@@ -41,7 +41,7 @@ const CallToAction = () => {
         <Link to='/jobs'><button className="cta-button">Find Jobs</button></Link>
       </div>
       <div className="cta-image-container" ref={imageContainerRef}>
-        <img src={jobsearchImage} alt="Company hero" className="hero-image" />
+        <img src={jobsearchImage} alt="Company hero" className="cta-hero-image" />
       </div>
     </div>
   );

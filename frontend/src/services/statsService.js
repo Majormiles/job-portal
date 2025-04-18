@@ -6,61 +6,64 @@ import api from '../utils/api';
 
 /**
  * Get portal statistics (jobs count, candidates count, companies count)
- * @returns {Promise} - Stats data object
+ * @returns {Promise<{success: boolean, data: {jobs: number, candidates: number, companies: number}, error: string}>}
  */
 export const getPortalStats = async () => {
   try {
-    console.log('Fetching portal stats from API...');
-    // Fix the endpoint path - remove the redundant "/api" prefix
+    console.log('Fetching portal stats...');
+    // Remove the duplicate /api from the URL path
     const response = await api.get('/stats');
     
-    console.log('Stats API response:', response.data);
+    console.log('Stats response:', response.data);
     
-    // If successful API response, return the data
+    // Ensure we return a consistent structure even if the API fails
     if (response.data && response.data.success) {
-      console.log('Successfully fetched stats data:', response.data.data);
-      
-      // Make sure the properties exist and are not undefined
-      const safeData = {
-        jobs: response.data.data?.jobs || 0,
-        candidates: response.data.data?.candidates || 0,
-        companies: response.data.data?.companies || 0
-      };
-      
       return {
         success: true,
-        data: safeData
+        data: {
+          jobs: response.data.data.jobs || 0,
+          candidates: response.data.data.candidates || 0,
+          companies: response.data.data.companies || 0
+        }
+      };
+    } else {
+      console.warn('Stats API returned success:false', response.data);
+      console.error('Stats API failed:', response.data?.message || 'No message provided');
+      
+      return {
+        success: false,
+        data: { jobs: 0, candidates: 0, companies: 0 },
+        error: response.data?.message || 'Failed to fetch stats'
       };
     }
-    
-    console.log('API call succeeded but returned no data');
-    // Return empty stats instead of mock data
-    return {
-      success: false,
-      message: 'No data returned from API',
-      data: {
-        jobs: 0,
-        candidates: 0,
-        companies: 0
-      }
-    };
-    
   } catch (error) {
     console.error('Error fetching portal stats:', error);
     
-    // Return empty stats instead of mock data
     return {
       success: false,
-      message: error.message || 'Failed to fetch portal statistics',
-      data: {
-        jobs: 0,
-        candidates: 0,
-        companies: 0
-      }
+      data: { jobs: 0, candidates: 0, companies: 0 },
+      error: error.message || 'Failed to fetch stats'
     };
   }
 };
 
+/**
+ * Safely extracts stats from the API response
+ * @param {Object} response - The API response object
+ * @returns {Object} - Safe stats object with default values
+ */
+export const getSafeStats = (response) => {
+  if (!response || !response.data) {
+    return { jobs: 0, candidates: 0, companies: 0 };
+  }
+  
+  return {
+    jobs: response.data.jobs || 0,
+    candidates: response.data.candidates || 0,
+    companies: response.data.companies || 0
+  };
+};
+
 // Export as named export and default object
-const statsService = { getPortalStats };
+const statsService = { getPortalStats, getSafeStats };
 export default statsService; 

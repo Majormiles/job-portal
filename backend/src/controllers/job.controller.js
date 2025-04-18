@@ -1,5 +1,6 @@
 import Job from '../models/job.model.js';
 import Application from '../models/application.model.js';
+import cloudinary from '../utils/cloudinary.js';
 
 // @desc    Create a new job
 // @route   POST /api/jobs
@@ -7,6 +8,32 @@ import Application from '../models/application.model.js';
 export const createJob = async (req, res) => {
   try {
     req.body.company = req.user.id;
+
+    // Handle image upload if provided
+    if (req.body.image) {
+      try {
+        // Upload image to Cloudinary
+        const imageUploadResult = await cloudinary.uploader.upload(req.body.image, {
+          folder: 'job-portal/jobs',
+          width: 800,
+          crop: 'scale',
+          resource_type: 'image',
+          timeout: 60000 // 60 seconds timeout
+        });
+        
+        // Add image data to request body
+        req.body.image = {
+          public_id: imageUploadResult.public_id,
+          url: imageUploadResult.secure_url
+        };
+      } catch (error) {
+        console.error('Cloudinary upload error:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Image upload failed. Please try again.'
+        });
+      }
+    }
 
     const job = await Job.create(req.body);
 
@@ -112,6 +139,50 @@ export const updateJob = async (req, res) => {
         success: false,
         message: 'Not authorized to update this job'
       });
+    }
+    
+    // Handle image upload for updates
+    if (req.body.image && req.body.image !== job.image?.url) {
+      try {
+        // If there's an existing image, delete it first
+        if (job.image && job.image.public_id) {
+          await cloudinary.uploader.destroy(job.image.public_id);
+        }
+        
+        // Upload new image
+        const imageUploadResult = await cloudinary.uploader.upload(req.body.image, {
+          folder: 'job-portal/jobs',
+          width: 800,
+          crop: 'scale',
+          resource_type: 'image',
+          timeout: 60000 // 60 seconds timeout
+        });
+        
+        // Update image data in request body
+        req.body.image = {
+          public_id: imageUploadResult.public_id,
+          url: imageUploadResult.secure_url
+        };
+      } catch (error) {
+        console.error('Cloudinary upload error:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Image upload failed. Please try again.'
+        });
+      }
+    } else if (req.body.image === '') {
+      // If image field is empty, remove the image
+      if (job.image && job.image.public_id) {
+        try {
+          await cloudinary.uploader.destroy(job.image.public_id);
+        } catch (error) {
+          console.error('Error deleting image from Cloudinary:', error);
+        }
+        req.body.image = null;
+      }
+    } else {
+      // If no new image is provided, preserve the existing image
+      delete req.body.image;
     }
 
     job = await Job.findByIdAndUpdate(req.params.id, req.body, {

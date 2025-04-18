@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Briefcase, Calendar, User, Clock, Tag, Check, X, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Briefcase, Calendar, User, Clock, Tag, Check, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { getCategoryById, getJobsByCategory } from '../../../../services/categoryService';
+import api from '../../../../utils/api';
 import { formatDate } from '../../../../utils/dateUtils';
 
 const ViewCategory = () => {
@@ -13,41 +14,275 @@ const ViewCategory = () => {
   const [error, setError] = useState(null);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsLimit, setJobsLimit] = useState(5);
+  const [jobsPage, setJobsPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
   
-  useEffect(() => {
-    const fetchCategoryDetails = async () => {
+  // Fetch category details
+  const fetchCategoryDetails = async (showLoading = true) => {
+    if (showLoading) {
       setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await getCategoryById(id);
+    }
+    setError(null);
+    
+    try {
+      const response = await getCategoryById(id);
+      if (response && response.data) {
+        console.log('Category data fetched:', response.data);
         setCategory(response.data);
-        
-        // Fetch related jobs after getting category details
-        fetchRelatedJobs();
-      } catch (err) {
-        console.error('Error fetching category details:', err);
-        setError(err.message || 'Failed to load category details');
-        setCategory(null);
-      } finally {
+        return response.data;
+      } else {
+        throw new Error('Invalid response format or empty data');
+      }
+    } catch (err) {
+      console.error('Error fetching category details:', err);
+      setError(err.message || 'Failed to load category details');
+      setCategory(null);
+      return null;
+    } finally {
+      if (showLoading) {
         setLoading(false);
+      }
+    }
+  };
+  
+  // Direct debugging function to determine how jobs are tied to categories
+  const debugJobCategoryStructure = async (categoryName, categoryId) => {
+    console.log('===== DEBUG: JOB CATEGORY STRUCTURE =====');
+    console.log(`Checking jobs for category: ${categoryName} (ID: ${categoryId})`);
+
+    try {
+      // 1. First, get all jobs to inspect
+      const allJobsResponse = await api.get('/jobs', { params: { limit: 100 } });
+      
+      if (!allJobsResponse.data || !allJobsResponse.data.data) {
+        console.error('No jobs data available');
+        return;
+      }
+      
+      const allJobs = allJobsResponse.data.data;
+      console.log(`Retrieved ${allJobs.length} total jobs for analysis`);
+      
+      // 2. Examine the first job to understand its structure
+      if (allJobs.length > 0) {
+        const sampleJob = allJobs[0];
+        console.log('Sample job structure:', sampleJob);
+        console.log('Category field type:', typeof sampleJob.category);
+        console.log('Category field value:', sampleJob.category);
+        
+        // Check what field might contain the category
+        const possibleFields = ['category', 'jobCategory', 'categories', 'type'];
+        for (const field of possibleFields) {
+          if (sampleJob[field]) {
+            console.log(`Found possible category in field "${field}":`, sampleJob[field]);
+          }
+        }
+      }
+      
+      // 3. Try different matching strategies
+      const matchingStrategies = {
+        exactMatch: [],
+        lowercaseMatch: [],
+        includes: [],
+        idMatch: [],
+        objectIdMatch: []
+      };
+      
+      allJobs.forEach(job => {
+        // Get the category field, whatever form it's in
+        const jobCategory = job.category;
+        
+        // Skip if no category at all
+        if (!jobCategory) return;
+        
+        // Exact string match
+        if (typeof jobCategory === 'string' && jobCategory === categoryName) {
+          matchingStrategies.exactMatch.push(job);
+        }
+        
+        // Lowercase match
+        if (typeof jobCategory === 'string' && 
+            jobCategory.toLowerCase() === categoryName.toLowerCase()) {
+          matchingStrategies.lowercaseMatch.push(job);
+        }
+        
+        // Includes match
+        if (typeof jobCategory === 'string' && 
+            jobCategory.toLowerCase().includes(categoryName.toLowerCase())) {
+          matchingStrategies.includes.push(job);
+        }
+        
+        // ID match (if category is an ID string)
+        if (typeof jobCategory === 'string' && jobCategory === categoryId) {
+          matchingStrategies.idMatch.push(job);
+        }
+        
+        // Object with ID match
+        if (typeof jobCategory === 'object' && jobCategory?._id === categoryId) {
+          matchingStrategies.objectIdMatch.push(job);
+        }
+      });
+      
+      console.log('Matching results:');
+      for (const [strategy, jobs] of Object.entries(matchingStrategies)) {
+        console.log(`- ${strategy}: ${jobs.length} jobs found`);
+        if (jobs.length > 0) {
+          console.log('  Sample matching job:', jobs[0].title);
+        }
+      }
+      
+      // 4. Try a direct API call with category ID 
+      try {
+        const idBasedResponse = await api.get(`/categories/${categoryId}/jobs`);
+        console.log('Category ID-based API response:', idBasedResponse.data);
+      } catch (err) {
+        console.error('Error with category ID API call:', err.message);
+      }
+      
+      console.log('===== END DEBUG =====');
+      
+      // Return the strategy that worked best
+      for (const [strategy, jobs] of Object.entries(matchingStrategies)) {
+        if (jobs.length > 0) {
+          console.log(`Using "${strategy}" strategy with ${jobs.length} jobs`);
+          return jobs;
+        }
+      }
+      
+      return [];
+    } catch (err) {
+      console.error('Error in debug function:', err);
+      return [];
+    }
+  };
+
+  // Modified fetchJobsByCategory to use different field matching approach
+  const fetchJobsByCategory = async (categoryName, categoryId, reset = false) => {
+    if (!categoryName) {
+      console.error('Missing category name for job fetch');
+      return [];
+    }
+    
+    setJobsLoading(true);
+    
+    // Reset jobs if needed
+    if (reset) {
+      setJobs([]);
+      setJobsPage(1);
+    }
+    
+    try {
+      console.log(`Attempting to fetch jobs for category "${categoryName}" with multiple strategies`);
+      
+      // First run the debugging function to understand the structure
+      const debugJobs = await debugJobCategoryStructure(categoryName, categoryId);
+      
+      if (debugJobs && debugJobs.length > 0) {
+        console.log(`Debug found ${debugJobs.length} jobs that match this category`);
+        setJobs(debugJobs);
+        
+        // Update category with accurate job count
+        setCategory(prev => ({
+          ...prev,
+          jobCount: debugJobs.length
+        }));
+        
+        return debugJobs;
+      }
+      
+      // Original implementation as fallback
+      const response = await api.get('/jobs', { 
+        params: { 
+          limit: 100 // Get more jobs to ensure we have enough
+        } 
+      });
+      
+      if (!response.data || !response.data.data) {
+        console.warn('Invalid response format or empty data');
+        setJobs([]);
+        return [];
+      }
+      
+      const allJobs = response.data.data;
+      console.log(`Retrieved ${allJobs.length} total jobs, attempting to match category`);
+      
+      // Try multiple strategies to match jobs to this category
+      const matchingJobs = allJobs.filter(job => {
+        // Check if category exists at all
+        if (!job.category) return false;
+        
+        // Try object vs string matching
+        if (typeof job.category === 'object') {
+          // If category is an object, check its name property
+          return job.category.name?.toLowerCase() === categoryName.toLowerCase();
+        } else if (typeof job.category === 'string') {
+          // Direct string match (case insensitive)
+          return job.category.toLowerCase() === categoryName.toLowerCase() || 
+                 job.category === categoryId;
+        }
+        
+        return false;
+      });
+      
+      console.log(`Found ${matchingJobs.length} jobs matching category "${categoryName}"`);
+      
+      if (matchingJobs.length > 0) {
+        setJobs(matchingJobs);
+        
+        // Update category with accurate job count
+        setCategory(prev => ({
+          ...prev,
+          jobCount: matchingJobs.length
+        }));
+        
+        return matchingJobs;
+      } else {
+        setJobs([]);
+        return [];
+      }
+    } catch (err) {
+      console.error('Error fetching jobs for category:', err);
+      setJobs([]);
+      return [];
+    } finally {
+      setJobsLoading(false);
+    }
+  };
+
+  // Initial data load
+  useEffect(() => {
+    const loadInitialData = async () => {
+      const categoryData = await fetchCategoryDetails();
+      if (categoryData && categoryData.name) {
+        console.log(`Starting job fetch for category: ${categoryData.name}`);
+        
+        // Pass both name and ID to allow for different matching strategies
+        await fetchJobsByCategory(categoryData.name, categoryData._id, true);
       }
     };
     
-    fetchCategoryDetails();
+    loadInitialData();
+    
+    // Refresh data periodically
+    const refreshInterval = setInterval(() => {
+      if (category && category.name) {
+        console.log('Periodic refresh triggered');
+        fetchJobsByCategory(category.name, category._id, true);
+      }
+    }, 120000); // 2 minutes
+    
+    return () => clearInterval(refreshInterval);
   }, [id]);
   
-  const fetchRelatedJobs = async () => {
-    setJobsLoading(true);
-    
+  // Handle manual refresh with debugging
+  const handleRefresh = async () => {
+    setRefreshing(true);
     try {
-      const response = await getJobsByCategory(id, { limit: jobsLimit });
-      setJobs(response.data);
-    } catch (err) {
-      console.error('Error fetching related jobs:', err);
-      setJobs([]);
+      const categoryData = await fetchCategoryDetails(false);
+      if (categoryData && categoryData.name) {
+        await fetchJobsByCategory(categoryData.name, categoryData._id, true);
+      }
     } finally {
-      setJobsLoading(false);
+      setRefreshing(false);
     }
   };
   
@@ -61,9 +296,14 @@ const ViewCategory = () => {
     navigate(`/admin/categories/edit/${id}`);
   };
   
-  // Handle load more jobs
-  const handleLoadMoreJobs = () => {
-    setJobsLimit(prevLimit => prevLimit + 5);
+  // Handle load more jobs - this is now unnecessary since we're loading all at once
+  const handleLoadMoreJobs = async () => {
+    if (category && category.name) {
+      if (jobs.length < 10) {
+        // If we have few jobs, try the fallback method to find more
+        await fetchJobsByCategory(category.name, category._id, true);
+      }
+    }
   };
   
   if (loading) {
@@ -230,11 +470,19 @@ const ViewCategory = () => {
           
           {/* Related Jobs */}
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <div className="p-4 border-b">
+            <div className="p-4 border-b flex justify-between items-center">
               <h3 className="font-semibold">Recent Jobs in this Category</h3>
+              <button 
+                onClick={handleRefresh}
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+                disabled={refreshing || jobsLoading}
+                title="Refresh jobs list"
+              >
+                <RefreshCw size={16} className={`${refreshing ? 'animate-spin' : ''}`} />
+              </button>
             </div>
             <div className="p-6">
-              {jobsLoading ? (
+              {jobsLoading && jobs.length === 0 ? (
                 <div className="flex justify-center items-center py-6">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
@@ -242,6 +490,14 @@ const ViewCategory = () => {
                 <div className="text-center py-6 text-gray-500">
                   <Briefcase className="mx-auto h-10 w-10 text-gray-300 mb-2" />
                   <p>No jobs found in this category</p>
+                  <button 
+                    onClick={handleRefresh}
+                    className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center mx-auto"
+                    disabled={refreshing}
+                  >
+                    <RefreshCw size={14} className={`mr-1 ${refreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -250,7 +506,11 @@ const ViewCategory = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="font-medium">{job.title}</h4>
-                          <div className="text-sm text-gray-500 mt-1">{job.company}</div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            {typeof job.company === 'object' ? 
+                              (job.company.name || 'Unknown Company') : 
+                              (job.company || 'Unknown Company')}
+                          </div>
                         </div>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           job.status === 'active' 
@@ -293,7 +553,13 @@ const ViewCategory = () => {
                     </div>
                   ))}
                   
-                  {jobs.length < category.jobCount && (
+                  {jobsLoading && jobs.length > 0 && (
+                    <div className="flex justify-center items-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    </div>
+                  )}
+                  
+                  {!jobsLoading && jobs.length > 0 && jobs.length < (category.jobCount || 0) && (
                     <div className="text-center pt-2">
                       <button 
                         onClick={handleLoadMoreJobs}
@@ -407,6 +673,15 @@ const ViewCategory = () => {
               >
                 <Edit size={16} className="mr-2" />
                 Edit this category
+              </button>
+              
+              <button 
+                onClick={handleRefresh}
+                className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-md flex items-center justify-center"
+                disabled={refreshing}
+              >
+                <RefreshCw size={16} className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh Data
               </button>
               
               {category.jobCount > 0 && (

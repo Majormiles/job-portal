@@ -18,8 +18,8 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function() {
-      // Only require password if not using OAuth (googleId not present)
-      return !this.googleId;
+      // Only require password for admin users or if using OAuth (googleId not present)
+      return this.roleName === 'admin' && !this.googleId;
     },
     minlength: 6,
     select: false
@@ -38,13 +38,131 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'default-profile.png'
   },
+  phone: {
+    type: String,
+    trim: true
+  },
+  location: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Location'
+  },
+  customLocation: {
+    type: String,
+    trim: true
+  },
+  role: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Role',
+    required: [true, 'Role is required']
+  },
+  roleName: {
+    type: String,
+    enum: ['admin', 'jobSeeker', 'employer', 'trainer', 'trainee'],
+    required: [true, 'Role name is required']
+  },
+  // Job seeker specific fields
+  jobSeekerProfile: {
+    skills: [String],
+    experience: [
+      {
+        title: String,
+        company: String,
+        location: String,
+        from: Date,
+        to: Date,
+        current: Boolean,
+        description: String
+      }
+    ],
+    education: [
+      {
+        school: String,
+        degree: String,
+        fieldOfStudy: String,
+        from: Date,
+        to: Date,
+        current: Boolean,
+        description: String
+      }
+    ],
+    resume: String,
+    jobPreferences: {
+      jobType: [String],
+      salary: {
+        min: Number,
+        max: Number,
+        currency: {
+          type: String,
+          default: 'GHS'
+        }
+      },
+      locations: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Location'
+      }],
+      remote: Boolean
+    }
+  },
+  // Employer specific fields
+  employerProfile: {
+    companyName: String,
+    industry: String,
+    companySize: String,
+    companyDescription: String,
+    companyLogo: String,
+    website: String,
+    socialMedia: {
+      facebook: String,
+      twitter: String,
+      linkedin: String,
+      instagram: String
+    },
+    locations: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Location'
+    }],
+    contactEmail: String,
+    contactPhone: String
+  },
+  // Trainer specific fields
+  trainerProfile: {
+    organization: String,
+    specialization: [String],
+    bio: String,
+    experience: Number, // Years of experience
+    certificates: [String],
+    trainingAreas: [String],
+    availableDays: [String],
+    availableHours: {
+      start: String,
+      end: String
+    }
+  },
+  // Trainee specific fields
+  traineeProfile: {
+    educationLevel: String,
+    interests: [String],
+    previousTrainings: [
+      {
+        title: String,
+        provider: String,
+        completionDate: Date,
+        certificate: String
+      }
+    ],
+    goals: [String],
+    availableDays: [String],
+    availableHours: {
+      start: String,
+      end: String
+    }
+  },
   socialLinks: [{
     id: Number,
     name: String,
     icon: String,
     url: String
   }],
-  phone: String,
   address: {
     street: String,
     city: String,
@@ -87,11 +205,6 @@ const userSchema = new mongoose.Schema({
       hoursPerWeek: Number
     }
   },
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user',
-  },
   onboardingComplete: {
     type: Boolean,
     default: false,
@@ -99,6 +212,14 @@ const userSchema = new mongoose.Schema({
   onboardingCompletedAt: {
     type: Date,
     default: null,
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   },
   createdAt: {
     type: Date,
@@ -140,11 +261,16 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 // Generate JWT token
 userSchema.methods.generateAuthToken = function() {
   return jwt.sign(
-    { id: this._id },
+    { id: this._id, role: this.roleName },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRE }
   );
 };
+
+// Create indexes for faster queries
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ roleName: 1 });
+userSchema.index({ isActive: 1 });
 
 const User = mongoose.model('User', userSchema);
 

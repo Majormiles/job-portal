@@ -28,8 +28,21 @@ const Header = () => {
       const isOnboardingComplete = onboardingStatus?.isComplete;
 
       if (isOnboardingComplete) {
-        // If onboarding is complete, go to dashboard
-        navigate('/dashboard_employee', { replace: true });
+        // Determine which dashboard to redirect to based on user role
+        const isEmployer = user?.role === 'employer' || 
+                          (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+                          user?.userType === 'employer' ||
+                          localStorage.getItem('registrationData') && 
+                          JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
+        
+        console.log('Redirecting to dashboard for role:', isEmployer ? 'employer' : 'job seeker');
+        
+        // Navigate to the appropriate dashboard
+        if (isEmployer) {
+          navigate('/dashboard-employer', { replace: true });
+        } else {
+          navigate('/dashboard-jobseeker', { replace: true });
+        }
       } else {
         // If onboarding is not complete, go to first onboarding step
         navigate('/onboarding/personal-info', { replace: true });
@@ -62,15 +75,15 @@ const Header = () => {
         <div className={`nav-container ${mobileMenuOpen ? 'nav-open' : ''}`}>
           <nav className="navigation">
             <NavLink to="/" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} onClick={closeMobileMenu}>Home</NavLink>
-            <NavLink to="/jobs" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} onClick={closeMobileMenu}>Jobs</NavLink>
-            <NavLink to="/about" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} onClick={closeMobileMenu}>About Us</NavLink>
+            {/* <NavLink to="/jobs" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} onClick={closeMobileMenu}>Jobs</NavLink> */}
+            <NavLink to="/gallery" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} onClick={closeMobileMenu}>About Us</NavLink>
             <NavLink to="/contact" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} onClick={closeMobileMenu}>Contact Us</NavLink>
           </nav>
           
           <div className="auth-buttons">
             {!isAuthenticated ? (
               <>
-                <Link to="/login" className="login-btn" onClick={closeMobileMenu}>Login</Link>
+                {/* <Link to="/login" className="login-btn" onClick={closeMobileMenu}>Login</Link> */}
                 <Link to="/register" className="register-btn" onClick={closeMobileMenu}>Register</Link>
               </>
             ) : (

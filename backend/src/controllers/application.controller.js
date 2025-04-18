@@ -154,7 +154,9 @@ export const getApplication = async (req, res) => {
 // @access  Private
 export const deleteApplication = async (req, res) => {
   try {
-    const application = await Application.findById(req.params.id);
+    const application = await Application.findById(req.params.id)
+      .populate('job')
+      .populate('applicant');
 
     if (!application) {
       return res.status(404).json({
@@ -165,7 +167,7 @@ export const deleteApplication = async (req, res) => {
 
     // Check if user is authorized to delete this application
     if (
-      application.applicant.toString() !== req.user.id &&
+      application.applicant._id.toString() !== req.user.id &&
       application.job.company.toString() !== req.user.id
     ) {
       return res.status(403).json({
@@ -175,13 +177,13 @@ export const deleteApplication = async (req, res) => {
     }
 
     // Remove application from job's applications array
-    const job = await Job.findById(application.job);
+    const job = await Job.findById(application.job._id);
     job.applications = job.applications.filter(
       app => app.toString() !== application._id.toString()
     );
     await job.save();
 
-    await application.remove();
+    await application.deleteOne();
 
     res.json({
       success: true,

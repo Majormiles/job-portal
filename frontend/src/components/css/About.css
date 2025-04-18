@@ -21,11 +21,11 @@
 }
 
 /* Container styles */
-.container {
+.job-portal-container .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 40px;
 }
 
 /* Section Animation */
@@ -38,7 +38,7 @@
 /* About Hero Section */
 .about-hero-section {
   padding: 100px 0;
-  background-color: var(--light-gray);
+  background-color: var(--white);
   overflow: hidden;
   margin-bottom: 0;
 }
@@ -136,13 +136,13 @@
 .features {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 30px;
+  gap: 40px;
   margin-top: 50px;
 }
 
 .feature {
   text-align: center;
-  padding: 30px 20px;
+  padding: 30px 25px;
   border-radius: var(--border-radius);
   transition: var(--transition);
   opacity: 0;
@@ -309,7 +309,7 @@
 /* FAQ Section */
 .about-faq-section {
   padding: 100px 0;
-  background-color: var(--light-gray);
+  background-color: var(--white);
 }
 
 .about-faq-section h2 {

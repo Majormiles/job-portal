@@ -91,6 +91,18 @@ const ContactPage = () => {
                                 </div>
                             </div>
                         </div>
+                        
+                        <div className="office-map-container animate-on-mount">
+                            <div className="map-inner">
+                                <iframe
+                                    src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d15853.182235823399!2d0.47855064999999997!3d6.61015005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sgh!4v1740799409286!5m2!1sen!2sgh"
+                                    style={{ border: "0", width: "100%", height: "300px", borderRadius: "12px", marginTop: "20px" }}
+                                    allowFullScreen
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade">
+                                </iframe>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="contact-right animate-on-mount">
@@ -150,36 +162,7 @@ const ContactPage = () => {
                 </div>
             </div>
 
-            <div className="map-container">
-                <div className="map-wrapper">
-                    <div className="map-inner">
-                        <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d15853.182235823399!2d0.47855064999999997!3d6.61015005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sgh!4v1740799409286!5m2!1sen!2sgh"
-                            style={{ border: "0" }}
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade">
-                        </iframe>
-                    </div>
-                </div>
-            </div>
-
-            <div className="partners-section">
-                <div className="partners-container">
-                    <div className="partner animate-on-mount">
-                        <img src={zoomLogo} alt="Company hero" className="hero-image" />
-                    </div>
-                    <div className="partner animate-on-mount">
-                        <img src={asanaLogo} alt="Company hero" className="hero-image" />
-                    </div>
-                    <div className="partner animate-on-mount">
-                        <img src={tinderLogo} alt="Company hero" className="hero-image" />
-                    </div>
-                    <div className="partner animate-on-mount">
-                        <img src={dribbleLogo} alt="Company hero" className="hero-image" />
-                    </div>
-                </div>
-            </div>
+         
         </div>
     );
 };

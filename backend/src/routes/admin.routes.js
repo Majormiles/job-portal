@@ -44,6 +44,77 @@ router.get('/jobs', async (req, res) => {
   }
 });
 
+// Get all applications for admin (no population)
+router.get('/applications', async (req, res) => {
+  try {
+    console.log('Admin applications route hit');
+    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', status, jobId, search, startDate } = req.query;
+    
+    // Build query
+    const query = {};
+    
+    // Add filters if provided
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    
+    if (jobId && jobId !== 'all') {
+      query.job = jobId;
+    }
+    
+    if (startDate) {
+      query.createdAt = { $gte: new Date(startDate) };
+    }
+    
+    if (search) {
+      // Simple search without populated fields
+      query.$or = [
+        { applicantName: { $regex: search, $options: 'i' } },
+        { applicantEmail: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Prepare sort options
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
+    
+    console.log('Query:', query);
+    console.log('Sort:', sort);
+    console.log('Skip:', skip);
+    console.log('Limit:', limit);
+    
+    // Execute query with pagination and NO population
+    const applications = await Application.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    // Get total count for pagination
+    const totalCount = await Application.countDocuments(query);
+    
+    console.log('Sending admin applications response:', { count: applications.length, totalCount });
+    
+    res.json({
+      success: true,
+      data: applications,
+      totalCount,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / limit)
+    });
+  } catch (error) {
+    console.error('Error in admin applications route:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching applications',
+      error: error.message
+    });
+  }
+});
+
 // Get system statistics
 router.get('/stats', async (req, res) => {
   try {

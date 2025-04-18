@@ -4,10 +4,11 @@ import { toast } from 'react-toastify';
 import { createJob, getJobById, updateJob } from '../../../../services/jobService';
 import { getCategories } from '../../../../services/categoryService';
 import { uploadImage } from '../../../../services/uploadService';
-import { PlusCircle, MinusCircle, AlertCircle, Save, ArrowLeft, Bold, Italic, List, ListOrdered, Link as LinkIcon, Image, Code, Loader } from 'lucide-react';
+import { PlusCircle, MinusCircle, AlertCircle, Save, ArrowLeft, Bold, Italic, List, ListOrdered, Link as LinkIcon, Image, Code, Loader, Upload, Trash, X } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '../../styles/category.css';
+
 
 // Add custom CSS for the Quill editor
 const quillStyles = `
@@ -22,6 +23,25 @@ const quillStyles = `
     height: auto;
   }
 `;
+
+// Fix for the findDOMNode deprecation warning
+// Create a wrapper component that doesn't use findDOMNode internally
+const QuillWrapper = React.forwardRef((props, ref) => {
+  const { value, onChange, modules, formats, placeholder, theme } = props;
+  return (
+    <ReactQuill
+      ref={ref}
+      theme={theme}
+      value={value}
+      onChange={onChange}
+      modules={modules}
+      formats={formats}
+      placeholder={placeholder}
+    />
+  );
+});
+
+QuillWrapper.displayName = 'QuillWrapper';
 
 const formats = [
   'header',
@@ -129,6 +149,7 @@ const CreateJob = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const quillRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // State for form data
   const [formData, setFormData] = useState({
@@ -147,7 +168,8 @@ const CreateJob = () => {
     skills: [''],
     benefits: [''],
     category: '',
-    status: 'active'
+    status: 'active',
+    image: ''
   });
 
   // State for loading states
@@ -158,6 +180,8 @@ const CreateJob = () => {
 
   // State for image upload
   const [imageUploading, setImageUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Add state for description preview
   const [showPreview, setShowPreview] = useState(false);
@@ -165,6 +189,9 @@ const CreateJob = () => {
   // State for tracking form changes
   const [formChanged, setFormChanged] = useState(false);
   const [initialFormData, setInitialFormData] = useState(null);
+
+  // Add state for form submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load categories
   useEffect(() => {
@@ -191,10 +218,56 @@ const CreateJob = () => {
       setFetchLoading(true);
       
       try {
+        console.log('Fetching job data for editing, job ID:', id);
         const response = await getJobById(id);
+        
+        console.log('Raw API response:', JSON.stringify(response));
         
         if (response.success && response.data) {
           const jobData = response.data;
+          console.log('Editing job data:', jobData);
+          console.log('Job image data type:', typeof jobData.image);
+          console.log('Job image full data:', jobData.image);
+          
+          // Extract image URL regardless of format
+          let imageUrl = null;
+          let originalImage = null;
+          
+          if (jobData.image) {
+            originalImage = jobData.image; // Save the original image data format
+            
+            if (typeof jobData.image === 'string') {
+              imageUrl = jobData.image;
+              console.log('Image is a string URL');
+            } else if (typeof jobData.image === 'object') {
+              console.log('Image is an object:', Object.keys(jobData.image));
+              
+              if (jobData.image.url) {
+                imageUrl = jobData.image.url;
+                console.log('Using image.url:', imageUrl);
+              } else if (jobData.image.secure_url) {
+                imageUrl = jobData.image.secure_url;
+                console.log('Using image.secure_url:', imageUrl);
+              } else if (jobData.image.src) {
+                imageUrl = jobData.image.src;
+                console.log('Using image.src:', imageUrl);
+              }
+            }
+          } else {
+            console.log('No image data found for this job');
+            originalImage = null;
+          }
+          
+          console.log('Extracted image URL:', imageUrl);
+          
+          // Set image preview if we extracted a URL
+          if (imageUrl) {
+            console.log('Setting image preview to:', imageUrl);
+            setImagePreview(imageUrl);
+          } else {
+            // Clear the image preview if there's no valid image
+            setImagePreview('');
+          }
           
           // Format the data to match our form structure
           const formattedData = {
@@ -208,9 +281,12 @@ const CreateJob = () => {
             requirements: jobData.requirements?.length > 0 ? jobData.requirements : [''],
             responsibilities: jobData.responsibilities?.length > 0 ? jobData.responsibilities : [''],
             skills: jobData.skills?.length > 0 ? jobData.skills : [''],
-            benefits: jobData.benefits?.length > 0 ? jobData.benefits : ['']
+            benefits: jobData.benefits?.length > 0 ? jobData.benefits : [''],
+            // Preserve the original image format from the server to avoid conversion issues
+            image: originalImage || '' // Use empty string as fallback when image is undefined
           };
           
+          console.log('Formatted form data:', formattedData);
           setFormData(formattedData);
         }
       } catch (error) {
@@ -231,22 +307,25 @@ const CreateJob = () => {
       // Short timeout to ensure the editor is fully initialized
       setTimeout(() => {
         try {
-          const editor = quillRef.current.getEditor();
-          
-          // Ensure there's content to work with
-          if (editor.getLength() <= 1) { // Only has newline character
-            editor.setText(" "); // Add a space
-            editor.setSelection(0, 0); // Select at beginning
-          } else {
-            editor.setSelection(0, 0); // Select at beginning
+          // Check if the ref exists
+          if (quillRef.current) {
+            const editor = quillRef.current.getEditor();
+            if (editor) {
+              // Ensure there's content to work with
+              if (editor.getLength() <= 1) { // Only has newline character
+                editor.setText(" "); // Add a space
+                editor.setSelection(0, 0); // Select at beginning
+              } else {
+                editor.setSelection(0, 0); // Select at beginning
+              }
+              
+              editor.focus();
+            }
           }
-          
-          editor.focus();
-          
         } catch (error) {
           console.error('Error initializing editor:', error);
         }
-      }, 300);
+      }, 500); // Increased timeout to allow editor to initialize
     }
   }, [fetchLoading, showPreview]);
 
@@ -423,6 +502,10 @@ const CreateJob = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Don't submit if already submitting
+    if (isSubmitting) return;
+    
+    // Validate the form first
     if (!validateForm()) {
       toast.error('Please fill in all required fields');
       // Scroll to the first error
@@ -433,11 +516,12 @@ const CreateJob = () => {
       return;
     }
     
+    setIsSubmitting(true);
     setLoading(true);
     
     try {
-      // Clean up the form data - filter out empty array entries
-      const cleanedData = {
+      // Create a copy of the form data for submission
+      const submissionData = {
         ...formData,
         requirements: formData.requirements.filter(req => req.trim()),
         responsibilities: formData.responsibilities.filter(resp => resp.trim()),
@@ -450,39 +534,257 @@ const CreateJob = () => {
         }
       };
       
-      // Convert empty strings to appropriate default values
-      Object.keys(cleanedData).forEach(key => {
-        if (cleanedData[key] === '') {
-          if (typeof formData[key] === 'number') {
-            cleanedData[key] = 0;
-          }
+      // Ensure we get the latest description content from the editor
+      if (quillRef.current && quillRef.current.getEditor) {
+        const editor = quillRef.current.getEditor();
+        if (editor) {
+          submissionData.description = editor.root.innerHTML;
         }
-      });
-      
-      let response;
-      
-      if (isEditMode) {
-        response = await updateJob(id, cleanedData);
-      } else {
-        response = await createJob(cleanedData);
       }
       
+      // Log the image data before submission
+      console.log('Image data before submission:', submissionData.image);
+      
+      // Handle image data preservation
+      if (isEditMode) {
+        // When editing, keep the original image format if possible
+        // The backend expects either a data URL for a new image, 
+        // or the original object structure for an existing image
+        try {
+          if (typeof formData.image === 'object' && formData.image !== null && imagePreview && !imagePreview.startsWith('data:')) {
+            // Using existing image object (preserve it as is)
+            console.log('Preserving original image object format for existing image');
+            // Ensure we're not passing an empty object
+            if (Object.keys(formData.image).length === 0) {
+              submissionData.image = '';
+            }
+            // If it's just a URL string in an object, extract it
+            if (formData.image.url && typeof formData.image.url === 'string') {
+              submissionData.image = formData.image.url;
+            }
+          } else if (imagePreview && imagePreview.startsWith('data:')) {
+            // Data URL from newly uploaded image
+            console.log('Sending new uploaded image as data URL');
+            submissionData.image = imagePreview;
+          } else if (!imagePreview || imagePreview === '') {
+            // Image was removed or not present
+            console.log('No image - setting to empty string');
+            submissionData.image = '';
+          }
+        } catch (imageError) {
+          // Handle any errors with image processing
+          console.error('Error processing image data:', imageError);
+          // Fallback to empty string or whatever the backend expects for no image
+          submissionData.image = '';
+        }
+      } else {
+        // When creating new, just use the data URL from preview if it exists
+        submissionData.image = imagePreview || '';
+      }
+      
+      console.log('Final submission data:', submissionData);
+      
+      const response = isEditMode
+        ? await updateJob(id, submissionData)
+        : await createJob(submissionData);
+      
       if (response.success) {
-        toast.success(isEditMode ? 'Job updated successfully' : 'Job created successfully');
-        setFormChanged(false);  // Reset form changed state after successful save
+        toast.success(isEditMode ? 'Job updated successfully!' : 'Job created successfully!');
         navigate('/admin/jobs');
       } else {
-        throw new Error(response.message || 'Operation failed');
+        throw new Error(response.message || 'Failed to save job');
       }
     } catch (error) {
       console.error('Error saving job:', error);
-      toast.error(error.message || 'Failed to save job');
+      toast.error(error.message || 'An error occurred while saving the job');
     } finally {
+      setIsSubmitting(false);
       setLoading(false);
     }
   };
 
-  // Helper function to upload images
+  // Handle job image input click
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Handle image change for job image (not description editor images)
+  const handleJobImageChange = (e) => {
+    const file = e.target.files[0];
+    
+    if (!file) return;
+    
+    // Check file type
+    if (!file.type.match('image.*')) {
+      setErrors(prev => ({
+        ...prev,
+        image: 'Please upload an image file (PNG, JPG, JPEG)'
+      }));
+      return;
+    }
+    
+    // Check file size (max 5MB - increased from 2MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(prev => ({
+        ...prev,
+        image: 'Image size should be less than 5MB'
+      }));
+      return;
+    }
+    
+    const reader = new FileReader();
+    
+    reader.onloadstart = () => {
+      setUploadProgress(0);
+      setImageUploading(true);
+    };
+    
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) {
+        setUploadProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+    
+    reader.onload = () => {
+      // Process image before setting
+      processImage(reader.result, file.type)
+        .then(processedImage => {
+          setImagePreview(processedImage);
+          setFormData(prev => ({
+            ...prev,
+            image: processedImage
+          }));
+          setUploadProgress(100);
+          setImageUploading(false);
+          
+          // Estimate the size of the Base64 string
+          const base64Size = Math.ceil((processedImage.length * 3) / 4);
+          console.log('Final image size:', Math.round(base64Size / 1024), 'KB');
+          
+          // Clear error if exists
+          if (errors.image) {
+            setErrors(prev => ({
+              ...prev,
+              image: null
+            }));
+          }
+        })
+        .catch(error => {
+          console.error('Error processing image:', error);
+          setErrors(prev => ({
+            ...prev,
+            image: 'Error processing image. Please try again.'
+          }));
+          setImageUploading(false);
+        });
+    };
+    
+    reader.readAsDataURL(file);
+  };
+  
+  // Process image - resize if needed
+  const processImage = (base64Image, mimeType) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const img = new window.Image(); // Use window.Image instead of Image to avoid confusion with the imported Lucide Icon
+        img.onload = () => {
+          // Reduced max dimensions for smaller file size
+          const MAX_WIDTH = 600;
+          const MAX_HEIGHT = 600;
+          
+          let width = img.width;
+          let height = img.height;
+          
+          // Always resize to optimize file size
+          if (width > MAX_WIDTH || height > MAX_HEIGHT || true) {
+            // Calculate new dimensions while maintaining aspect ratio
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height = Math.round(height * (MAX_WIDTH / width));
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width = Math.round(width * (MAX_HEIGHT / height));
+                height = MAX_HEIGHT;
+              }
+            }
+            
+            // Create canvas and resize image
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Apply stronger compression
+            let quality = 0.6; // Default quality reduced from 0.8
+            if (mimeType.includes('jpeg') || mimeType.includes('jpg')) {
+              quality = 0.5; // Even stronger compression for JPEG
+            } else if (mimeType.includes('png')) {
+              // For PNGs, convert to JPEG for better compression
+              mimeType = 'image/jpeg';
+              quality = 0.6;
+            }
+            
+            const resizedImage = canvas.toDataURL(mimeType, quality);
+            
+            // Calculate approximate size in KB
+            const approximateSizeKB = Math.round((resizedImage.length * 3) / 4 / 1024);
+            console.log('Image processed:', `${img.width}x${img.height}`, '→', `${width}x${height}`, `(~${approximateSizeKB}KB)`);
+            
+            resolve(resizedImage);
+          } else {
+            // Even if no resizing, still apply compression
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Apply compression
+            const quality = mimeType.includes('jpeg') ? 0.6 : 0.7;
+            const optimizedImage = canvas.toDataURL(mimeType, quality);
+            
+            const approximateSizeKB = Math.round((optimizedImage.length * 3) / 4 / 1024);
+            console.log('Image optimized without resize:', `${width}x${height}`, `(~${approximateSizeKB}KB)`);
+            
+            resolve(optimizedImage);
+          }
+        };
+        
+        img.onerror = (error) => {
+          reject(error);
+        };
+        
+        img.src = base64Image;
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+  
+  // Remove job image
+  const handleRemoveJobImage = () => {
+    setImagePreview('');
+    setFormData(prev => ({
+      ...prev,
+      image: ''
+    }));
+    // Clear any errors
+    if (errors.image) {
+      setErrors(prev => ({
+        ...prev,
+        image: null
+      }));
+    }
+  };
+
+  // Helper function to upload images to description editor
   const handleImageUpload = () => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
@@ -509,12 +811,16 @@ const CreateJob = () => {
           
           const reader = new FileReader();
           reader.onload = () => {
-            if (quillRef.current) {
+            if (quillRef.current && quillRef.current.getEditor) {
               try {
                 const editor = quillRef.current.getEditor();
-                const range = editor.getSelection() || { index: editor.getLength() };
-                editor.insertEmbed(range.index, 'image', reader.result);
-                editor.setSelection((range.index || 0) + 1);
+                if (editor) {
+                  const range = editor.getSelection() || { index: editor.getLength() };
+                  editor.insertEmbed(range.index, 'image', reader.result);
+                  editor.setSelection((range.index || 0) + 1);
+                } else {
+                  toast.error('Editor not initialized properly. Please try again.');
+                }
               } catch (error) {
                 console.error('Error inserting image:', error);
                 toast.error('Failed to insert image. Please try again.');
@@ -620,6 +926,95 @@ const CreateJob = () => {
                 {/* Basic Info Section */}
                 <div className="bg-white p-4 rounded border border-gray-100 shadow-sm">
                   <h2 className="text-base font-semibold mb-3 text-gray-700 pb-2 border-b border-gray-100">Basic Information</h2>
+                  
+                  {/* Job Image Upload Section */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Job Image {isEditMode && imagePreview ? '(Current image will be displayed below)' : ''}
+                    </label>
+                    <div className="mt-1 flex flex-col items-center justify-center">
+                      {imagePreview ? (
+                        <div className="relative w-full max-w-md">
+                          <img 
+                            src={imagePreview} 
+                            alt="Job preview" 
+                            className="object-cover h-48 w-full rounded-lg border border-gray-200" 
+                          />
+                          {imageUploading && (
+                            <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
+                              <div className="text-center">
+                                <Loader size={24} className="animate-spin mx-auto text-blue-500 mb-2" />
+                                <p className="text-sm text-gray-600">Uploading... {uploadProgress}%</p>
+                              </div>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={handleRemoveJobImage}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div onClick={triggerFileInput} className="w-full max-w-md cursor-pointer">
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg px-6 py-10 text-center hover:border-blue-500 transition-colors">
+                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                            <div className="mt-4 flex text-sm text-gray-600">
+                              <label htmlFor="job-image" className="relative cursor-pointer w-full">
+                                <span className="text-blue-600 hover:text-blue-500">Upload an image</span>
+                                <span className="pl-1">or drag and drop</span>
+                              </label>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">PNG, JPG, JPEG up to 5MB</p>
+                            {isEditMode && (
+                              <p className="text-xs text-gray-600 mt-3">
+                                {formData.image === undefined || formData.image === null || formData.image === '' ? 
+                                  'No image found for this job. You can upload a new one.' :
+                                  'Current image not displaying correctly. You can upload a new one or keep the existing image.'}
+                              </p>
+                            )}
+                            {imageUploading && (
+                              <div className="mt-4">
+                                <div className="relative pt-1">
+                                  <div className="flex mb-2 items-center justify-between">
+                                    <div>
+                                      <span className="text-xs font-semibold inline-block text-blue-600">
+                                        Uploading...
+                                      </span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-xs font-semibold inline-block text-blue-600">
+                                        {uploadProgress}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                                    <div
+                                      style={{ width: `${uploadProgress}%` }}
+                                      className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-300"
+                                    ></div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          {errors.image && (
+                            <p className="mt-1 text-sm text-red-500 error-message">{errors.image}</p>
+                          )}
+                        </div>
+                      )}
+                      <input
+                        ref={fileInputRef}
+                        id="job-image"
+                        name="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleJobImageChange}
+                        className="sr-only"
+                      />
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Job Title */}
@@ -871,7 +1266,7 @@ const CreateJob = () => {
                               </div>
                             </div>
                           )}
-                          <ReactQuill
+                          <QuillWrapper
                             key={`editor-${id || 'new'}-${Date.now()}`}
                             ref={quillRef}
                             theme="snow"

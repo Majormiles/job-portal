@@ -8,7 +8,7 @@ const CompanySection = () => {
     <div className="company-section">
       <div className="company-hero">
         <div className="hero-image-container">
-          <img src={jobsearchImage} alt="Company hero" className="hero-image" />
+          <img src={jobsearchImage} alt="Company hero" className="company-hero-image" />
         </div>
         <div className="hero-content-company">
           <h2 className="hero-title_company">Good Life Begins With A Good Company</h2>

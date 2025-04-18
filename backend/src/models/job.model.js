@@ -15,6 +15,14 @@ const jobSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please add a job description']
   },
+  image: {
+    public_id: {
+      type: String
+    },
+    url: {
+      type: String
+    }
+  },
   requirements: [{
     type: String,
     required: [true, 'Please add job requirements']

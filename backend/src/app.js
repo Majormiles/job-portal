@@ -11,6 +11,8 @@ import applicationRouter from './routes/application.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import statsRouter from './routes/stats.routes.js';
 import companyRouter from './routes/company.routes.js';
+import locationRouter from './routes/location.routes.js';
+import roleRouter from './routes/role.routes.js';
 import errorHandler from './middleware/error.middleware.js';
 
 dotenv.config();
@@ -24,8 +26,8 @@ app.use(cors({
 }));
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(cookieParser());
 
 // Routes
@@ -38,6 +40,8 @@ app.use('/api/applications', applicationRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/companies', companyRouter);
+app.use('/api/locations', locationRouter);
+app.use('/api/roles', roleRouter);
 
 // Error handling
 app.use(errorHandler);

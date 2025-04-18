@@ -131,7 +131,7 @@ const JobPortal = () => {
     };
 
     return (
-        <div className="job-portal-container">
+        <div className="job-portal-container" style={{ width: '100%', backgroundColor: 'var(--white)' }}>
             <RouterScrollToTop />
             {/* Hero Section */}
             <section className="about-hero-section" ref={heroRef}>
@@ -149,7 +149,7 @@ const JobPortal = () => {
 
                     </div>
                     <div className="about-hero-image">
-                        <img src={jobsearchImage} alt="Company hero" className="hero-image" />
+                        <img src={jobsearchImage} alt="Company hero" className="about-hero-image" />
                     </div>
                 </div>
             </section>
@@ -235,7 +235,7 @@ const JobPortal = () => {
                         We provide clear answers to common questions about our services and processes.
                     </p>
 
-                    <div className="About-faq-container">
+                    <div className="about-faq-container">
                         <div id="faq-1" className="faq-item">
                             <div className="faq-question" onClick={() => toggleFaq(1)}>
                                 <div className="faq-number">01</div>
@@ -315,16 +315,16 @@ const JobPortal = () => {
                     <div className="partners-grid">
                         <div className="partners-image-grid">
                             <div className="partner-image">
-                                <img src={jobsearchImage} alt="Company hero" className="hero-image" />
+                                <img src={jobsearchImage} alt="Company hero" className="hero-image1" />
                             </div>
                             <div className="partner-image">
-                                <img src={jobsearchImage} alt="Company hero" className="hero-image" />
+                                <img src={jobsearchImage} alt="Company hero" className="hero-image2" />
                             </div>
                             <div className="partner-image">
-                                <img src={jobsearchImage} alt="Company hero" className="hero-image" />
+                                <img src={jobsearchImage} alt="Company hero" className="hero-image3" />
                             </div>
                             <div className="partner-image">
-                                <img src={jobsearchImage} alt="Company hero" className="hero-image" />
+                                <img src={jobsearchImage} alt="Company hero" className="hero-image4" />
                             </div>
                         </div>
 

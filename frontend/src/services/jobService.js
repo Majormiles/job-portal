@@ -22,16 +22,38 @@ export const getJobs = async (params = {}) => {
 };
 
 /**
- * Get a single job by ID
+ * Get a specific job by ID
  * @param {string} id - The job ID
  * @returns {Promise} - The API response
  */
 export const getJobById = async (id) => {
   try {
+    console.log(`Fetching job with ID: ${id}`);
     const response = await api.get(`/jobs/${id}`);
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: 'Failed to fetch job' };
+    console.error('Job fetch error:', error);
+    
+    // Handle 404 errors specifically (job not found/deleted)
+    if (error.response?.status === 404) {
+      return { 
+        success: false, 
+        message: 'Job not found or has been deleted',
+        data: {
+          _id: id,
+          title: `Job ID: ${id.slice(-6)}`,
+          company: 'Job Not Found',
+          deleted: true
+        }
+      };
+    }
+    
+    // Handle other errors
+    return { 
+      success: false, 
+      message: error.response?.data?.message || 'Failed to fetch job details',
+      data: null
+    };
   }
 };
 
@@ -109,9 +131,39 @@ export const createJob = async (jobData) => {
  */
 export const updateJob = async (id, jobData) => {
   try {
-    const response = await adminApi.put(`/jobs/${id}`, jobData);
+    // Clone the data to avoid modifying the original
+    const submissionData = { ...jobData };
+    
+    // Handle image data properly to avoid sending objects when strings are expected
+    if (submissionData.image) {
+      // If the image is already a string (URL or data URL), keep it as is
+      if (typeof submissionData.image === 'string') {
+        console.log('Image is already a string, keeping as is');
+      } 
+      // If the image is an object but has a URL property, use that URL
+      else if (typeof submissionData.image === 'object' && submissionData.image !== null) {
+        if (submissionData.image.url) {
+          console.log('Extracting URL from image object');
+          // If the image already exists on server, just send its URL
+          submissionData.image = submissionData.image.url;
+        } else if (Object.keys(submissionData.image).length === 0) {
+          // Empty object, set to empty string
+          submissionData.image = '';
+        }
+      }
+    }
+    
+    console.log('Submitting job data:', { 
+      ...submissionData,
+      image: typeof submissionData.image === 'string' && submissionData.image.length > 100 
+        ? `${submissionData.image.substring(0, 50)}... (truncated)` 
+        : submissionData.image
+    });
+
+    const response = await adminApi.put(`/jobs/${id}`, submissionData);
     return response.data;
   } catch (error) {
+    console.error('Error updating job:', error);
     throw error.response?.data || { message: 'Failed to update job' };
   }
 };

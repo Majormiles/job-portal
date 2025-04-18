@@ -217,5 +217,30 @@
   "fVcl2qZDwq9hOlAoAAAF": [],
   "7tlwiYJNi61IUVPtAAAH": [],
   "ecTi6nO2KkcpbFZdAAAJ": [],
-  "o5otF86vlrTlKbxxAAAL": []
+  "o5otF86vlrTlKbxxAAAL": [],
+  "zVjcRpv6-X268IrJAAAB": [
+    {
+      "role": "user",
+      "content": "What are the top job categories?",
+      "timestamp": 1744884494143
+    },
+    {
+      "role": "assistant",
+      "content": "Popular categories include Technology, Healthcare, Finance, Education, Marketing, Engineering, and Customer Service.",
+      "timestamp": 1744884494917
+    }
+  ],
+  "kWEEhILRVJFnamcFAAAD": [],
+  "ixFbDBC0s8nijK1yAAAF": [
+    {
+      "role": "user",
+      "content": "How can I filter job results?",
+      "timestamp": 1744884600142
+    },
+    {
+      "role": "assistant",
+      "content": "Use the filter options on the Jobs page to narrow results by location, salary, job type, experience level, and more.",
+      "timestamp": 1744884601571
+    }
+  ]
 }

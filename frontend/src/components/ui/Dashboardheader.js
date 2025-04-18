@@ -1,68 +1,85 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Menu, X, ExternalLink } from 'lucide-react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Bell, Search, Settings, ExternalLink, Menu, X, User } from 'react-feather';
+import { useAuth } from '../../contexts/AuthContext';
+// CSS is handled via Tailwind classes, no need for a separate CSS file
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const [dashboardPath, setDashboardPath] = useState('/dashboard-jobseeker');
+  const { user } = useAuth();
+  
+  // Determine appropriate dashboard path based on user role
+  useEffect(() => {
+    const isEmployer = user?.role === 'employer' || 
+                      (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+                      user?.userType === 'employer' ||
+                      localStorage.getItem('registrationData') && 
+                      JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
+    
+    setDashboardPath(isEmployer ? '/dashboard-employer' : '/dashboard-jobseeker');
+  }, [user]);
 
-  // Handle scroll effect
+  // Handle scroll events
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      const scrollPosition = window.scrollY;
+      setIsScrolled(scrollPosition > 10);
     };
 
     window.addEventListener('scroll', handleScroll);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Toggle mobile menu
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchValue(e.target.value);
   };
 
-  // Handle search submit
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    console.log('Searching for:', searchValue);
-    // Implement search functionality here
+    console.log('Search for:', searchValue);
+    // Implement search functionality
   };
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-          ? 'bg-white/90 backdrop-blur-sm shadow-lg'
-          : 'bg-transparent'
-        }`}
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link to="/" className="flex items-center">
-              <span className={`font-bold text-xl ${isScrolled ? 'text-gray-800' : 'text-white'}`}>
-                Brand
+    <header className={`header fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-gradient-to-r '}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center gap-2">
+              <div className={`w-10 h-10 rounded-md flex items-center justify-center ${
+                isScrolled ? 'bg-blue-600' : 'bg-white'
+              }`}>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className={`w-6 h-6 ${isScrolled ? 'text-white' : 'text-blue-600'}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" 
+                  />
+                </svg>
+              </div>
+              <span className={`font-semibold text-xl ${isScrolled ? 'text-gray-800' : 'text-white'}`}>
+                Job Portal
               </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center justify-between flex-1 ml-10">
             {/* Search Bar */}
-            <form onSubmit={handleSearchSubmit} className="relative">
+            <form onSubmit={handleSearchSubmit} className="relative ml-20">
               <input
                 type="text"
                 value={searchValue}
@@ -82,7 +99,7 @@ const Header = () => {
             {/* Navigation Links */}
             <div className="flex items-center space-x-6">
               <NavLink
-                to="/dashboard_employee"
+                to={dashboardPath}
                 className={({isActive}) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
               >
                 Home
@@ -145,7 +162,7 @@ const Header = () => {
             {/* Mobile Navigation Links */}
             <div className="flex flex-col space-y-3 pt-2">
               <NavLink
-                to="/dashboard_employee"
+                to={dashboardPath}
                 className={({isActive}) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
               >
                 Home

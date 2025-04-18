@@ -9,36 +9,32 @@ import 'react-toastify/dist/ReactToastify.css';
 import ErrorBoundary from './components/ErrorBoundary';
 import HeaderOne from './components/ui/Header-one';
 import Header from './components/ui/Header';
+import Sidebar from './components/ui/Sidebar';
 import RegisterPopup from './components/ui/RegisterPopup';
 import ChatbotWidget from './components/ui/ChatbotWidget';
 import Home from './pages/Home';
-import Jobs from './pages/Jobs';
-import About from './pages/AboutPage';
+import About from './pages/About';
+import CompanyGallery from './pages/CompanyGallery';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import PostJob from './pages/PostJob';
-import PricingPlan from './pages/PricingPlan';
-import CheckoutPage from './pages/CheckoutPage';
-import JobDetail from './pages/JobDetails';
 import Dashboard from './pages/Dashboard';
-import JobalertPage from './pages/JobalertPage';
-import JobsApplied from './pages/JobsApplied';
-import FavoriteJobs from './pages/FavoriteJobs';
 import SettingsPage from './pages/SettingsPage';
-import VerifyEmail from './pages/VerifyEmail';
 import PrivateRoute from './components/PrivateRoute';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
 import GoogleOAuthTest from './components/GoogleOAuthTest';
 import { GoogleOAuthProvider } from './contexts/GoogleOAuthContext';
 import EmailVerificationTest from './components/EmailVerificationTest';
+import VerifyEmail from './pages/VerifyEmail';
+
+// Dashboard Components for different user roles
+import DashboardEmployer from './components/ui/DashboardEmployer';
+import DashboardJobSeeker from './components/ui/DashboardJobSeeker';
+import DashboardTrainer from './components/ui/DashboardTrainer';
+import DashboardTrainee from './components/ui/DashboardTrainee';
 
 // Onboarding Components
 import PersonalInfo from './pages/onboarding/PersonalInfo';
-import ProfessionalInfo from './pages/onboarding/ProfessionalInfo';
 import Skills from './pages/onboarding/Skills';
-import Preferences from './pages/onboarding/Preferences';
 import Complete from './pages/onboarding/Complete';
 
 // Admin Components
@@ -123,17 +119,60 @@ const OnboardingRoute = ({ children }) => {
         const status = await checkOnboardingStatus(true);
         setOnboardingStatus(status);
 
-        // If onboarding is complete, redirect to dashboard
+        // If onboarding is complete, redirect to appropriate dashboard based on role
         if (status?.isComplete) {
-          navigate('/dashboard_employee', { replace: true });
+          // Get the stored data first
+          let userType = '';
+          try {
+            const storageStr = localStorage.getItem('registrationData');
+            if (storageStr) {
+              const storageData = JSON.parse(storageStr);
+              userType = storageData.userType || storageData.talentType || '';
+            }
+          } catch (e) {
+            console.error('Error checking storage for role:', e);
+          }
+          
+          // Determine which dashboard to redirect to based on user role
+          const isEmployer = user?.role === 'employer' || 
+                           (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+                           user?.userType === 'employer' ||
+                           user?.roleName === 'employer' ||
+                           userType === 'employer';
+                           
+          const isTrainer = user?.role === 'trainer' || 
+                           (typeof user?.role === 'object' && user?.role?.name === 'trainer') ||
+                           user?.userType === 'trainer' ||
+                           user?.roleName === 'trainer' ||
+                           userType === 'trainer';
+                           
+          const isTrainee = user?.role === 'trainee' || 
+                           (typeof user?.role === 'object' && user?.role?.name === 'trainee') ||
+                           user?.userType === 'trainee' ||
+                           user?.roleName === 'trainee' ||
+                           userType === 'trainee';
+          
+          console.log('OnboardingRoute redirecting to dashboard for role type:', 
+                      isEmployer ? 'employer' : 
+                      isTrainer ? 'trainer' : 
+                      isTrainee ? 'trainee' : 'job seeker');
+          
+          // Navigate to the appropriate dashboard
+          if (isEmployer) {
+            navigate('/dashboard-employer', { replace: true });
+          } else if (isTrainer) {
+            navigate('/dashboard-trainer', { replace: true });
+          } else if (isTrainee) {
+            navigate('/dashboard-trainee', { replace: true });
+          } else {
+            navigate('/dashboard-jobseeker', { replace: true });
+          }
           return;
         }
 
         const sections = [
           { path: '/onboarding/personal-info', key: 'personalInfo' },
-          { path: '/onboarding/professional-info', key: 'professionalInfo' },
           { path: '/onboarding/skills', key: 'skills' },
-          { path: '/onboarding/preferences', key: 'preferences' },
           { path: '/onboarding/complete', key: 'complete' }
         ];
 
@@ -194,19 +233,65 @@ const OnboardingRoute = ({ children }) => {
 // Admin Protected Route Component
 const AdminProtectedRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
   
   useEffect(() => {
-    // Check for admin token
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
-    setLoading(false);
-  }, []);
+    const checkAdminAuth = async () => {
+      try {
+        // Check for admin token
+        const token = localStorage.getItem('adminToken');
+        
+        if (!token) {
+          setIsAuthenticated(false);
+          setIsAuthorized(false);
+          setLoading(false);
+          return;
+        }
+        
+        // Validate token by making a request to a protected admin endpoint
+        try {
+          // Make a simple request to verify admin access - use a simple GET request to dashboard
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/admin/stats`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            setIsAuthenticated(true);
+            setIsAuthorized(true);
+          } else if (response.status === 403) {
+            // User is authenticated but not admin
+            setIsAuthenticated(true);
+            setIsAuthorized(false);
+            // Clear admin token as it might be a regular user token
+            localStorage.removeItem('adminToken');
+            // Show error message
+            alert('You do not have permission to access the admin area');
+            // Redirect to home
+            navigate('/');
+          } else {
+            // Any other error means token is invalid
+            setIsAuthenticated(false);
+            setIsAuthorized(false);
+            localStorage.removeItem('adminToken');
+          }
+        } catch (error) {
+          console.error('Admin access verification failed:', error);
+          // Don't fallback to token check - assume auth failed if request fails
+          setIsAuthenticated(false);
+          setIsAuthorized(false);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkAdminAuth();
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -216,7 +301,7 @@ const AdminProtectedRoute = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isAuthorized) {
     return <Navigate to="/admin/login" state={{ from: location.pathname }} replace />;
   }
 
@@ -232,7 +317,7 @@ const AppContent = () => {
   const isAdminLoginRoute = location.pathname === '/admin/login';
   const isOnboardingRoute = location.pathname.startsWith('/onboarding');
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
-  const isPublicRoute = location.pathname === '/jobs' || location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/job-detail' || location.pathname === '/pricing-plan';
+  const isPublicRoute = location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/gallery';
   
   return (
     <div className="App">
@@ -247,18 +332,12 @@ const AppContent = () => {
       <Routes>
         {/* Public Routes - Always accessible */}
         <Route path="/" element={<Home />} />
-        <Route path="/jobs" element={<Jobs />} />
         <Route path="/about" element={<About />} />
+        <Route path="/gallery" element={<CompanyGallery />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/job-detail" element={<JobDetail />} />
-        <Route path="/job-detail/:id" element={<JobDetail />} />
-        <Route path="/pricing-plan" element={<PricingPlan />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
         <Route 
           path="/test-email-verification" 
           element={
@@ -267,7 +346,7 @@ const AppContent = () => {
             </ErrorBoundary>
           } 
         />
-
+        
         {/* Protected Routes - Only accessible when authenticated */}
         <Route
           path="/dashboard_employee"
@@ -277,33 +356,46 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+        
+        {/* Role-specific Dashboard routes */}
         <Route
-          path="/applied-jobs"
+          path="/dashboard-employer"
           element={
             <ProtectedRoute>
-              <JobsApplied />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
         
         <Route
-          path="/favorite-jobs"
+          path="/dashboard-jobseeker"
           element={
             <ProtectedRoute>
-              <FavoriteJobs />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
-
+        
+        {/* New Trainer Dashboard Route */}
         <Route
-          path="/job-alerts"
+          path="/dashboard-trainer"
           element={
             <ProtectedRoute>
-              <JobalertPage />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
-
+        
+        {/* New Trainee Dashboard Route */}
+        <Route
+          path="/dashboard-trainee"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        
         <Route
           path="/settings"
           element={
@@ -323,26 +415,10 @@ const AppContent = () => {
           }
         />
         <Route
-          path="/onboarding/professional-info"
-          element={
-            <OnboardingRoute>
-              <ProfessionalInfo />
-            </OnboardingRoute>
-          }
-        />
-        <Route
           path="/onboarding/skills"
           element={
             <OnboardingRoute>
               <Skills />
-            </OnboardingRoute>
-          }
-        />
-        <Route
-          path="/onboarding/preferences"
-          element={
-            <OnboardingRoute>
-              <Preferences />
             </OnboardingRoute>
           }
         />

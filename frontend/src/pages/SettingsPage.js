@@ -5,7 +5,6 @@ import Sidebar from '../components/ui/Sidebar';
 import PersonalSettings from '../components/settings/PersonalSettings';
 import ProfileSettings from '../components/settings/ProfileSettings';
 import SocialLinksSettings from '../components/settings/SocialLinksSettings';
-import AccountSettings from '../components/settings/AccountSettings';
 import '../components/css/Settings.css';
 
 const SettingsPage = () => {
@@ -39,8 +38,6 @@ const SettingsPage = () => {
         return <ProfileSettings />;
       case 'social':
         return <SocialLinksSettings />;
-      case 'account':
-        return <AccountSettings />;
       default:
         return <PersonalSettings />;
     }
@@ -54,8 +51,6 @@ const SettingsPage = () => {
         return 'Profile';
       case 'social':
         return 'Social Links';
-      case 'account':
-        return 'Account Setting';
       default:
         return 'Personal';
     }
@@ -118,13 +113,6 @@ const SettingsPage = () => {
                   >
                     <span className="tab-icon social-icon"></span>
                     Social Links
-                  </button>
-                  <button
-                    className={`tab-button ${activeTab === 'account' ? 'active' : ''}`}
-                    onClick={() => handleTabClick('account')}
-                  >
-                    <span className="tab-icon account-icon"></span>
-                    Account Setting
                   </button>
                 </div>
               </div>

@@ -1,0 +1,29 @@
+/* DashboardHeader.css */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: all 0.3s ease;
+}
+
+.header.scrolled {
+  background-color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.header a {
+  text-decoration: none;
+}
+
+/* Mobile menu styles */
+@media (max-width: 768px) {
+  .mobile-menu {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    z-index: 40;
+  }
+} 

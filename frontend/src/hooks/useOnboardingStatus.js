@@ -55,7 +55,47 @@ export const useOnboardingStatus = () => {
 
   const redirectIfComplete = () => {
     if (!loading && isComplete && isAuthenticated) {
-      navigate('/dashboard_employee', { replace: true });
+      // Determine which dashboard to redirect to based on user role
+      const isEmployer = user?.role === 'employer' || 
+                        (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+                        user?.userType === 'employer' ||
+                        localStorage.getItem('registrationData') && 
+                        JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
+      
+      console.log('useOnboardingStatus redirecting to dashboard for role:', isEmployer ? 'employer' : 'job seeker');
+      
+      // Navigate to the appropriate dashboard
+      if (isEmployer) {
+        navigate('/dashboard-employer', { replace: true });
+      } else {
+        navigate('/dashboard-jobseeker', { replace: true });
+      }
+    }
+  };
+
+  const completeOnboarding = async () => {
+    try {
+      // Logic to complete onboarding
+      // ...
+
+      // Determine which dashboard to redirect to based on user role
+      const isEmployer = user?.role === 'employer' || 
+                        (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+                        user?.userType === 'employer' ||
+                        localStorage.getItem('registrationData') && 
+                        JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
+      
+      console.log('Onboarding hook redirecting to dashboard for role:', isEmployer ? 'employer' : 'job seeker');
+      
+      // Navigate to the appropriate dashboard
+      if (isEmployer) {
+        navigate('/dashboard-employer', { replace: true });
+      } else {
+        navigate('/dashboard-jobseeker', { replace: true });
+      }
+    } catch (error) {
+      // Error handling
+      // ...
     }
   };
 
@@ -63,6 +103,7 @@ export const useOnboardingStatus = () => {
     loading,
     isComplete,
     redirectIfIncomplete,
-    redirectIfComplete
+    redirectIfComplete,
+    completeOnboarding
   };
 }; 
