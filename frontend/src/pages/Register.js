@@ -43,6 +43,9 @@ const RegisterPage = () => {
   const [companyTypes, setCompanyTypes] = useState([]);
   const [loadingCompanyTypes, setLoadingCompanyTypes] = useState(false);
 
+  // State for form errors
+  const [formErrors, setFormErrors] = useState({});
+
   // Fetch locations, roles, job categories, job types, and company types when component mounts
   useEffect(() => {
     // Define some default locations in case the API fails
@@ -334,6 +337,15 @@ const RegisterPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
+    // Clear the error for this field when user changes the input
+    if (formErrors[name]) {
+      setFormErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+    
     // Special handling for jobType based on user type
     if (name === 'jobType') {
       if (userType === 'employer' && jobCategories.length > 0) {
@@ -439,70 +451,77 @@ const RegisterPage = () => {
     setTalentType(type);
   };
 
-  // Form validation
+  // Enhance validateForm function to add better email validation
   const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      toast.error('Please enter your name');
-      return false;
-    }
-
-    if (!formData.email.trim()) {
-      toast.error('Please enter your email');
-      return false;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    const errors = {};
+    
+    // Validate email format with a more robust regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!formData.email) {
+      errors.email = 'Email is required';
+      toast.error('Please enter your email address');
+    } else if (!emailRegex.test(formData.email)) {
+      errors.email = 'Please enter a valid email address';
       toast.error('Please enter a valid email address');
-      return false;
     }
-
-    if (!formData.phoneNumber.trim()) {
+    
+    // Other validations
+    if (!formData.fullName) {
+      errors.fullName = 'Name is required';
+      toast.error('Please enter your name');
+    }
+    
+    if (!formData.phoneNumber) {
+      errors.phoneNumber = 'Phone number is required';
       toast.error('Please enter your phone number');
-      return false;
+    } else if (!/^\d{10}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
+      errors.phoneNumber = 'Please enter a valid 10-digit phone number';
+      toast.error('Please enter a valid 10-digit phone number');
     }
-
+    
     if (!formData.location) {
+      errors.location = 'Location is required';
       toast.error('Please select your location');
-      return false;
     }
-
-    // Validate custom location if "Other/custom" is selected
-    if (formData.location === 'custom' && !formData.customLocation.trim()) {
-      toast.error('Please enter your custom location');
-      return false;
+    
+    if (!formData.jobType) {
+      errors.jobType = userType === 'talent' && talentType === 'trainee' ? 
+        'Please select your training interest' : 
+        'Please select a job type';
+      toast.error(errors.jobType);
     }
-
-    if (!formData.jobType.trim()) {
-      if (userType === 'talent' && talentType === 'trainee') {
-        toast.error('Please select your training interest');
-      } else if (userType === 'employer') {
-        toast.error('Please select your company type');
-      } else {
-        toast.error('Please select your job type');
-      }
-      return false;
-    }
-
-    // Validate custom interest if "Other" is selected for trainee
-    if (userType === 'talent' && talentType === 'trainee' && 
-        formData.jobType === 'Other' && !formData.customInterest.trim()) {
-      toast.error('Please enter your custom training interest');
-      return false;
-    }
-
-    // Employer-specific validation
+    
+    // Employer specific validation
     if (userType === 'employer' && !formData.companySize) {
+      errors.companySize = 'Company size is required';
       toast.error('Please select your company size');
+    }
+    
+    // Custom interest validation for trainees who selected "Other"
+    if (userType === 'talent' && talentType === 'trainee' && 
+        formData.jobType === 'Other' && !formData.customInterest) {
+      errors.customInterest = 'Please specify your interest';
+      toast.error('Please specify your interest');
+    }
+    
+    // Set errors in state
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return false;
     }
-
+    
     return true;
+  };
+
+  const clearErrors = () => {
+    setFormErrors({});
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Clear previous errors
+    clearErrors();
     
     if (!validateForm()) {
       return;
@@ -615,6 +634,43 @@ const RegisterPage = () => {
           console.log('Registration server response headers:', directResponse.headers);
           console.log('Registration server response data:', directResponse.data);
           
+          // Handle specific error for existing user
+          if (directResponse.status === 500 && 
+              directResponse.data && 
+              typeof directResponse.data.message === 'string' && 
+              (directResponse.data.message.includes('User already exists') || 
+               directResponse.data.message.toLowerCase().includes('already exists') || 
+               directResponse.data.message.toLowerCase().includes('already registered') ||
+               directResponse.data.message.toLowerCase().includes('duplicate'))) {
+            
+            console.log('Detected existing user error in a 500 response');
+            
+            // Set email validation error
+            setFormErrors(prev => ({
+              ...prev,
+              email: 'Email already exists'
+            }));
+            
+            // Show error toast
+            toast.error('This email address is already registered.');
+            setTimeout(() => {
+              toast.info('Please use a different email address or try logging in instead.');
+            }, 500);
+            
+            // Focus on the email field
+            setTimeout(() => {
+              const emailField = document.querySelector('input[name="email"]');
+              if (emailField) {
+                emailField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                emailField.focus();
+              }
+            }, 100);
+            
+            // Exit early
+            setLoading(false);
+            return;
+          }
+          
           if (directResponse.status >= 200 && directResponse.status < 300) {
             // Success case
             localStorage.setItem('pendingVerificationEmail', formData.email);
@@ -673,22 +729,80 @@ const RegisterPage = () => {
               } 
             });
             return;
-          } else {
-            // Handle specific status codes
-            if (directResponse.status === 500) {
-              console.error('Server error details:', directResponse.data);
-              throw new Error(`Server error: ${directResponse.data?.message || 'Unknown server error'}`);
-            } else if (directResponse.status === 400) {
-              throw new Error(`Bad request: ${directResponse.data?.message || 'Invalid data provided'}`);
-            } else if (directResponse.status === 409) {
-              throw new Error(`Conflict: ${directResponse.data?.message || 'Email may already be in use'}`);
-            } else {
-              throw new Error(`Error (${directResponse.status}): ${directResponse.data?.message || 'Unknown error'}`);
-            }
           }
         } catch (directError) {
           console.error('Direct registration attempt failed:', directError);
           console.error('Error details:', directError.response?.data || directError.message);
+          
+          // Handle specific error for existing user
+          if (directError.message && 
+              (directError.message.includes('User already exists') || 
+               directError.message.toLowerCase().includes('already exists') || 
+               directError.message.toLowerCase().includes('already registered') ||
+               directError.message.toLowerCase().includes('duplicate'))) {
+            
+            console.log('Detected existing user error in error message');
+            
+            // Set email validation error
+            setFormErrors(prev => ({
+              ...prev,
+              email: 'Email already exists'
+            }));
+            
+            // Show error toast
+            toast.error('This email address is already registered.');
+            setTimeout(() => {
+              toast.info('Please use a different email address or try logging in instead.');
+            }, 500);
+            
+            // Focus on the email field
+            setTimeout(() => {
+              const emailField = document.querySelector('input[name="email"]');
+              if (emailField) {
+                emailField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                emailField.focus();
+              }
+            }, 100);
+            
+            // Exit early
+            setLoading(false);
+            return;
+          }
+          
+          // Also check response data for the error
+          if (directError.response?.data?.message && 
+              (directError.response.data.message.includes('User already exists') ||
+               directError.response.data.message.toLowerCase().includes('already exists') ||
+               directError.response.data.message.toLowerCase().includes('already registered') ||
+               directError.response.data.message.toLowerCase().includes('duplicate'))) {
+            
+            console.log('Detected existing user error in response data');
+            
+            // Set email validation error
+            setFormErrors(prev => ({
+              ...prev,
+              email: 'Email already exists'
+            }));
+            
+            // Show error toast
+            toast.error('This email address is already registered.');
+            setTimeout(() => {
+              toast.info('Please use a different email address or try logging in instead.');
+            }, 500);
+            
+            // Focus on the email field
+            setTimeout(() => {
+              const emailField = document.querySelector('input[name="email"]');
+              if (emailField) {
+                emailField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                emailField.focus();
+              }
+            }, 100);
+            
+            // Exit early
+            setLoading(false);
+            return;
+          }
           
           // If direct attempt has useful error info, throw it now
           if (directError.response?.data?.message) {
@@ -880,34 +994,126 @@ const RegisterPage = () => {
       }
     } catch (error) {
       console.error('Registration error:', error);
+      setLoading(false);
       
-      // Extract error message from response if available
+      // Extract the most useful error message to display to the user
       let errorMessage = 'Registration failed. Please try again.';
+      let errorDetails = '';
       
-      if (error.response) {
-        // Handle specific error cases
-        if (error.response.status === 500) {
-          console.error('Server error response data:', error.response.data);
-          
-          if (error.response.data?.message?.includes('password')) {
-            errorMessage = 'The server requires a password for registration. Please contact the administrator.';
-          } else if (error.response.data?.message) {
-            errorMessage = error.response.data.message;
-          } else {
-            errorMessage = 'A server error occurred. The system may not be properly configured. Please contact support.';
-          }
-        } else if (error.response.status === 409) {
-          errorMessage = 'This email is already registered. Please use a different email or try to login.';
-        } else if (error.response.data?.message) {
-          errorMessage = error.response.data.message;
+      // Check for specific error messages first before checking response status
+      if (error.message && (
+          error.message.toLowerCase().includes('already registered') || 
+          error.message.toLowerCase().includes('already exists') ||
+          error.message.toLowerCase().includes('email is already') ||
+          error.message.toLowerCase().includes('user already exists'))) {
+        
+        // This is definitely a duplicate email error regardless of status code
+        errorMessage = 'This email address is already registered.';
+        errorDetails = 'Please use a different email address or try logging in instead.';
+        
+        // Highlight the email field to indicate it's the source of the error
+        setFormErrors(prev => ({
+          ...prev,
+          email: 'Email already exists'
+        }));
+        
+        // Show the error message to the user
+        toast.error(errorMessage);
+        
+        // If we have additional details, show them as a second toast
+        if (errorDetails) {
+          setTimeout(() => {
+            toast.info(errorDetails);
+          }, 500);
         }
-      } else if (error.message) {
-        errorMessage = error.message;
+        
+        // After setting formErrors, scroll to the first error element
+        setTimeout(() => {
+          const firstErrorField = document.querySelector('.border-red-500');
+          if (firstErrorField) {
+            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstErrorField.focus();
+          }
+        }, 100);
+        
+        return; // Exit early since we've handled this specific error case
       }
       
+      // Check response status and extract appropriate messages
+      if (error.response) {
+        console.log('Error response status:', error.response.status);
+        console.log('Error response data:', error.response.data);
+        
+        // Handle specific HTTP status codes
+        switch (error.response.status) {
+          case 409: // Conflict - typically means duplicate email
+            errorMessage = 'This email address is already registered.';
+            errorDetails = 'Please use a different email address or try logging in instead.';
+            
+            // Highlight the email field to indicate it's the source of the error
+            setFormErrors(prev => ({
+              ...prev,
+              email: 'Email already exists'
+            }));
+            break;
+            
+          case 400: // Bad Request - invalid data
+            errorMessage = error.response.data?.message || 'Invalid registration data provided.';
+            errorDetails = 'Please check your information and try again.';
+            
+            // If the backend provided field-specific errors, set them
+            if (error.response.data?.errors) {
+              const serverErrors = error.response.data.errors;
+              const fieldErrors = {};
+              
+              Object.keys(serverErrors).forEach(field => {
+                fieldErrors[field] = serverErrors[field].message || serverErrors[field];
+              });
+              
+              setFormErrors(prev => ({
+                ...prev,
+                ...fieldErrors
+              }));
+            }
+            break;
+            
+          case 500: // Server Error
+            errorMessage = 'Server error occurred during registration.';
+            errorDetails = error.response.data?.message || 'Please try again later or contact support.';
+            break;
+            
+          default:
+            // For any other response status
+            errorMessage = error.response.data?.message || 'An error occurred during registration.';
+            errorDetails = 'Please try again or contact support if the issue persists.';
+        }
+      } else if (error.request) {
+        // Network error - no response received
+        errorMessage = 'Unable to connect to the registration service.';
+        errorDetails = 'Please check your internet connection and try again.';
+      } else {
+        // Other errors
+        errorMessage = error.message || 'An unexpected error occurred.';
+      }
+      
+      // Show the error message to the user
       toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+      
+      // If we have additional details, show them as a second toast
+      if (errorDetails) {
+        setTimeout(() => {
+          toast.info(errorDetails);
+        }, 500);
+      }
+      
+      // After setting formErrors, scroll to the first error element
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('.border-red-500');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstErrorField.focus();
+        }
+      }, 100);
     }
   };
 
@@ -1141,12 +1347,17 @@ const RegisterPage = () => {
                   <input
                     type="text"
                     name="fullName"
-                    placeholder={userType === 'employer' ? 'Company Name' : 'Full Name'}
+                    placeholder="Full Name or Business Name"
                     value={formData.fullName}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full p-3 border ${formErrors.fullName ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     required
                   />
+                  {formErrors.fullName && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {formErrors.fullName}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -1156,9 +1367,14 @@ const RegisterPage = () => {
                     placeholder="Email Address"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full p-3 border ${formErrors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     required
                   />
+                  {formErrors.email && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {formErrors.email}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -1168,9 +1384,14 @@ const RegisterPage = () => {
                     placeholder="Phone Number"
                     value={formData.phoneNumber}
                     onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full p-3 border ${formErrors.phoneNumber ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     required
                   />
+                  {formErrors.phoneNumber && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {formErrors.phoneNumber}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -1179,7 +1400,7 @@ const RegisterPage = () => {
                       name="location"
                       value={formData.location}
                       onChange={handleChange}
-                      className="w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full p-3 border ${formErrors.location ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
                       required
                     >
                       <option value="">Location</option>
@@ -1204,6 +1425,11 @@ const RegisterPage = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
+                    {formErrors.location && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {formErrors.location}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -1229,7 +1455,7 @@ const RegisterPage = () => {
                         name="jobType"
                         value={formData.jobType}
                         onChange={handleChange}
-                        className="w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full p-3 border ${formErrors.jobType ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         required
                       >
                         <option value="">
@@ -1278,7 +1504,7 @@ const RegisterPage = () => {
                           name="jobType"
                           value={formData.jobType}
                           onChange={handleChange}
-                          className="w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full p-3 border ${formErrors.jobType ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
                           required
                         >
                           <option value="">
@@ -1330,9 +1556,14 @@ const RegisterPage = () => {
                             placeholder="Enter your interest"
                             value={formData.customInterest}
                             onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className={`w-full p-3 border ${formErrors.customInterest ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                             required
                           />
+                          {formErrors.customInterest && (
+                            <p className="mt-1 text-sm text-red-600">
+                              {formErrors.customInterest}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1342,7 +1573,7 @@ const RegisterPage = () => {
                         name="jobType"
                         value={formData.jobType}
                         onChange={handleChange}
-                        className="w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full p-3 border ${formErrors.jobType ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         required
                       >
                         <option value="">
@@ -1386,10 +1617,10 @@ const RegisterPage = () => {
                         name="companySize"
                         value={formData.companySize}
                         onChange={handleChange}
-                        className="w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full p-3 border ${formErrors.companySize ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
                         required
                       >
-                        <option value="">Company Size</option>
+                        <option value="">Select Company Size</option>
                         <option value="1-10">1-10 employees</option>
                         <option value="11-50">11-50 employees</option>
                         <option value="51-200">51-200 employees</option>
