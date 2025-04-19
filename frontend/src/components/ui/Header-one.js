@@ -560,7 +560,7 @@ const JobPortal = () => {
       {/* New Header Banner */}
       <section className="header-banner">
         <div className="banner-content">
-          <h1 className="banner-title">Connect Job Seekers, Training centers, Companies</h1>
+          <h1 className="banner-title">Connecting Job Seekers, Training centers, Companies</h1>
           <p className="banner-description">
             Find the perfect job or hire the best talent with our comprehensive job portal.
             Connecting employers, candidates, and training centers in one seamless platform.
