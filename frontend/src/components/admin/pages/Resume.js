@@ -59,9 +59,11 @@ const Resume = () => {
   const fetchResumeData = async () => {
     setLoading(true);
     try {
-      // Use adminApi to fetch users with job seeker role who have resumes
+      // Get all users to properly categorize them
+      let allUsers = [];
+      
       try {
-        // Try different endpoints to fetch job seekers with resumes
+        // Try different endpoints to fetch all users first
         const endpoints = [
           '/admin/users',         // Try admin-specific endpoint first
           '/dashboard/users',     // Try dashboard endpoint 
@@ -69,20 +71,17 @@ const Resume = () => {
           '/users/all'            // Try alternative endpoint
         ];
         
-        let jobSeekersData = [];
         let endpointFound = false;
         
         // Try each endpoint until one works
         for (const endpoint of endpoints) {
           try {
-            console.log(`Attempting to fetch job seekers from ${endpoint}`);
-            const response = await adminApi.get(endpoint, {
-              params: { roleName: 'jobSeeker' }
-            });
+            console.log(`Attempting to fetch all users from ${endpoint}`);
+            const response = await adminApi.get(endpoint);
             
             if (response.data && (response.data.success || response.data.data)) {
-              console.log(`Successfully fetched job seekers from ${endpoint}`);
-              jobSeekersData = response.data.data || response.data;
+              console.log(`Successfully fetched users from ${endpoint}`);
+              allUsers = response.data.data || response.data;
               endpointFound = true;
               break;
             }
@@ -98,140 +97,119 @@ const Resume = () => {
             console.log('Attempting to fetch from dashboard stats as fallback');
             const statsResponse = await adminApi.get('/dashboard/stats');
             if (statsResponse.data && statsResponse.data.recentUsers) {
-              jobSeekersData = statsResponse.data.recentUsers.filter(
-                user => user.roleName === 'jobSeeker'
-              );
-              console.log('Using recent users from dashboard stats:', jobSeekersData.length);
+              allUsers = statsResponse.data.recentUsers;
+              console.log('Using recent users from dashboard stats:', allUsers.length);
             }
           } catch (err) {
             console.log('Dashboard stats fallback failed:', err.message);
           }
         }
-        
-        // Process job seeker data
-        if (jobSeekersData && jobSeekersData.length > 0) {
-          // Transform user data to the format expected by the component
-          const resumeData = jobSeekersData
-            .filter(user => {
-              // Only include users who have a resume in one of the possible locations
-              return (
-                (user.professionalInfo && user.professionalInfo.resume) || 
-                (user.jobSeekerProfile && user.jobSeekerProfile.resume)
-              );
-            })
-            .map(user => ({
-              id: user._id,
-              name: user.name || 'Unknown',
-              email: user.email || 'No email',
-              phone: user.phone || 'No phone',
-              position: user.professionalInfo?.currentTitle || 'Job Seeker',
-              location: user.customLocation || (user.location?.name || 'Not specified'),
-              status: user.isVerified ? 'approved' : 'pending', // Use user verification status or default to pending
-              submitted: user.createdAt || new Date().toISOString(),
-              // Get resume URL from the correct location
-              resumeUrl: user.professionalInfo?.resume || 
-                         (user.jobSeekerProfile ? user.jobSeekerProfile.resume : null),
-              fileType: 'pdf', // Assuming PDF format, adjust if you store this info
-              fileSize: '1.5 MB', // Placeholder, adjust if you store this info
-              keywords: user.skills?.technical || []
-            }));
-          
-          setJobSeekerResumes(resumeData);
-        } else {
-          setJobSeekerResumes([]);
-        }
       } catch (error) {
-        console.error('Error fetching job seeker users:', error);
-        setJobSeekerResumes([]);
+        console.error('Error fetching users:', error);
+        allUsers = [];
       }
       
-      // Use adminApi to fetch users with trainer role who have resumes/certifications
-      try {
-        // Try different endpoints to fetch trainers with resumes
-        const endpoints = [
-          '/admin/users',         // Try admin-specific endpoint first
-          '/dashboard/users',     // Try dashboard endpoint 
-          '/users/list',          // Try users list endpoint
-          '/users/all'            // Try alternative endpoint
-        ];
-        
-        let trainersData = [];
-        let endpointFound = false;
-        
-        // Try each endpoint until one works
-        for (const endpoint of endpoints) {
-          try {
-            console.log(`Attempting to fetch trainers from ${endpoint}`);
-            const response = await adminApi.get(endpoint, {
-              params: { roleName: 'trainer' }
-            });
-            
-            if (response.data && (response.data.success || response.data.data)) {
-              console.log(`Successfully fetched trainers from ${endpoint}`);
-              trainersData = response.data.data || response.data;
-              endpointFound = true;
-              break;
-            }
-          } catch (err) {
-            console.log(`Endpoint ${endpoint} failed:`, err.message);
-            // Continue to the next endpoint
-          }
-        }
-        
-        if (!endpointFound) {
-          // If no endpoint works, manually load users from the dashboard stats as fallback
-          try {
-            console.log('Attempting to fetch from dashboard stats as fallback');
-            const statsResponse = await adminApi.get('/dashboard/stats');
-            if (statsResponse.data && statsResponse.data.recentUsers) {
-              trainersData = statsResponse.data.recentUsers.filter(
-                user => user.roleName === 'trainer'
-              );
-              console.log('Using recent users from dashboard stats:', trainersData.length);
-            }
-          } catch (err) {
-            console.log('Dashboard stats fallback failed:', err.message);
-          }
-        }
-        
-        // Process trainer data
-        if (trainersData && trainersData.length > 0) {
-          // Transform user data to the format expected by the component
-          const resumeData = trainersData
-            .filter(user => {
-              // Only include users who have a resume in one of the possible locations
-              return (
-                (user.professionalInfo && user.professionalInfo.resume) || 
-                (user.trainerProfile && user.trainerProfile.certificates && user.trainerProfile.certificates.length > 0)
-              );
-            })
-            .map(user => ({
-              id: user._id,
-              name: user.name || 'Unknown',
-              email: user.email || 'No email',
-              phone: user.phone || 'No phone',
-              specialty: user.trainerProfile?.specialization?.[0] || 'Training Specialist',
-              experience: user.trainerProfile?.experience ? `${user.trainerProfile.experience} years` : undefined,
-              location: user.customLocation || (user.location?.name || 'Not specified'),
-              status: user.isVerified ? 'approved' : 'pending', // Use user verification status or default to pending
-              submitted: user.createdAt || new Date().toISOString(),
-              // Get resume URL from the correct location
-              resumeUrl: user.professionalInfo?.resume || 
-                        (user.trainerProfile && user.trainerProfile.certificates && user.trainerProfile.certificates.length > 0 
-                          ? user.trainerProfile.certificates[0] 
-                          : null),
-              fileType: 'pdf', // Assuming PDF format, adjust if you store this info
-              fileSize: '2.0 MB', // Placeholder, adjust if you store this info
-              certification: user.trainerProfile?.certificates || []
-            }));
-          
-          setTrainerResumes(resumeData);
-        } else {
-          setTrainerResumes([]);
-        }
-      } catch (error) {
-        console.error('Error fetching trainer users:', error);
+      // Create a unique ID set to prevent duplicates
+      const processedUserIds = new Set();
+      
+      // Process job seeker users
+      if (allUsers && allUsers.length > 0) {
+        // Clear existing data
+        setJobSeekerResumes([]);
         setTrainerResumes([]);
+        
+        // Filter and process job seeker users
+        const jobSeekers = allUsers.filter(user => {
+          return user.roleName === 'jobSeeker' || 
+                 (user.roles && user.roles.some(role => role.name === 'jobSeeker')) ||
+                 (user.role === 'jobSeeker');
+        });
+        
+        // Transform job seeker data to the format expected by the component
+        const jobSeekerResumeData = jobSeekers
+          .filter(user => {
+            // Check if user has already been processed to prevent duplicates
+            if (processedUserIds.has(user._id)) return false;
+            
+            // Only include users who have a resume in one of the possible locations
+            const hasResume = (
+              (user.professionalInfo && user.professionalInfo.resume) || 
+              (user.jobSeekerProfile && user.jobSeekerProfile.resume)
+            );
+            
+            if (hasResume) {
+              processedUserIds.add(user._id);
+              return true;
+            }
+            return false;
+          })
+          .map(user => ({
+            id: user._id,
+            name: user.name || 'Unknown',
+            email: user.email || 'No email',
+            phone: user.phone || 'No phone',
+            position: user.professionalInfo?.currentTitle || 'Job Seeker',
+            location: user.customLocation || (user.location?.name || 'Not specified'),
+            status: user.isVerified ? 'approved' : 'pending', // Use user verification status or default to pending
+            submitted: user.createdAt || new Date().toISOString(),
+            // Get resume URL from the correct location
+            resumeUrl: user.professionalInfo?.resume || 
+                       (user.jobSeekerProfile ? user.jobSeekerProfile.resume : null),
+            fileType: 'pdf', // Assuming PDF format, adjust if you store this info
+            fileSize: '1.5 MB', // Placeholder, adjust if you store this info
+            keywords: user.skills?.technical || []
+          }));
+        
+        setJobSeekerResumes(jobSeekerResumeData);
+        console.log(`Processed ${jobSeekerResumeData.length} job seeker resumes`);
+        
+        // Filter and process trainer users
+        const trainers = allUsers.filter(user => {
+          return user.roleName === 'trainer' || 
+                 (user.roles && user.roles.some(role => role.name === 'trainer')) ||
+                 (user.role === 'trainer');
+        });
+        
+        // Transform trainer data to the format expected by the component
+        const trainerResumeData = trainers
+          .filter(user => {
+            // Check if user has already been processed to prevent duplicates
+            if (processedUserIds.has(user._id)) return false;
+            
+            // Only include users who have a resume in one of the possible locations
+            const hasResume = (
+              (user.professionalInfo && user.professionalInfo.resume) || 
+              (user.trainerProfile && user.trainerProfile.certificates && user.trainerProfile.certificates.length > 0)
+            );
+            
+            if (hasResume) {
+              processedUserIds.add(user._id);
+              return true;
+            }
+            return false;
+          })
+          .map(user => ({
+            id: user._id,
+            name: user.name || 'Unknown',
+            email: user.email || 'No email',
+            phone: user.phone || 'No phone',
+            specialty: user.trainerProfile?.specialization?.[0] || 'Training Specialist',
+            experience: user.trainerProfile?.experience ? `${user.trainerProfile.experience} years` : undefined,
+            location: user.customLocation || (user.location?.name || 'Not specified'),
+            status: user.isVerified ? 'approved' : 'pending', // Use user verification status or default to pending
+            submitted: user.createdAt || new Date().toISOString(),
+            // Get resume URL from the correct location
+            resumeUrl: user.professionalInfo?.resume || 
+                      (user.trainerProfile && user.trainerProfile.certificates && user.trainerProfile.certificates.length > 0 
+                        ? user.trainerProfile.certificates[0] 
+                        : null),
+            fileType: 'pdf', // Assuming PDF format, adjust if you store this info
+            fileSize: '2.0 MB', // Placeholder, adjust if you store this info
+            certification: user.trainerProfile?.certificates || []
+          }));
+        
+        setTrainerResumes(trainerResumeData);
+        console.log(`Processed ${trainerResumeData.length} trainer resumes`);
       }
       
       setLoading(false);
