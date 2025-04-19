@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import jobService from '../services/jobService';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -30,11 +31,14 @@ const RegisterPage = () => {
   // State for job categories/types
   const [jobCategories, setJobCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  // State for job types data
+  const [jobTypes, setJobTypes] = useState([]);
+  const [loadingJobTypes, setLoadingJobTypes] = useState(false);
   // State for company types
   const [companyTypes, setCompanyTypes] = useState([]);
   const [loadingCompanyTypes, setLoadingCompanyTypes] = useState(false);
 
-  // Fetch locations, roles, job categories, and company types when component mounts
+  // Fetch locations, roles, job categories, job types, and company types when component mounts
   useEffect(() => {
     // Define some default locations in case the API fails
     const defaultLocations = [
@@ -61,6 +65,20 @@ const RegisterPage = () => {
       { _id: 'transportation', name: 'Transportation & Logistics' },
       { _id: 'media', name: 'Media & Communication' },
       { _id: 'other', name: 'Other' }
+    ];
+
+    // Default job types if API fails
+    const defaultJobTypes = [
+      { id: 'full-time', name: 'Full-time' },
+      { id: 'part-time', name: 'Part-time' },
+      { id: 'contract', name: 'Contract' },
+      { id: 'temporary', name: 'Temporary' },
+      { id: 'internship', name: 'Internship' },
+      { id: 'remote', name: 'Remote' },
+      { id: 'hybrid', name: 'Hybrid' },
+      { id: 'seasonal', name: 'Seasonal' },
+      { id: 'freelance', name: 'Freelance' },
+      { id: 'volunteer', name: 'Volunteer' }
     ];
 
     // Default company types if API fails
@@ -116,6 +134,27 @@ const RegisterPage = () => {
         setJobCategories(defaultJobCategories);
       } finally {
         setLoadingCategories(false);
+      }
+    };
+
+    // Fetch job types for job seekers and trainees
+    const fetchJobTypes = async () => {
+      setLoadingJobTypes(true);
+      try {
+        // Use the job service instead of direct axios call
+        const response = await jobService.getJobTypes();
+        if (response.success && response.data.length > 0) {
+          setJobTypes(response.data);
+        } else {
+          // Use default job types if API returns empty data
+          setJobTypes(defaultJobTypes);
+        }
+      } catch (error) {
+        console.error('Error fetching job types:', error);
+        // Use default job types in case of error
+        setJobTypes(defaultJobTypes);
+      } finally {
+        setLoadingJobTypes(false);
       }
     };
 
@@ -207,6 +246,7 @@ const RegisterPage = () => {
     // Execute the fetch functions
     fetchLocations();
     fetchJobCategories();
+    fetchJobTypes();
     fetchCompanyTypes();
     fetchRoles();
   }, []);
@@ -214,16 +254,40 @@ const RegisterPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Special handling for jobType to also track the category ID
-    if (name === 'jobType' && jobCategories.length > 0) {
-      const selectedCategory = jobCategories.find(cat => cat.name === value);
-      if (selectedCategory) {
-        console.log('Selected job category:', selectedCategory);
-        setFormData({
-          ...formData,
-          jobType: value,
-          jobTypeId: selectedCategory._id // Store the category ID
-        });
+    // Special handling for jobType based on user type
+    if (name === 'jobType') {
+      if (userType === 'employer' && jobCategories.length > 0) {
+        // For employers, we use job categories (industries)
+        const selectedCategory = jobCategories.find(cat => cat.name === value);
+        if (selectedCategory) {
+          console.log('Selected job category:', selectedCategory);
+          setFormData({
+            ...formData,
+            jobType: value,
+            jobTypeId: selectedCategory._id // Store the category ID
+          });
+        } else {
+          setFormData({
+            ...formData,
+            [name]: value
+          });
+        }
+      } else if ((userType === 'jobSeeker' || userType === 'talent') && jobTypes.length > 0) {
+        // For job seekers and talent, we use job types
+        const selectedJobType = jobTypes.find(type => type.name === value);
+        if (selectedJobType) {
+          console.log('Selected job type:', selectedJobType);
+          setFormData({
+            ...formData,
+            jobType: value,
+            jobTypeId: selectedJobType.id // Store the job type ID
+          });
+        } else {
+          setFormData({
+            ...formData,
+            [name]: value
+          });
+        }
       } else {
         setFormData({
           ...formData,
@@ -362,11 +426,15 @@ const RegisterPage = () => {
       
       // Add role-specific data based on user selection
       if (userType === 'jobSeeker') {
+        // For job seekers, we store job type in the skills array
+        registrationData.preferredJobType = formData.jobType;
+        registrationData.jobTypeId = formData.jobTypeId;
         registrationData.skills = [formData.jobType];
-        if (formData.jobTypeId) {
-          // If we have the category ID, include it directly
-          registrationData.categoryId = formData.jobTypeId;
-        }
+        
+        // Add job type to user preferences
+        registrationData.preferences = {
+          jobType: formData.jobType
+        };
       } else if (userType === 'employer') {
         // For employers, set both name and company name fields
         registrationData.companyName = formData.fullName;
@@ -382,14 +450,14 @@ const RegisterPage = () => {
         if (talentType === 'trainer') {
           registrationData.organization = formData.fullName;
           registrationData.specialization = [formData.jobType];
-          if (formData.jobTypeId) {
-            registrationData.categoryId = formData.jobTypeId;
-          }
+          // Add preferred job type
+          registrationData.preferredJobType = formData.jobType;
+          registrationData.jobTypeId = formData.jobTypeId;
         } else {
           registrationData.interests = [formData.jobType];
-          if (formData.jobTypeId) {
-            registrationData.categoryId = formData.jobTypeId;
-          }
+          // Add preferred job type
+          registrationData.preferredJobType = formData.jobType;
+          registrationData.jobTypeId = formData.jobTypeId;
         }
       }
       
@@ -423,7 +491,10 @@ const RegisterPage = () => {
                 userType: userType,
                 talentType: talentType,
                 location: formData.location,
-                customLocation: formData.customLocation
+                customLocation: formData.customLocation,
+                // Add explicit data about job type
+                preferredJobType: formData.jobType,
+                isJobTypeCategory: userType === 'employer', // Flag to indicate if the job type is a category (employer) or actual job type
               };
               
               // Add employer-specific data if applicable
@@ -1066,24 +1137,26 @@ const RegisterPage = () => {
                         required
                       >
                         <option value="">
-                          {loadingCategories ? 'Loading job types...' : 'Select Job Type'}
+                          {loadingJobTypes ? 'Loading job types...' : 'Select Job Type'}
                         </option>
-                        {jobCategories.length > 0 ? (
-                          jobCategories.map(category => (
-                            <option key={category._id} value={category.name} data-id={category._id}>
-                              {category.name}
+                        {jobTypes.length > 0 ? (
+                          jobTypes.map(type => (
+                            <option key={type.id} value={type.name} data-id={type.id}>
+                              {type.name}
                             </option>
                           ))
                         ) : (
                           <>
-                            <option value="Information Technology">Information Technology</option>
-                            <option value="Healthcare">Healthcare</option>
-                            <option value="Education">Education</option>
-                            <option value="Finance">Finance</option>
-                            <option value="Retail">Retail</option>
-                            <option value="Manufacturing">Manufacturing</option>
-                            <option value="Construction">Construction</option>
-                            <option value="Other">Other</option>
+                            <option value="Full-time">Full-time</option>
+                            <option value="Part-time">Part-time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Temporary">Temporary</option>
+                            <option value="Internship">Internship</option>
+                            <option value="Remote">Remote</option>
+                            <option value="Hybrid">Hybrid</option>
+                            <option value="Seasonal">Seasonal</option>
+                            <option value="Freelance">Freelance</option>
+                            <option value="Volunteer">Volunteer</option>
                           </>
                         )}
                       </select>

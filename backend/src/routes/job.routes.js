@@ -6,13 +6,15 @@ import {
   updateJob,
   deleteJob,
   applyForJob,
-  getEmployerJobs
+  getEmployerJobs,
+  getJobTypes
 } from '../controllers/job.controller.js';
 import { protect, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // Public routes
+router.get('/types', getJobTypes);
 router.get('/', getJobs);
 router.get('/:id', getJob);
 

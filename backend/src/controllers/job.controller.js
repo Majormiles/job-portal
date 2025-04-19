@@ -342,4 +342,36 @@ export const getEmployerJobs = async (req, res) => {
       error: error.message
     });
   }
+};
+
+// @desc    Get job types
+// @route   GET /api/jobs/types
+// @access  Public
+export const getJobTypes = async (req, res) => {
+  try {
+    // These values should match the enum values in your job model
+    const jobTypes = [
+      { id: 'full-time', name: 'Full-time' },
+      { id: 'part-time', name: 'Part-time' },
+      { id: 'contract', name: 'Contract' },
+      { id: 'temporary', name: 'Temporary' },
+      { id: 'internship', name: 'Internship' },
+      { id: 'remote', name: 'Remote' },
+      { id: 'hybrid', name: 'Hybrid' },
+      { id: 'seasonal', name: 'Seasonal' },
+      { id: 'freelance', name: 'Freelance' },
+      { id: 'volunteer', name: 'Volunteer' }
+    ];
+
+    res.json({
+      success: true,
+      data: jobTypes
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching job types',
+      error: error.message
+    });
+  }
 }; 
