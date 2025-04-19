@@ -206,6 +206,39 @@ const PersonalSettings = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // ADDED: Check registration data specifically for jobseeker jobType at startup
+        console.log('Checking for jobseeker data in registration data...');
+        try {
+          const regData = localStorage.getItem('registrationData');
+          if (regData) {
+            const parsedRegData = JSON.parse(regData);
+            console.log('Registration data found:', parsedRegData);
+            if (parsedRegData.preferredJobType || parsedRegData.jobType || 
+                (parsedRegData.preferences && parsedRegData.preferences.jobType)) {
+              console.log('Job seeker related fields found in registration:', {
+                preferredJobType: parsedRegData.preferredJobType,
+                jobType: parsedRegData.jobType,
+                preferencesJobType: parsedRegData.preferences?.jobType
+              });
+              
+              // Pre-save this to jobseekerData to ensure it's available
+              try {
+                const jobseekerData = JSON.parse(localStorage.getItem('jobseekerData') || '{}');
+                jobseekerData.jobType = parsedRegData.preferredJobType || 
+                                       parsedRegData.jobType || 
+                                       parsedRegData.preferences?.jobType || 
+                                       jobseekerData.jobType;
+                localStorage.setItem('jobseekerData', JSON.stringify(jobseekerData));
+                console.log('Updated jobseekerData in localStorage with job type:', jobseekerData.jobType);
+              } catch (e) {
+                console.error('Error updating jobseekerData:', e);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error checking registration data for jobType:', e);
+        }
+
         // Fetch locations
         let locationsData = [];
         try {
@@ -327,7 +360,7 @@ const PersonalSettings = () => {
                 };
               } else if (userRole === 'jobseeker' && !roleSpecificData) {
                 roleSpecificData = {
-                  jobType: parsedData.jobType || parsedData.profession
+                  jobType: parsedData.jobType || parsedData.profession || parsedData.preferredJobType || ''
                 };
               }
               
@@ -408,7 +441,26 @@ const PersonalSettings = () => {
             
             // Fields for different roles
             // Job Seeker
-            jobType: mergedData.jobType || mergedData.profession || '',
+            jobType: mergedData.jobType || mergedData.profession || (() => {
+              // Check specifically for preferredJobType in registration data
+              try {
+                const regData = localStorage.getItem('registrationData');
+                if (regData) {
+                  const parsedData = JSON.parse(regData);
+                  if (parsedData && parsedData.preferredJobType) {
+                    console.log('Found preferredJobType in registration data:', parsedData.preferredJobType);
+                    return parsedData.preferredJobType;
+                  }
+                  if (parsedData && parsedData.preferences && parsedData.preferences.jobType) {
+                    console.log('Found preferences.jobType in registration data:', parsedData.preferences.jobType);
+                    return parsedData.preferences.jobType;
+                  }
+                }
+              } catch (e) {
+                console.error('Error checking preferredJobType in registration data:', e);
+              }
+              return '';
+            })(),
             
             // Employer
             industry: mergedData.industry || '', 
@@ -583,6 +635,60 @@ const PersonalSettings = () => {
             }
           } catch (e) {
             console.error('Error directly checking registration data for interests:', e);
+          }
+        }
+        
+        // Add direct lookup for jobseeker job type
+        if (userRole === 'jobseeker') {
+          try {
+            // Direct check of registration data for job seekers
+            const regData = localStorage.getItem('registrationData') || sessionStorage.getItem('registrationData');
+            if (regData) {
+              const parsedRegData = JSON.parse(regData);
+              // Try to force set job type data directly from registration
+              if (parsedRegData) {
+                // Check all possible job type field names
+                let jobTypeData = null;
+                
+                if (parsedRegData.preferredJobType) {
+                  jobTypeData = parsedRegData.preferredJobType;
+                  console.log('Found preferredJobType in registration:', jobTypeData);
+                }
+                else if (parsedRegData.jobType) {
+                  jobTypeData = parsedRegData.jobType;
+                  console.log('Found jobType in registration:', jobTypeData);
+                }
+                else if (parsedRegData.profession) {
+                  jobTypeData = parsedRegData.profession;
+                  console.log('Found profession in registration:', jobTypeData);
+                }
+                else if (parsedRegData.preferences && parsedRegData.preferences.jobType) {
+                  jobTypeData = parsedRegData.preferences.jobType;
+                  console.log('Found preferences.jobType in registration:', jobTypeData);
+                }
+                
+                // If we found job type data, set it directly in the form
+                if (jobTypeData) {
+                  console.log('Setting job seeker job type directly from registration data:', jobTypeData);
+                  setFormData(prevFormData => ({
+                    ...prevFormData,
+                    jobType: jobTypeData
+                  }));
+                  
+                  // Also store it in jobseekerData for persistence
+                  try {
+                    const jobseekerData = JSON.parse(localStorage.getItem('jobseekerData') || '{}');
+                    jobseekerData.jobType = jobTypeData;
+                    localStorage.setItem('jobseekerData', JSON.stringify(jobseekerData));
+                    console.log('Stored job type in jobseekerData storage:', jobTypeData);
+                  } catch (e) {
+                    console.error('Error storing job type in jobseekerData:', e);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error directly checking registration data for job type:', e);
           }
         }
       } catch (error) {
@@ -955,6 +1061,21 @@ const PersonalSettings = () => {
           jobType: formData.jobType
         };
         localStorage.setItem('jobseekerData', JSON.stringify(updatedJobseekerData));
+        
+        // Also update registration data to maintain consistency
+        try {
+          const registrationData = JSON.parse(localStorage.getItem('registrationData') || '{}');
+          registrationData.preferredJobType = formData.jobType;
+          
+          // Update in preferences structure too if it exists
+          if (!registrationData.preferences) registrationData.preferences = {};
+          registrationData.preferences.jobType = formData.jobType;
+          
+          localStorage.setItem('registrationData', JSON.stringify(registrationData));
+          console.log('Updated registration data with new job type:', formData.jobType);
+        } catch (e) {
+          console.error('Error updating registration data with job type:', e);
+        }
       }
       
       if (!updateSuccess) {
