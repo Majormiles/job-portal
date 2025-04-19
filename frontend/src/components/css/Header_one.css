@@ -50,25 +50,27 @@ body {
 }
 
 .main-header.scrolled {
-  background-image: none; /* Remove the background image when scrolled */
-  background-color: #ffffff; /* Apply white background when scrolled */
+  background-image: none; 
+  background-color: #ffffff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 
 .main-header.scrolled .logo-link,
 .main-header.scrolled .nav-links li a,
-.main-header.scrolled .login-btn,
 .main-header.scrolled .register-btn ,
 .main-header.scrolled .username {
-  color: #333333; /* Dark text on white background for better visibility */
+  color: #4b59f7; 
 }
 
-.main-header.scrolled .login-btn,
+
 .main-header.scrolled .register-btn {
-  border: 1px solid #4b59f7;
+  border: 0.1px solid #4b59f7;
+  color: #4b59f7; 
 }
-
+.main-header.scrolled .login-btn{
+  color: #4b59f7; 
+}
 .main-header.scrolled .briefcase-icon {
   color: #333333;
 }
@@ -77,13 +79,9 @@ body {
   background-color: #333333;
 }
 
-.main-header.scrolled .login-btn {
-  color: #ffffff;
-  border-color: rgba(51, 51, 51, 0.3);
-}
 
 .main-header.scrolled .login-btn:hover {
-  background-color: rgba(51, 51, 51, 0.1);
+  box-shadow: rgba(51, 51, 51, 0.1);
 }
 
 .header-container {
