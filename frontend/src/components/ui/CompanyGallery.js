@@ -4,6 +4,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLinkedin, faTwitter } from '@fortawesome/free-brands-svg-icons';
 import '../css/CompanyGallery.css';
 
+// Sample image imports - you'll replace these with your actual images later
+import jobsearchImage from '../../assets/images/jobsearch.png';
+// Import paths for executive images - using the same pattern as jobsearchImage
+import execImage1 from '../../assets/images/jobsearch.png';
+import execImage2 from '../../assets/images/jobsearch.png';
+import execImage3 from '../../assets/images/jobsearch.png';
+import execImage4 from '../../assets/images/jobsearch.png';
+// Import paths for culture images - using the same pattern as jobsearchImage
+import cultureImage1 from '../../assets/images/jobsearch.png';
+import cultureImage2 from '../../assets/images/jobsearch.png';
+import cultureImage3 from '../../assets/images/jobsearch.png';
+import cultureImage4 from '../../assets/images/jobsearch.png';
+import cultureImage5 from '../../assets/images/jobsearch.png';
+import cultureImage6 from '../../assets/images/jobsearch.png';
+
 const ScrollToTop = () => {
     const { pathname } = useLocation();
     
@@ -23,7 +38,8 @@ const CompanyGallery = () => {
       position: 'Chief Executive Officer',
       message: 'Leading with innovation and integrity, creating opportunities for all.',
       linkedin: '#',
-      twitter: '#'
+      twitter: '#',
+      image: execImage1  // Added image property
     },
     {
       id: 2,
@@ -31,7 +47,8 @@ const CompanyGallery = () => {
       position: 'Chief Operations Officer',
       message: 'Building efficient systems that empower our team and clients.',
       linkedin: '#',
-      twitter: '#'
+      twitter: '#',
+      image: execImage2  // Added image property
     },
     {
       id: 3,
@@ -39,7 +56,8 @@ const CompanyGallery = () => {
       position: 'Chief Technology Officer',
       message: 'Leveraging technology to transform the future of work.',
       linkedin: '#',
-      twitter: '#'
+      twitter: '#',
+      image: execImage3  // Added image property
     },
     {
       id: 4,
@@ -47,8 +65,19 @@ const CompanyGallery = () => {
       position: 'VP of Human Resources',
       message: 'Creating an inclusive workplace where talent thrives.',
       linkedin: '#',
-      twitter: '#'
+      twitter: '#',
+      image: execImage4  // Added image property
     },
+  ];
+
+  // Company culture images array
+  const cultureImages = [
+    cultureImage1,
+    cultureImage2,
+    cultureImage3,
+    cultureImage4,
+    cultureImage5,
+    cultureImage6
   ];
 
   return (
@@ -82,9 +111,9 @@ const CompanyGallery = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 executive-grid">
             {executives.map((exec, index) => (
               <div key={exec.id} className={`flex flex-col items-center animate-fade-in-up animation-delay-${(index + 2) * 100}`}>
-                {/* Image Placeholder */}
+                {/* Image - Using individual executive images */}
                 <div className="w-48 h-48 rounded-full mb-4 border border-gray-300 overflow-hidden flex items-center justify-center bg-gray-100 executive-photo-placeholder">
-                  <span className="text-gray-400 text-sm">Executive Photo</span>
+                  <img src={exec.image} alt={exec.name} className="w-full h-full object-cover" />
                 </div>
                 
                 <h3 className="text-xl font-semibold text-gray-800">{exec.name}</h3>
@@ -110,13 +139,13 @@ const CompanyGallery = () => {
             <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">Our Company Culture</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Culture Images Placeholders */}
-              {[1, 2, 3, 4, 5, 6].map((item, index) => (
+              {/* Culture Images - Using individual culture images */}
+              {cultureImages.map((image, index) => (
                 <div 
-                  key={item}
+                  key={index}
                   className={`aspect-video border border-gray-300 rounded-lg overflow-hidden flex items-center justify-center bg-gray-100 company-culture-photo animate-fade-in-up animation-delay-${(index + 7) * 100}`}
                 >
-                  <span className="text-gray-400 text-sm">Company Culture Photo</span>
+                  <img src={image} alt={`Company Culture ${index + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
@@ -127,4 +156,4 @@ const CompanyGallery = () => {
   );
 };
 
-export default CompanyGallery; 
+export default CompanyGallery;
