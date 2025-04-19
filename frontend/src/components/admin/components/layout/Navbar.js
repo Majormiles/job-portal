@@ -37,6 +37,27 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
       } catch (error) {
         console.error('Error parsing admin user data:', error);
       }
+    } else {
+      // Try to fetch admin user data from API if not in localStorage
+      const fetchAdminUser = async () => {
+        try {
+          const token = localStorage.getItem('adminToken');
+          if (token) {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/admin/profile`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            if (response.data && response.data.success) {
+              setAdminUser(response.data.data);
+              localStorage.setItem('adminUser', JSON.stringify(response.data.data));
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching admin user data:', error);
+        }
+      };
+      fetchAdminUser();
     }
   }, []);
 
@@ -163,15 +184,20 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
                 {adminUser?.role || 'Administrator'}
               </div>
             </div>
-            <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-sm overflow-hidden">
               {adminUser?.profilePicture ? (
                 <img
-                  alt="Profile"
+                  alt={adminUser?.name || 'Admin Profile'}
                   src={adminUser.profilePicture}
-                  className="h-8 w-8 rounded-full object-cover"
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null; 
+                    e.target.style.display = 'none';
+                    e.target.parentNode.innerHTML = adminUser?.name?.charAt(0) || 'A';
+                  }}
                 />
               ) : (
-                <span>{adminUser?.name?.charAt(0) || 'A'}</span>
+                <span className="text-sm font-medium">{adminUser?.name?.charAt(0) || 'A'}</span>
               )}
             </div>
           </button>
@@ -179,8 +205,34 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
           {/* User dropdown menu */}
           {showDropdown && (
             <div 
-              className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-30 border border-gray-200 transition-all duration-200 transform origin-top"
+              className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-30 border border-gray-200 transition-all duration-200 transform origin-top"
             >
+              {/* Profile header in dropdown */}
+              <div className="px-4 py-3 border-b border-gray-100">
+                <div className="flex items-center">
+                  <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-sm overflow-hidden mr-3">
+                    {adminUser?.profilePicture ? (
+                      <img
+                        alt={adminUser?.name || 'Admin Profile'}
+                        src={adminUser.profilePicture}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null; 
+                          e.target.style.display = 'none';
+                          e.target.parentNode.innerHTML = adminUser?.name?.charAt(0) || 'A';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-sm font-medium">{adminUser?.name?.charAt(0) || 'A'}</span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{adminUser?.name || 'Admin User'}</div>
+                    <div className="text-xs text-gray-500">{adminUser?.email || 'admin@example.com'}</div>
+                  </div>
+                </div>
+              </div>
+
               <Link 
                 to="/admin/profile" 
                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -189,14 +241,7 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
                 <User size={16} className="mr-2 text-gray-500" />
                 Profile
               </Link>
-              <Link 
-                to="/admin/settings" 
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                onClick={() => setShowDropdown(false)}
-              >
-                <Settings size={16} className="mr-2 text-gray-500" />
-                Settings
-              </Link>
+        
               <div className="border-t border-gray-100 my-1"></div>
               <button 
                 onClick={handleLogout}

@@ -109,7 +109,6 @@ function Sidebar({ isOpen, onClose }) {
       subItems: [
         { text: 'All Jobs', path: '/admin/jobs' },
         { text: 'Create Job', path: '/admin/jobs/create' },
-        { text: 'Profile', path: '/admin/profile' },
         { text: 'Invoice', path: '/admin/invoice' }
       ]
     },
@@ -119,12 +118,6 @@ function Sidebar({ isOpen, onClose }) {
       path: '/admin/job-seekers',
       disabled: true,
       isNew: true,
-      subItems: []
-    },
-    {
-      icon: Settings,
-      text: 'Admin Profile',
-      path: '/admin/profile',
       subItems: []
     }
   ];
