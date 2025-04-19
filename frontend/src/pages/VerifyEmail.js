@@ -163,20 +163,6 @@ const VerifyEmail = () => {
     }
   };
 
-  // Add a test function to check backend connectivity
-  const testEndpoint = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/auth/test-verify`, {
-        params: { token }
-      });
-      console.log('Test response:', response.data);
-      toast.info(`Test endpoint response: ${JSON.stringify(response.data)}`);
-    } catch (error) {
-      console.error('Test endpoint error:', error);
-      toast.error(`Test endpoint error: ${error.message}`);
-    }
-  };
-
   if (verificationStatus.isLoading) {
     return (
       <div className="flex flex-col md:flex-row h-screen">
@@ -330,13 +316,6 @@ const VerifyEmail = () => {
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Return to Login
-              </button>
-              
-              <button
-                onClick={testEndpoint}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Test API Connection
               </button>
               
               <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-left">
