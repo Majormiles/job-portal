@@ -15,11 +15,18 @@ adminApi.interceptors.request.use(
   (config) => {
     // Add admin auth token
     const adminToken = localStorage.getItem('adminToken');
+    const userToken = localStorage.getItem('token'); // Fallback to user token if admin token not available
+    
     if (adminToken) {
       config.headers.Authorization = `Bearer ${adminToken}`;
       console.log('Admin API: Using authentication token:', adminToken.substring(0, 10) + '...');
+    } else if (userToken && config.url?.includes('/jobs')) {
+      // For job-related endpoints, try using the regular user token as fallback
+      config.headers.Authorization = `Bearer ${userToken}`;
+      console.log('Admin API: No admin token found, using user token for jobs endpoint');
     } else {
-      console.error('Admin API: No authentication token found in localStorage');
+      console.warn('Admin API: No authentication token found in localStorage');
+      // We'll continue the request - the backend will handle unauthorized access
     }
     
     // Auto-enable strictPopulate=false for /applications endpoint to avoid mongoose error

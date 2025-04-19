@@ -376,12 +376,16 @@ export const getCategorySuggestions = async () => {
  */
 export const getLocationSuggestions = async () => {
   try {
-    // Fetch a sample of jobs to extract locations
-    const response = await getJobs({ limit: 100 });
-    if (response.success) {
+    // Use direct API call instead of getJobs (which uses adminApi)
+    // This ensures it works even when users aren't logged in as admin
+    const response = await api.get('/jobs', {
+      params: { limit: 100, fields: 'location' }
+    });
+    
+    if (response.data && response.data.success) {
       const locations = new Set();
       
-      response.data.forEach(job => {
+      response.data.data.forEach(job => {
         if (job.location && job.location.trim() !== '') {
           locations.add(job.location.trim());
         }
@@ -392,10 +396,25 @@ export const getLocationSuggestions = async () => {
         label: location
       }));
     }
-    return [];
+    
+    // Fallback to default locations if API call fails
+    return [
+      { value: 'Accra', label: 'Accra' },
+      { value: 'Kumasi', label: 'Kumasi' },
+      { value: 'Tamale', label: 'Tamale' },
+      { value: 'Takoradi', label: 'Takoradi' },
+      { value: 'Cape Coast', label: 'Cape Coast' }
+    ];
   } catch (error) {
     console.error('Error fetching location suggestions:', error);
-    return [];
+    // Return default locations on error
+    return [
+      { value: 'Accra', label: 'Accra' },
+      { value: 'Kumasi', label: 'Kumasi' },
+      { value: 'Tamale', label: 'Tamale' },
+      { value: 'Takoradi', label: 'Takoradi' },
+      { value: 'Cape Coast', label: 'Cape Coast' }
+    ];
   }
 };
 

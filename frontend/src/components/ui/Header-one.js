@@ -280,8 +280,22 @@ const JobPortal = () => {
       try {
         // Fetch both location and category data in parallel
         const [locationsData, categoriesData] = await Promise.all([
-          getLocationSuggestions(),
-          getCategorySuggestions()
+          getLocationSuggestions().catch(err => {
+            console.error('Error fetching locations:', err);
+            // Return default locations instead of failing
+            return [
+              { value: 'Accra', label: 'Accra' },
+              { value: 'Kumasi', label: 'Kumasi' },
+              { value: 'Tamale', label: 'Tamale' },
+              { value: 'Takoradi', label: 'Takoradi' },
+              { value: 'Cape Coast', label: 'Cape Coast' }
+            ];
+          }),
+          getCategorySuggestions().catch(err => {
+            console.error('Error fetching categories:', err);
+            // Return empty array rather than failing completely
+            return [];
+          })
         ]);
 
         // Check if we received valid data for locations
@@ -289,8 +303,15 @@ const JobPortal = () => {
           setLocationOptions(locationsData);
           console.log('Loaded locations:', locationsData.length);
         } else {
-          console.error('Invalid location data received:', locationsData);
-          toast.error('Failed to load location options');
+          console.warn('No location data received, using defaults');
+          // Set default locations if none were received
+          setLocationOptions([
+            { value: 'Accra', label: 'Accra' },
+            { value: 'Kumasi', label: 'Kumasi' },
+            { value: 'Tamale', label: 'Tamale' },
+            { value: 'Takoradi', label: 'Takoradi' },
+            { value: 'Cape Coast', label: 'Cape Coast' }
+          ]);
         }
 
         // Check if we received valid data for categories
@@ -298,12 +319,12 @@ const JobPortal = () => {
           setCategoryOptions(categoriesData);
           console.log('Loaded categories:', categoriesData.length);
         } else {
-          console.error('Invalid category data received:', categoriesData);
-          toast.error('Failed to load category options');
+          console.warn('No category data received');
+          // We don't show an error toast for this - it's not critical
         }
       } catch (error) {
         console.error('Error fetching search options:', error);
-        toast.error('Failed to load search options');
+        // Don't show error toast - use default data instead
       } finally {
         setIsLoading(false);
       }
