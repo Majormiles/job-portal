@@ -383,4 +383,99 @@ export const getCategoryStats = asyncHandler(async (req, res) => {
     success: true,
     data: stats
   });
+});
+
+/**
+ * @desc    Get industry categories
+ * @route   GET /api/industries
+ * @access  Public
+ */
+export const getIndustries = asyncHandler(async (req, res) => {
+  // Standard list of industries
+  const industries = [
+    { _id: 'information-technology', name: 'Information Technology' },
+    { _id: 'healthcare', name: 'Healthcare' },
+    { _id: 'education', name: 'Education' },
+    { _id: 'finance', name: 'Finance and Banking' },
+    { _id: 'retail', name: 'Retail' },
+    { _id: 'manufacturing', name: 'Manufacturing' },
+    { _id: 'construction', name: 'Construction' },
+    { _id: 'hospitality', name: 'Hospitality & Tourism' },
+    { _id: 'agriculture', name: 'Agriculture' },
+    { _id: 'transportation', name: 'Transportation & Logistics' },
+    { _id: 'media', name: 'Media & Communication' },
+    { _id: 'energy', name: 'Energy & Utilities' },
+    { _id: 'legal', name: 'Legal Services' },
+    { _id: 'government', name: 'Government' },
+    { _id: 'nonprofit', name: 'Non-Profit' },
+    { _id: 'real-estate', name: 'Real Estate' },
+    { _id: 'other', name: 'Other' }
+  ];
+  
+  res.status(200).json({
+    success: true,
+    data: industries
+  });
+});
+
+/**
+ * @desc    Get company types 
+ * @route   GET /api/company-types
+ * @access  Public
+ */
+export const getCompanyTypes = asyncHandler(async (req, res) => {
+  // Standard list of company types
+  const companyTypes = [
+    { _id: 'corporation', name: 'Corporation' },
+    { _id: 'limited-liability', name: 'Limited Liability Company (LLC)' },
+    { _id: 'partnership', name: 'Partnership' },
+    { _id: 'sole-proprietorship', name: 'Sole Proprietorship' },
+    { _id: 'non-profit', name: 'Non-Profit Organization' },
+    { _id: 'startup', name: 'Startup' },
+    { _id: 'government', name: 'Government Agency' },
+    { _id: 'educational', name: 'Educational Institution' },
+    { _id: 'other', name: 'Other' }
+  ];
+  
+  res.status(200).json({
+    success: true,
+    data: companyTypes
+  });
+});
+
+/**
+ * @desc    Get training interests
+ * @route   GET /api/training/interests
+ * @access  Public
+ */
+export const getTrainingInterests = asyncHandler(async (req, res) => {
+  // Comprehensive list of training interests
+  const interests = [
+    { id: 'web-development', name: 'Web Development' },
+    { id: 'mobile-app-development', name: 'Mobile App Development' },
+    { id: 'graphic-design', name: 'Graphic Design' },
+    { id: 'ui-ux-design', name: 'UI/UX Design' },
+    { id: 'digital-marketing', name: 'Digital Marketing' },
+    { id: 'data-analysis', name: 'Data Analysis' },
+    { id: 'business-admin', name: 'Business Administration' },
+    { id: 'accounting', name: 'Accounting & Finance' },
+    { id: 'language', name: 'Language & Communication' },
+    { id: 'healthcare', name: 'Healthcare & Wellness' },
+    { id: 'culinary', name: 'Culinary Arts' },
+    { id: 'fashion', name: 'Fashion & Beauty' },
+    { id: 'photography', name: 'Photography & Videography' },
+    { id: 'music-production', name: 'Music Production' },
+    { id: 'electrical', name: 'Electrical Engineering' },
+    { id: 'mechanical', name: 'Mechanical Engineering' },
+    { id: 'carpentry', name: 'Carpentry & Woodworking' },
+    { id: 'plumbing', name: 'Plumbing' },
+    { id: 'welding', name: 'Welding & Metalwork' },
+    { id: 'agriculture', name: 'Agriculture & Farming' },
+    { id: 'other', name: 'Other' }
+  ];
+  
+  res.status(200).json({
+    success: true,
+    data: interests
+  });
 }); 

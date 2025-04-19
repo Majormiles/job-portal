@@ -6,7 +6,10 @@ import {
   updateCategory,
   deleteCategory,
   getCategoryJobs,
-  getCategoryStats
+  getCategoryStats,
+  getIndustries,
+  getCompanyTypes,
+  getTrainingInterests
 } from '../controllers/category.controller.js';
 import { protect, authorize } from '../middleware/auth.middleware.js';
 import Category from '../models/category.model.js';
@@ -15,6 +18,10 @@ const router = express.Router();
 
 // Public routes
 router.get('/', getCategories);
+
+// New public routes for industries, company types, and training interests
+router.get('/industries', getIndustries);
+router.get('/interests', getTrainingInterests);
 
 // Admin-only routes - must come before the routes with path parameters
 router.use('/admin', protect);

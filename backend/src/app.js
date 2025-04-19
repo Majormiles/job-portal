@@ -13,6 +13,7 @@ import statsRouter from './routes/stats.routes.js';
 import companyRouter from './routes/company.routes.js';
 import locationRouter from './routes/location.routes.js';
 import roleRouter from './routes/role.routes.js';
+import indexRouter from './routes/index.js';
 import errorHandler from './middleware/error.middleware.js';
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(cookieParser());
 
 // Routes
+app.use('/api', indexRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/jobs', jobRouter);
