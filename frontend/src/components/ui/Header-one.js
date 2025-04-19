@@ -537,6 +537,7 @@ const JobPortal = () => {
           <div className="auth-buttons mobile-auth">
             {!isAuthenticated ? (
               <>
+                <Link to="/login" className="login-btn" >Login</Link>
                 <Link to="/register" className="register-btn" onClick={toggleMobileMenu}>Register</Link>
               </>
             ) : (
