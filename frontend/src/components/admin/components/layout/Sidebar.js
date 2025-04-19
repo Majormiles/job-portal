@@ -104,6 +104,8 @@ function Sidebar({ isOpen, onClose }) {
       text: 'Manage Jobs',
       path: '/admin/jobs',
       menuKey: 'manageJobs',
+      disabled: true,
+      isNew: true,
       subItems: [
         { text: 'All Jobs', path: '/admin/jobs' },
         { text: 'Create Job', path: '/admin/jobs/create' },
@@ -115,6 +117,8 @@ function Sidebar({ isOpen, onClose }) {
       icon: Users,
       text: 'Job Seekers',
       path: '/admin/job-seekers',
+      disabled: true,
+      isNew: true,
       subItems: []
     },
     {
@@ -126,7 +130,7 @@ function Sidebar({ isOpen, onClose }) {
   ];
 
   const renderMenuItem = (item) => {
-    const { icon: Icon, text, path, subItems, menuKey, onClick } = item;
+    const { icon: Icon, text, path, subItems, menuKey, onClick, disabled, isNew } = item;
     const hasSubItems = subItems && subItems.length > 0;
     const isMenuOpen = menuKey ? openMenus[menuKey] : false;
     const isPathActive = isActive(path);
@@ -137,23 +141,33 @@ function Sidebar({ isOpen, onClose }) {
           <button 
             className={`flex items-center p-2 w-full text-left rounded-md transition-colors duration-200
               ${isCollapsed ? 'justify-center' : ''}
-              ${isPathActive ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-100'}`}
+              ${isPathActive ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-100'}
+              ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => {
-              onClick();
-              onClose?.();
+              if (!disabled) {
+                onClick();
+                onClose?.();
+              }
             }}
+            disabled={disabled}
           >
             <Icon className={`w-5 h-5 ${isPathActive ? 'text-blue-600' : 'text-gray-500'}`} />
             {!isCollapsed && (
               <span className="ml-3 flex-1">{text}</span>
             )}
+            {!isCollapsed && isNew && (
+              <span className="ml-2 text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-100 text-orange-500">New</span>
+            )}
           </button>
         ) : (
           <div
-            className={`cursor-pointer flex items-center p-2 rounded-md transition-colors duration-200
+            className={`flex items-center p-2 rounded-md transition-colors duration-200
               ${isCollapsed ? 'justify-center' : ''}
-              ${isPathActive ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-100'}`}
+              ${isPathActive ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-100'}
+              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             onClick={(e) => {
+              if (disabled) return;
+              
               if (hasSubItems) {
                 e.preventDefault();
                 toggleMenu(menuKey);
@@ -168,9 +182,12 @@ function Sidebar({ isOpen, onClose }) {
             {!isCollapsed && (
               <>
                 <span className="ml-3 flex-1">{text}</span>
+                {isNew && (
+                  <span className="ml-2 text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-100 text-orange-500">New</span>
+                )}
                 {hasSubItems && (
                   <ChevronDown 
-                    className={`transition-transform duration-300 ease-in-out ${isMenuOpen ? 'rotate-180' : ''}`} 
+                    className={`transition-transform duration-300 ease-in-out ml-1 ${isMenuOpen ? 'rotate-180' : ''}`} 
                     size={18} 
                   />
                 )}
@@ -194,8 +211,8 @@ function Sidebar({ isOpen, onClose }) {
                   isActive(subItem.path) 
                     ? 'text-blue-600 font-medium' 
                     : 'text-gray-600'
-                }`}
-                onClick={onClose}
+                } ${disabled ? 'pointer-events-none opacity-50' : ''}`}
+                onClick={disabled ? (e) => e.preventDefault() : onClose}
               >
                 {subItem.text}
               </Link>
@@ -208,14 +225,19 @@ function Sidebar({ isOpen, onClose }) {
           <div className="relative group">
             <div className="absolute left-full ml-2 top-0 z-50 transform -translate-y-1/2 hidden group-hover:block">
               <div className="bg-white border shadow-md rounded-md py-2 px-3 min-w-[160px]">
+                {isNew && (
+                  <div className="mb-1 px-2 py-1">
+                    <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-100 text-orange-500">New</span>
+                  </div>
+                )}
                 {subItems.map((subItem, index) => (
                   <Link 
                     key={index}
                     to={subItem.path} 
                     className={`block py-2 text-sm transition-colors hover:text-blue-600 ${
                       isActive(subItem.path) ? 'text-blue-600 font-medium' : 'text-gray-600'
-                    }`}
-                    onClick={onClose}
+                    } ${disabled ? 'pointer-events-none opacity-50' : ''}`}
+                    onClick={disabled ? (e) => e.preventDefault() : onClose}
                   >
                     {subItem.text}
                   </Link>
