@@ -433,12 +433,64 @@ const PersonalSettings = () => {
             
             // Trainee
             interests: (() => {
-              // Handle different possible formats of interests data
-              if (Array.isArray(mergedData.interests)) {
+              // FIRST: Directly check registration data - this should be most reliable
+              try {
+                const storedData = localStorage.getItem('registrationData') || sessionStorage.getItem('registrationData');
+                if (storedData) {
+                  const parsedData = JSON.parse(storedData);
+                  if (parsedData) {
+                    // Try all possible interest field names
+                    if (Array.isArray(parsedData.interests) && parsedData.interests.length > 0) {
+                      console.log('DIRECT: Found interests array in registration:', parsedData.interests);
+                      return parsedData.interests.join(', ');
+                    } 
+                    else if (parsedData.interests) {
+                      console.log('DIRECT: Found interests string in registration:', parsedData.interests);
+                      return parsedData.interests;
+                    }
+                    else if (parsedData.interest) {
+                      console.log('DIRECT: Found interest in registration:', parsedData.interest);
+                      return parsedData.interest;
+                    }
+                    else if (parsedData.jobType) {
+                      console.log('DIRECT: Using jobType as interest in registration:', parsedData.jobType);
+                      return parsedData.jobType;
+                    }
+                    else if (parsedData.preferredInterest) {
+                      console.log('DIRECT: Found preferredInterest in registration:', parsedData.preferredInterest);
+                      return parsedData.preferredInterest;
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('Error in direct registration data check for interests:', e);
+              }
+
+              // Then continue with other checks from API data
+              // Check mergedData interests array
+              if (Array.isArray(mergedData.interests) && mergedData.interests.length > 0) {
                 return mergedData.interests.join(', ');
-              } else if (typeof mergedData.interests === 'string') {
+              } 
+              // Check mergedData interests string
+              else if (typeof mergedData.interests === 'string' && mergedData.interests.trim()) {
                 return mergedData.interests;
               }
+              // Check traineeProfile or specific trainee data structures
+              else if (mergedData.traineeProfile && Array.isArray(mergedData.traineeProfile.interests)) {
+                return mergedData.traineeProfile.interests.join(', ');
+              }
+              else if (mergedData.traineeProfile && typeof mergedData.traineeProfile.interests === 'string') {
+                return mergedData.traineeProfile.interests;
+              }
+              // Check single interest field
+              else if (mergedData.interest) {
+                return typeof mergedData.interest === 'string' ? mergedData.interest : '';
+              }
+              // Check preferredInterest field
+              else if (mergedData.preferredInterest) {
+                return mergedData.preferredInterest;
+              }
+              
               return '';
             })()
           };
@@ -456,6 +508,81 @@ const PersonalSettings = () => {
                 location: 'custom' 
               }));
             }
+          }
+        }
+
+        // Add extra logging in the fetchData function - after "console.log('Working endpoint:', workingEndpoint);"
+        console.log('Looking specifically for trainee interests data...');
+        // Check registration data for trainee interests
+        try {
+          const regData = localStorage.getItem('registrationData') || sessionStorage.getItem('registrationData');
+          if (regData) {
+            const parsedRegData = JSON.parse(regData);
+            console.log('Registration data found:', parsedRegData);
+            if (parsedRegData.interests || parsedRegData.interest || parsedRegData.jobType) {
+              console.log('Possible trainee interests in registration data:',
+                parsedRegData.interests || parsedRegData.interest || parsedRegData.jobType);
+            }
+          }
+        } catch (e) {
+          console.error('Error checking registration data for interests:', e);
+        }
+
+        // Add this direct lookup when setting formData for trainee interests
+        if (userRole === 'trainee') {
+          try {
+            // Direct check of registration data for trainees
+            const regData = localStorage.getItem('registrationData') || sessionStorage.getItem('registrationData');
+            if (regData) {
+              const parsedRegData = JSON.parse(regData);
+              // Try to force set interest data directly from registration
+              if (parsedRegData) {
+                // Check direct interest fields first
+                let interestData = null;
+                
+                if (Array.isArray(parsedRegData.interests) && parsedRegData.interests.length > 0) {
+                  interestData = parsedRegData.interests.join(', ');
+                  console.log('Found interests array in registration:', interestData);
+                } 
+                else if (parsedRegData.interests) {
+                  interestData = parsedRegData.interests;
+                  console.log('Found interests string in registration:', interestData);
+                }
+                else if (parsedRegData.interest) {
+                  interestData = parsedRegData.interest;
+                  console.log('Found interest in registration:', interestData);
+                }
+                else if (parsedRegData.jobType) {
+                  interestData = parsedRegData.jobType;
+                  console.log('Using jobType as interest in registration:', interestData);
+                }
+                else if (parsedRegData.preferredInterest) {
+                  interestData = parsedRegData.preferredInterest;
+                  console.log('Found preferredInterest in registration:', interestData);
+                }
+                
+                // If we found interest data, set it directly in the form
+                if (interestData) {
+                  console.log('Setting trainee interests directly from registration data:', interestData);
+                  setFormData(prevFormData => ({
+                    ...prevFormData,
+                    interests: interestData
+                  }));
+                  
+                  // Also store it in traineeData for persistence
+                  try {
+                    const traineeData = JSON.parse(localStorage.getItem('traineeData') || '{}');
+                    traineeData.interests = interestData;
+                    localStorage.setItem('traineeData', JSON.stringify(traineeData));
+                    console.log('Stored interests in traineeData storage:', interestData);
+                  } catch (e) {
+                    console.error('Error storing interests in traineeData:', e);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error directly checking registration data for interests:', e);
           }
         }
       } catch (error) {
@@ -1074,7 +1201,7 @@ const PersonalSettings = () => {
                   <textarea
                     id="interests"
                     name="interests"
-                    value={formData.interests}
+                    value={formData.interests || ''}
                     onChange={handleInputChange}
                     placeholder="Enter your training interests (comma separated)"
                     className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
@@ -1082,7 +1209,9 @@ const PersonalSettings = () => {
                     required={isTrainee()}
                   />
                   {errors.interests && <span className="error text-red-600 text-xs mt-1">{errors.interests}</span>}
-                  <p className="text-xs text-gray-500 mt-1">Examples: Web Development, Project Management, Data Analysis, etc.</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.interests ? 'These are your registered training interests. You can update them if needed.' : 'Examples: Web Development, Project Management, Data Analysis, etc.'}
+                  </p>
                 </div>
               )}
 
