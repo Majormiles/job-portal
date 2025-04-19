@@ -102,7 +102,7 @@ const RegisterPopup = () => {
             
             <Link to="/register">
               <button className="register-popup-button">
-                Create Free Account
+                Apply Now
               </button>
             </Link>
           </div>
