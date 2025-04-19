@@ -19,16 +19,16 @@ const Footer = () => {
           {/* Job Logo and Description */}
           <div className="footer-section">
             <div className="logo-container">
-
-              <Link to="/"> <div className="mb-6 sm:mb-8">
-                <div className="logo">
-                  <svg className="w-10 h-10 sm:w-12 sm:h-12 text-purple-700" viewBox="0 0 100 100" fill="currentColor">
-                    <path d="M50 10 L90 30 L50 50 L10 30 Z" />
-                    <path d="M50 50 L50 90 L10 70 L10 30 Z" />
-                    <path d="M50 50 L50 90 L90 70 L90 30 Z" />
-                  </svg>
+              <Link to="/">
+                <div className="mb-6 sm:mb-8">
+                  <div className="logo">
+                    <svg className="w-10 h-10 sm:w-12 sm:h-12 text-purple-700" viewBox="0 0 100 100" fill="currentColor">
+                      <path d="M50 10 L90 30 L50 50 L10 30 Z" />
+                      <path d="M50 50 L50 90 L10 70 L10 30 Z" />
+                      <path d="M50 50 L50 90 L90 70 L90 30 Z" />
+                    </svg>
+                  </div>
                 </div>
-              </div>
               </Link>
               <span className="logo-text">Job</span>
             </div>
@@ -83,10 +83,9 @@ const Footer = () => {
             </form>
           </div>
         </div>
-
       </div>
+      
       <div className="container">
-
         {/* Footer Bottom */}
         <div className="footer-bottom">
           <div className="copyright">
