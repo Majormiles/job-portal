@@ -76,6 +76,21 @@ const PersonalInfo = () => {
           console.log('Setting trainee status based on registration data');
           setIsEmployer(false);
           setUserRole('trainee');
+          
+          // Check all possible fields where interests might be stored
+          const storedInterest = parsedData.interests || // Array format
+                                 parsedData.interest || // Single value format
+                                 parsedData.jobType || // Alternative format from registration
+                                 ''; 
+          
+          console.log('Found stored interest data:', storedInterest);
+          
+          // Set interests in formData, handling both array and string formats
+          setFormData(prev => ({
+            ...prev,
+            interests: Array.isArray(storedInterest) ? storedInterest : 
+                       (storedInterest ? [storedInterest] : [])
+          }));
         }
       }
     } catch (e) {
@@ -153,12 +168,20 @@ const PersonalInfo = () => {
               console.log('Setting trainee flag based on storage data');
               setUserRole('trainee');
               
-              if (parsedData.jobType && !formData.interests) {
-                setFormData(prev => ({
-                  ...prev,
-                  interests: [parsedData.jobType]
-                }));
-              }
+              // Check all possible fields where interests might be stored
+              const storedInterest = parsedData.interests || // Array format
+                                     parsedData.interest || // Single value format
+                                     parsedData.jobType || // Alternative format from registration
+                                     ''; 
+              
+              console.log('Found stored interest data:', storedInterest);
+              
+              // Set interests in formData, handling both array and string formats
+              setFormData(prev => ({
+                ...prev,
+                interests: Array.isArray(storedInterest) ? storedInterest : 
+                           (storedInterest ? [storedInterest] : [])
+              }));
             }
           }
         } catch (storageError) {
@@ -373,9 +396,45 @@ const PersonalInfo = () => {
           const skills = Array.isArray(userData.skills) ? userData.skills : 
                         (userData.skills ? [userData.skills] : []);
                         
-          const interests = Array.isArray(userData.interests) ? userData.interests : 
-                           (userData.interests ? [userData.interests] : []);
-                           
+          // Improved interests extraction with multiple fallbacks
+          let interests = [];
+          // Look in all possible locations for interests data
+          if (Array.isArray(userData.interests)) {
+            interests = userData.interests;
+          } else if (userData.interests) {
+            interests = [userData.interests];
+          } else if (userData.traineeProfile?.interests) {
+            // Look in nested traineeProfile object
+            interests = Array.isArray(userData.traineeProfile.interests) ? 
+              userData.traineeProfile.interests : 
+              [userData.traineeProfile.interests];
+          } else if (userData.interest) {
+            // Check singular form
+            interests = Array.isArray(userData.interest) ? userData.interest : [userData.interest];
+          } else if (userData.preferredInterest) {
+            // Check for preferredInterest field
+            interests = [userData.preferredInterest];
+          }
+
+          // If still no interests, check storage for trainees
+          if (interests.length === 0 && (role === 'trainee' || userData.roleName === 'trainee')) {
+            try {
+              const storedData = localStorage.getItem('registrationData') || sessionStorage.getItem('registrationData');
+              if (storedData) {
+                const parsedData = JSON.parse(storedData);
+                const storedInterest = parsedData.interests || parsedData.interest || parsedData.jobType;
+                if (storedInterest) {
+                  interests = Array.isArray(storedInterest) ? storedInterest : [storedInterest];
+                  console.log('Using interests from storage:', interests);
+                }
+              }
+            } catch (e) {
+              console.error('Error checking storage for interests:', e);
+            }
+          }
+
+          console.log('Extracted interests data:', interests);
+
           const specialization = Array.isArray(userData.specialization) ? userData.specialization : 
                                 (userData.specialization ? [userData.specialization] : []);
           
@@ -972,8 +1031,12 @@ const PersonalInfo = () => {
   const formatArrayForDisplay = (array) => {
     if (!array) return '';
     if (typeof array === 'string') return array;
-    if (Array.isArray(array)) return array.join(', ');
-    return '';
+    if (Array.isArray(array)) {
+      // Filter out empty items and join
+      return array.filter(item => item && item.trim() !== '').join(', ');
+    }
+    // If it's an object or something else, convert to string
+    return String(array);
   };
 
   // Enhanced role detection helpers
@@ -997,6 +1060,36 @@ const PersonalInfo = () => {
     return userRole === 'trainee' || 
            userRole.includes('trainee') || 
            (user && user.roleName === 'trainee');
+  };
+
+  // Add a more robust version for trainee interests
+  const getTraineeInterests = () => {
+    // Get interests from form data
+    const interestsData = formData.interests;
+    
+    // Format if exists
+    if (interestsData && 
+       (Array.isArray(interestsData) && interestsData.length > 0) || 
+       (typeof interestsData === 'string' && interestsData.trim() !== '')) {
+      return formatArrayForDisplay(interestsData);
+    }
+    
+    // Try to get from local storage as fallback
+    try {
+      const storedData = localStorage.getItem('registrationData') || sessionStorage.getItem('registrationData');
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        const storedInterest = parsedData.interests || parsedData.interest || parsedData.jobType || parsedData.preferredInterest;
+        if (storedInterest) {
+          return Array.isArray(storedInterest) ? storedInterest.join(', ') : storedInterest;
+        }
+      }
+    } catch (e) {
+      console.error('Error retrieving interests from storage:', e);
+    }
+    
+    // Final fallback to job type or empty string
+    return formData.jobType || '';
   };
 
   // Function to get the appropriate account type label
@@ -1238,17 +1331,18 @@ const PersonalInfo = () => {
                     <>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
-                          Interests
+                          Training Interests
                         </label>
                         <input
                           type="text"
                           name="interests"
-                          value={formatArrayForDisplay(formData.interests) || ''}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                          placeholder="Enter your interests (comma separated)"
-                          required
+                          value={getTraineeInterests()}
+                          className="mt-1 block w-full rounded-md bg-gray-100 border-gray-300 shadow-sm text-gray-700"
+                          readOnly
                         />
+                        <p className="mt-1 text-xs text-gray-500">
+                          These are the training interests you selected during registration.
+                        </p>
                       </div>
                     </>
                   )}
