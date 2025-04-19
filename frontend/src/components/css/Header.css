@@ -43,8 +43,10 @@
 
 .navigation {
   display: flex;
-  margin-right: 20px;
-  flex-wrap: nowrap;
+  justify-content: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .nav-link {
@@ -313,10 +315,11 @@
   }
 
   .navigation {
+    position: static;
+    transform: none;
     flex-direction: column;
     width: 100%;
-    margin-right: 0;
-    margin-bottom: 20px;
+    margin: 0 0 20px 0;
   }
   
   .nav-link {
