@@ -32,8 +32,7 @@ const PersonalInfo = () => {
     interests: [],
     specialization: [],
     companySize: '',
-    companyName: '',
-    organization: ''
+    companyName: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -150,13 +149,6 @@ const PersonalInfo = () => {
             } else if (parsedData.userType === 'trainer' || parsedData.talentType === 'trainer') {
               console.log('Setting trainer flag based on storage data');
               setUserRole('trainer');
-              
-              if (parsedData.organization && !formData.organization) {
-                setFormData(prev => ({
-                  ...prev,
-                  organization: parsedData.organization
-                }));
-              }
               
               if (parsedData.jobType && !formData.specialization) {
                 setFormData(prev => ({
@@ -679,8 +671,7 @@ const PersonalInfo = () => {
             interests: interests,
             specialization: specialization,
             companySize: userData.companySize || profile.companySize || '',
-            companyName: userData.companyName || profile.companyName || userData.organization || '',
-            organization: userData.organization || profile.organization || ''
+            companyName: userData.companyName || profile.companyName || userData.organization || ''
           });
         } else {
           toast.warning('Could not retrieve your profile data. Some fields may be empty.');
@@ -939,6 +930,11 @@ const PersonalInfo = () => {
       } else {
         // Handle job seeker or other role-specific data
         dataToSend.skills = processArrayField(formData.skills);
+        
+        // Add trainer-specific data if user is a trainer
+        if (isTrainer()) {
+          dataToSend.specialization = processArrayField(formData.specialization);
+        }
         
         // Update storage for job seeker
         try {
@@ -1298,19 +1294,6 @@ const PersonalInfo = () => {
                     <>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
-                          Organization Name
-                        </label>
-                        <input
-                          type="text"
-                          name="organization"
-                          value={formData.organization || ''}
-                          onChange={handleChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
                           Specialization
                         </label>
                         <input
@@ -1378,7 +1361,7 @@ const PersonalInfo = () => {
                   {isTrainer() && (
                     <div className="col-span-3">
                       <p className="text-xs text-gray-500 mt-2">
-                        You are registered as a Trainer. Please make sure to provide your organization name and specialization.
+                        You are registered as a Trainer. Please make sure to provide your specialization.
                       </p>
                     </div>
                   )}
