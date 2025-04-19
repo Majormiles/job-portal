@@ -8,7 +8,6 @@ import {
   ChevronRight,
   ChevronLeft,
   FileText,
-  Clipboard,
   Users,
   Settings,
   LogOut,
@@ -119,15 +118,9 @@ function Sidebar({ isOpen, onClose }) {
       subItems: []
     },
     {
-      icon: Clipboard,
-      text: 'Applications',
-      path: '/admin/manage-applications',
-      subItems: []
-    },
-    {
       icon: Settings,
-      text: 'Settings',
-      path: '/admin/settings',
+      text: 'Admin Profile',
+      path: '/admin/profile',
       subItems: []
     }
   ];

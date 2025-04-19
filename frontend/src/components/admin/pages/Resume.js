@@ -4,6 +4,7 @@ import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, T
 import { Pie, Bar } from 'react-chartjs-2';
 import { toast } from 'react-toastify';
 import adminApi from '../../../utils/adminApi';
+import axios from 'axios';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -511,25 +512,81 @@ const Resume = () => {
         return;
       }
       
-      // Instead of trying to download directly, open in a new tab
-      // This avoids authentication issues with direct downloads
-      window.open(resumeUrl, '_blank');
-      toast.success('Resume opened in new tab');
-      
-      // Alternative fallback: create a direct download link if the URL is valid
-      if (resumeUrl.startsWith('http')) {
+      // Check if it's a Cloudinary URL
+      if (resumeUrl.includes('cloudinary.com')) {
+        // For Cloudinary URLs, we need to use a proper fetch with authentication
+        const token = localStorage.getItem('token');
+        
+        // Use a proxy endpoint to handle authentication if possible
+        try {
+          const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+          const proxyUrl = `${baseUrl}/proxy/download`;
+          
+          toast.info('Preparing resume for download...');
+          
+          const formData = new FormData();
+          formData.append('fileUrl', resumeUrl);
+          
+          const config = {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            },
+            responseType: 'blob'
+          };
+          
+          const response = await axios.post(proxyUrl, formData, config);
+          
+          // Create blob link to download
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `${resumeName.replace(/\s+/g, '_')}_resume.pdf`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          toast.success('Resume downloaded successfully');
+          
+        } catch (err) {
+          console.error('Error downloading through proxy:', err);
+          
+          // Fallback - try direct iframe approach
+          toast.info('Opening resume in a new window');
+          
+          // Create a temporary iframe with authentication
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = resumeUrl;
+          document.body.appendChild(iframe);
+          
+          // Remove the iframe after load attempt
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 5000);
+          
+          // Also try opening in a new tab as fallback
+          window.open(resumeUrl, '_blank');
+        }
+      } else {
+        // For non-Cloudinary URLs, try direct download
         const link = document.createElement('a');
         link.href = resumeUrl;
         link.setAttribute('download', `${resumeName.replace(/\s+/g, '_')}_resume.pdf`);
         link.setAttribute('target', '_blank');
-        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        toast.success('Resume download initiated');
       }
     } catch (error) {
-      console.error('Error opening resume:', error);
-      toast.error('Failed to open resume. Try right-clicking the download button and selecting "Open in new tab"');
+      console.error('Error handling resume:', error);
+      toast.error('Could not download resume. Please try a different method.');
+      
+      // Final fallback - direct user how to download manually
+      toast.info('Try right-clicking on the download button and selecting "Save link as..."');
     }
   };
   
