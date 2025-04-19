@@ -16,7 +16,7 @@ const JobPortal = () => {
   const [scrolled, setScrolled] = useState(false);
   const [heroAnimation, setHeroAnimation] = useState(false);
   const [logoAnimation, setLogoAnimation] = useState(false);
-  
+
   // Add search-related state
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('');
@@ -27,7 +27,7 @@ const JobPortal = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Add stats-related state
   const [stats, setStats] = useState({
     jobs: 0,
@@ -35,7 +35,7 @@ const JobPortal = () => {
     companies: 0
   });
   const [statsLoaded, setStatsLoaded] = useState(false);
-  
+
   // Refs for counter animation
   const jobsCounterRef = useRef(null);
   const candidatesCounterRef = useRef(null);
@@ -61,23 +61,23 @@ const JobPortal = () => {
     }, 100);
 
     window.addEventListener('scroll', handleScroll);
-    
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
-  
+
   // Handle cursor movement for the hero image
   useEffect(() => {
     const heroContainer = heroImageRef.current;
-    
+
     if (!heroContainer) return;
-    
+
     const handleMouseMove = (e) => {
       const { left, top, width, height } = heroContainer.getBoundingClientRect();
       const x = (e.clientX - left) / width - 0.5;
       const y = (e.clientY - top) / height - 0.5;
-      
+
       // Get the image element inside the container
       const heroImage = heroContainer.querySelector('.hero-image');
       if (heroImage) {
@@ -85,7 +85,7 @@ const JobPortal = () => {
         heroImage.style.transform = `perspective(1000px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg) translateZ(20px)`;
       }
     };
-    
+
     const handleMouseLeave = () => {
       const heroImage = heroContainer.querySelector('.hero-image');
       if (heroImage) {
@@ -93,10 +93,10 @@ const JobPortal = () => {
         heroImage.style.transform = '';
       }
     };
-    
+
     heroContainer.addEventListener('mousemove', handleMouseMove);
     heroContainer.addEventListener('mouseleave', handleMouseLeave);
-    
+
     return () => {
       heroContainer.removeEventListener('mousemove', handleMouseMove);
       heroContainer.removeEventListener('mouseleave', handleMouseLeave);
@@ -106,37 +106,37 @@ const JobPortal = () => {
   // Fetch portal statistics data
   useEffect(() => {
     console.log('Starting stats fetch...');
-    
+
     const fetchStats = async () => {
       try {
         console.log('Fetching stats data...');
         const response = await getPortalStats();
         console.log('Stats API response:', response);
-        
+
         if (response.success) {
           console.log('Setting stats data:', response.data);
           // Check if we have real data (not all zeros)
-          const hasRealData = 
-            response.data.jobs > 0 || 
-            response.data.candidates > 0 || 
+          const hasRealData =
+            response.data.jobs > 0 ||
+            response.data.candidates > 0 ||
             response.data.companies > 0;
-          
+
           if (hasRealData) {
             console.log('REAL DATA FOUND IN DATABASE:', response.data);
           } else {
             toast.info('No portal statistics found in database.');
           }
-          
+
           // Log the refs to see if they're properly initialized
           console.log('Refs status:', {
             jobsRef: !!jobsCounterRef.current,
-            candidatesRef: !!candidatesCounterRef.current, 
+            candidatesRef: !!candidatesCounterRef.current,
             companiesRef: !!companiesCounterRef.current
           });
-          
+
           setStats(response.data);
           setStatsLoaded(true);
-          
+
           // Initialize data-count attributes on counter elements after stats are loaded
           if (jobsCounterRef.current) {
             console.log('Setting jobs count:', response.data.jobs);
@@ -145,7 +145,7 @@ const JobPortal = () => {
           } else {
             console.warn('Jobs counter ref is null');
           }
-          
+
           if (candidatesCounterRef.current) {
             console.log('Setting candidates count:', response.data.candidates);
             candidatesCounterRef.current.setAttribute('data-count', response.data.candidates || 0);
@@ -153,7 +153,7 @@ const JobPortal = () => {
           } else {
             console.warn('Candidates counter ref is null');
           }
-          
+
           if (companiesCounterRef.current) {
             console.log('Setting companies count:', response.data.companies);
             companiesCounterRef.current.setAttribute('data-count', response.data.companies || 0);
@@ -164,21 +164,21 @@ const JobPortal = () => {
         } else {
           console.error('Failed to fetch stats data:', response.message);
           toast.error('Failed to load portal statistics');
-          
+
           // Still set the data we got, even if it's zeros
           setStats(response.data);
           setStatsLoaded(true);
-          
+
           if (jobsCounterRef.current) {
             jobsCounterRef.current.setAttribute('data-count', response.data.jobs || 0);
             jobsCounterRef.current.textContent = response.data.jobs || 0;
           }
-          
+
           if (candidatesCounterRef.current) {
             candidatesCounterRef.current.setAttribute('data-count', response.data.candidates || 0);
             candidatesCounterRef.current.textContent = response.data.candidates || 0;
           }
-          
+
           if (companiesCounterRef.current) {
             companiesCounterRef.current.setAttribute('data-count', response.data.companies || 0);
             companiesCounterRef.current.textContent = response.data.companies || 0;
@@ -187,7 +187,7 @@ const JobPortal = () => {
       } catch (error) {
         console.error('Error in stats fetching:', error);
         toast.error('Failed to load portal statistics');
-        
+
         // Set empty stats in case of error
         setStats({
           jobs: 0,
@@ -202,7 +202,7 @@ const JobPortal = () => {
     const timer = setTimeout(() => {
       fetchStats();
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -211,22 +211,22 @@ const JobPortal = () => {
     if (statsLoaded) {
       console.log('Stats loaded, setting up counter animation');
       console.log('REAL DATABASE STATS:', stats);
-      
+
       const animateCounter = (countElement, targetValue) => {
         if (!countElement) {
           console.warn('Counter element is null, cannot animate');
           return;
         }
-        
+
         console.log(`Animating counter for target value: ${targetValue}`);
         const count = parseInt(targetValue) || 0;
-        
+
         // Don't animate if the count is zero (would look weird)
         if (count === 0) {
           countElement.textContent = '0';
           return;
         }
-        
+
         let current = 0;
         const increment = count > 1000 ? Math.ceil(count / 50) : Math.ceil(count / 25);
         const timer = setInterval(() => {
@@ -249,13 +249,13 @@ const JobPortal = () => {
             animateCounter(jobsCounterRef.current, stats.jobs);
             animateCounter(candidatesCounterRef.current, stats.candidates);
             animateCounter(companiesCounterRef.current, stats.companies);
-            
+
             // Stop observing after animation starts
             observer.unobserve(entry.target);
           }
         });
       }, { threshold: 0.25 });
-      
+
       // Find the stats section container and observe it
       const statsSection = document.querySelector('.job-stats');
       if (statsSection) {
@@ -264,7 +264,7 @@ const JobPortal = () => {
       } else {
         console.warn('Stats section not found in DOM');
       }
-      
+
       return () => {
         if (statsSection) {
           observer.unobserve(statsSection);
@@ -283,7 +283,7 @@ const JobPortal = () => {
           getLocationSuggestions(),
           getCategorySuggestions()
         ]);
-        
+
         // Check if we received valid data for locations
         if (Array.isArray(locationsData) && locationsData.length > 0) {
           setLocationOptions(locationsData);
@@ -292,7 +292,7 @@ const JobPortal = () => {
           console.error('Invalid location data received:', locationsData);
           toast.error('Failed to load location options');
         }
-        
+
         // Check if we received valid data for categories
         if (Array.isArray(categoriesData) && categoriesData.length > 0) {
           setCategoryOptions(categoriesData);
@@ -316,7 +316,7 @@ const JobPortal = () => {
   const handleSearchQueryChange = async (e) => {
     const value = e.target.value;
     setQuery(value);
-    
+
     if (value.trim() !== '') {
       try {
         const results = await getSearchSuggestions(value);
@@ -342,9 +342,9 @@ const JobPortal = () => {
       toast.info('Please enter at least one search parameter');
       return;
     }
-    
+
     setIsSearching(true);
-    
+
     try {
       // Construct search parameters - using standardized parameter names
       const searchParams = {
@@ -354,15 +354,15 @@ const JobPortal = () => {
         page: 1,
         limit: 10
       };
-      
+
       // Create URL search parameters with consistent naming
       const urlParams = new URLSearchParams();
       if (query) urlParams.set('query', query);
       if (location) urlParams.set('location', location);
       if (category) urlParams.set('category', category);
-      
+
       // Navigate to jobs page with search params
-      navigate('/jobs', { 
+      navigate('/jobs', {
         state: { searchParams },
         search: urlParams.toString()
       });
@@ -392,21 +392,21 @@ const JobPortal = () => {
     try {
       // Force check onboarding status before redirecting
       await checkOnboardingStatus(true);
-      
+
       // Get the latest onboarding status
       const onboardingStatus = user?.onboardingStatus;
       const isOnboardingComplete = onboardingStatus?.isComplete;
 
       if (isOnboardingComplete) {
         // Determine which dashboard to redirect to based on user role
-        const isEmployer = user?.role === 'employer' || 
-                          (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
-                          user?.userType === 'employer' ||
-                          localStorage.getItem('registrationData') && 
-                          JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
-        
+        const isEmployer = user?.role === 'employer' ||
+          (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+          user?.userType === 'employer' ||
+          localStorage.getItem('registrationData') &&
+          JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
+
         console.log('Header-one redirecting to dashboard for role:', isEmployer ? 'employer' : 'job seeker');
-        
+
         // Navigate to the appropriate dashboard
         if (isEmployer) {
           navigate('/dashboard-employer', { replace: true });
@@ -465,6 +465,7 @@ const JobPortal = () => {
           <div className="auth-buttons desktop-auth">
             {!isAuthenticated ? (
               <>
+                <Link to="/login" className="login-btn" >Login</Link>
                 <Link to="/register" className="register-btn">Register</Link>
               </>
             ) : (
@@ -482,7 +483,7 @@ const JobPortal = () => {
             <span></span>
           </div>
         </div>
-        
+
         {/* Mobile Side Menu */}
         <div className={`mobile-menu ${showMobileMenu ? 'show' : ''}`}>
           <div className="mobile-menu-header">
@@ -498,11 +499,11 @@ const JobPortal = () => {
             </div>
             <div className="close-menu" onClick={toggleMobileMenu}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
               </svg>
             </div>
           </div>
-          
+
           <nav className="main-nav">
             <ul className="nav-links">
               <li><Link to="/" className="nav-link-clean" onClick={toggleMobileMenu}>Home</Link></li>
@@ -529,7 +530,7 @@ const JobPortal = () => {
             )}
           </div>
         </div>
-        
+
         {/* Dark overlay when mobile menu is open */}
         {showMobileMenu && <div className="menu-overlay" onClick={toggleMobileMenu}></div>}
       </header>
@@ -539,7 +540,7 @@ const JobPortal = () => {
         <div className="banner-content">
           <h1 className="banner-title">Connect Job Seekers, Training centers, Companies</h1>
           <p className="banner-description">
-            Find the perfect job or hire the best talent with our comprehensive job portal. 
+            Find the perfect job or hire the best talent with our comprehensive job portal.
             Connecting employers, candidates, and training centers in one seamless platform.
           </p>
         </div>

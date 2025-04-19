@@ -84,7 +84,7 @@ const Header = () => {
           <div className="auth-buttons">
             {!isAuthenticated ? (
               <>
-                {/* <Link to="/login" className="login-btn" onClick={closeMobileMenu}>Login</Link> */}
+               <Link to="/login" className="login-btn" onClick={closeMobileMenu}>Login</Link>
                 <Link to="/register" className="register-btn" onClick={closeMobileMenu}>Register</Link>
               </>
             ) : (

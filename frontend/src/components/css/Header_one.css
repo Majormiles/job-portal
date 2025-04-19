@@ -279,13 +279,17 @@ body {
 
 .login-btn,
 .register-btn {
-  padding: 8px 16px;
+  padding: 5px 7px;
   border-radius: 4px;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s;
 }
-
+.register-btn {
+  background-color: #ffffff;
+  color: #4b59f7;
+  border: none;
+}
 @media (max-width: 992px){
   .login-btn,
   .register-btn {display: none;}
@@ -302,7 +306,6 @@ body {
 }
 
 .register-btn {
-  color: white;
   position: relative;
   z-index: 1;
   overflow: hidden;
