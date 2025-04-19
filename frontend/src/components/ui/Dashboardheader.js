@@ -11,15 +11,15 @@ const Header = () => {
   const [searchValue, setSearchValue] = useState('');
   const [dashboardPath, setDashboardPath] = useState('/dashboard-jobseeker');
   const { user } = useAuth();
-  
+
   // Determine appropriate dashboard path based on user role
   useEffect(() => {
-    const isEmployer = user?.role === 'employer' || 
-                      (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
-                      user?.userType === 'employer' ||
-                      localStorage.getItem('registrationData') && 
-                      JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
-    
+    const isEmployer = user?.role === 'employer' ||
+      (typeof user?.role === 'object' && user?.role?.name === 'employer') ||
+      user?.userType === 'employer' ||
+      localStorage.getItem('registrationData') &&
+      JSON.parse(localStorage.getItem('registrationData'))?.userType === 'employer';
+
     setDashboardPath(isEmployer ? '/dashboard-employer' : '/dashboard-jobseeker');
   }, [user]);
 
@@ -52,31 +52,6 @@ const Header = () => {
     <header className={`header fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-gradient-to-r '}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2">
-              <div className={`w-10 h-10 rounded-md flex items-center justify-center ${
-                isScrolled ? 'bg-blue-600' : 'bg-white'
-              }`}>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className={`w-6 h-6 ${isScrolled ? 'text-white' : 'text-blue-600'}`} 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" 
-                  />
-                </svg>
-              </div>
-              <span className={`font-semibold text-xl ${isScrolled ? 'text-gray-800' : 'text-white'}`}>
-                Job Portal
-              </span>
-            </Link>
-          </div>
 
           <nav className="hidden md:flex items-center justify-between flex-1 ml-10">
             {/* Search Bar */}
@@ -87,8 +62,8 @@ const Header = () => {
                 onChange={handleSearchChange}
                 placeholder="Search..."
                 className={`w-64 pl-10 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${isScrolled
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'bg-white/20 text-white placeholder-white/80 backdrop-blur-sm'
+                  ? 'bg-gray-100 text-gray-800'
+                  : 'bg-white/20 text-white placeholder-white/80 backdrop-blur-sm'
                   }`}
               />
               <Search
@@ -101,19 +76,19 @@ const Header = () => {
             <div className="flex items-center space-x-6">
               <NavLink
                 to={dashboardPath}
-                className={({isActive}) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
+                className={({ isActive }) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
               >
                 Home
               </NavLink>
               <NavLink
                 to="/features"
-                className={({isActive}) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
+                className={({ isActive }) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
               >
                 Features
               </NavLink>
               <NavLink
                 to="/about"
-                className={({isActive}) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
+                className={({ isActive }) => `font-medium hover:opacity-80 transition-opacity ${isScrolled ? 'text-gray-700' : 'text-white'} ${isActive ? 'opacity-100' : 'opacity-80'}`}
               >
                 About
               </NavLink>
@@ -169,29 +144,29 @@ const Header = () => {
             <div className="flex flex-col space-y-3 pt-2">
               <NavLink
                 to={dashboardPath}
-                className={({isActive}) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
+                className={({ isActive }) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
               >
                 Home
               </NavLink>
               <NavLink
                 to="/features"
-                className={({isActive}) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
+                className={({ isActive }) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
               >
                 Features
               </NavLink>
               <NavLink
                 to="/about"
-                className={({isActive}) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
+                className={({ isActive }) => `font-medium px-3 py-2 rounded-md ${isActive ? 'bg-gray-100' : ''}`}
               >
                 About
               </NavLink>
-              
+
               {/* Add NotificationBell to mobile menu */}
               <div className="flex items-center px-3 py-2">
                 <span className="mr-2">Notifications</span>
                 <NotificationBell />
               </div>
-              
+
               <Link to="/"
                 className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-2 rounded-md font-medium"
               >
