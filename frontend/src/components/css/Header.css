@@ -38,11 +38,13 @@
 .nav-container {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
 .navigation {
   display: flex;
-  margin-right: 290px;
+  margin-right: 20px;
+  flex-wrap: nowrap;
 }
 
 .nav-link {
@@ -83,6 +85,8 @@
 .user-profile {
   position: relative;
   z-index: 1001;
+  display: flex;
+  align-items: center;
 }
 .user-profile button {
   background: linear-gradient(to right, hsl(279, 62%, 54%), hsl(290, 64%, 68%), hsl(264, 68%, 48%));
@@ -145,6 +149,10 @@
   cursor: pointer;
   background: rgba(255, 255, 255, 0.1);
   transition: background-color 0.2s ease;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-btn:hover {
@@ -164,6 +172,10 @@
   font-size: 14px;
   color: #ffffff;
   font-weight: 500;
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chevron-icon {
@@ -262,12 +274,18 @@
 }
 
 @media (max-width: 768px) {
+  .header-container {
+    padding: 0 15px;
+  }
+  
   .user-profile {
-    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
   }
   
   .mobile-user-menu {
-    display: block;
+    width: 100%;
   }
 }
 
@@ -276,25 +294,29 @@
   .nav-container {
     position: fixed;
     top: 0;
-    right: -300px;
+    right: -100%;
+    width: 80%;
+    max-width: 300px;
     height: 100vh;
-    width: 250px;
-    background-image: url('/src/assets/images/navbar_image.png');
     flex-direction: column;
     justify-content: flex-start;
-    padding: 80px 20px 20px;
+    align-items: flex-start;
+    background-color: #1c3fa9;
     transition: right 0.3s ease;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    padding: 100px 20px 20px;
+    z-index: 999;
+    overflow-y: auto;
   }
   
   .nav-container.nav-open {
     right: 0;
   }
-  
+
   .navigation {
     flex-direction: column;
-    margin-right: 0;
     width: 100%;
+    margin-right: 0;
+    margin-bottom: 20px;
   }
   
   .nav-link {
@@ -325,23 +347,16 @@
     margin-right: 0;
   }
   
-  /* Mobile dropdown styles */
   .user-profile {
     width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
   }
   
   .profile-btn {
     width: 100%;
-    justify-content: space-between;
-    padding: 10px;
-  }
-  
-  .dropdown-menu {
-    position: relative;
-    width: 100%;
-    top: 5px;
-    box-shadow: none;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    justify-content: center;
+    max-width: 100%;
   }
   
   .mobile-menu-toggle {
@@ -355,7 +370,7 @@
 
 @media (max-width: 480px) {
   .logo-text {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
   }
   
   .hero-title {
@@ -368,7 +383,13 @@
   }
   
   .username {
-    font-size: 0.9rem;
+    font-size: 12px;
+    max-width: 80px;
+  }
+  
+  .nav-link {
+    margin: 8px 0;
+    font-size: 16px;
   }
 }
 

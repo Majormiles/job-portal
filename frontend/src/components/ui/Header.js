@@ -89,9 +89,8 @@ const Header = () => {
               </>
             ) : (
               <div className="user-profile">
-                <NotificationBell />
-                <button className="profile-btn" onClick={handleDashboardClick}>
-                  Dashboard
+                <button className="profile-btn" onClick={handleDashboardClick} title={user?.name || "Dashboard"}>
+                  <span className="username">{user?.name || "Dashboard"}</span>
                 </button>
               </div>
             )}
