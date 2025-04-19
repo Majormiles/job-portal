@@ -16,6 +16,7 @@ const RegisterPage = () => {
     customLocation: '',
     jobType: '',
     jobTypeId: '',
+    customInterest: '',
     file: null,
     companySize: ''
   });
@@ -24,6 +25,7 @@ const RegisterPage = () => {
   const [talentType, setTalentType] = useState(null);
   const [showTalentOptions, setShowTalentOptions] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showCustomInterest, setShowCustomInterest] = useState(false);
 
   // State for location data
   const [locations, setLocations] = useState([]);
@@ -34,6 +36,9 @@ const RegisterPage = () => {
   // State for job types data
   const [jobTypes, setJobTypes] = useState([]);
   const [loadingJobTypes, setLoadingJobTypes] = useState(false);
+  // State for interests data (for trainees)
+  const [interests, setInterests] = useState([]);
+  const [loadingInterests, setLoadingInterests] = useState(false);
   // State for company types
   const [companyTypes, setCompanyTypes] = useState([]);
   const [loadingCompanyTypes, setLoadingCompanyTypes] = useState(false);
@@ -79,6 +84,31 @@ const RegisterPage = () => {
       { id: 'seasonal', name: 'Seasonal' },
       { id: 'freelance', name: 'Freelance' },
       { id: 'volunteer', name: 'Volunteer' }
+    ];
+
+    // Default interests for trainees if API fails
+    const defaultInterests = [
+      { id: 'web-development', name: 'Web Development' },
+      { id: 'mobile-app-development', name: 'Mobile App Development' },
+      { id: 'graphic-design', name: 'Graphic Design' },
+      { id: 'ui-ux-design', name: 'UI/UX Design' },
+      { id: 'digital-marketing', name: 'Digital Marketing' },
+      { id: 'data-analysis', name: 'Data Analysis' },
+      { id: 'business-admin', name: 'Business Administration' },
+      { id: 'accounting', name: 'Accounting & Finance' },
+      { id: 'language', name: 'Language & Communication' },
+      { id: 'healthcare', name: 'Healthcare & Wellness' },
+      { id: 'culinary', name: 'Culinary Arts' },
+      { id: 'fashion', name: 'Fashion & Beauty' },
+      { id: 'photography', name: 'Photography & Videography' },
+      { id: 'music-production', name: 'Music Production' },
+      { id: 'electrical', name: 'Electrical Engineering' },
+      { id: 'mechanical', name: 'Mechanical Engineering' },
+      { id: 'carpentry', name: 'Carpentry & Woodworking' },
+      { id: 'plumbing', name: 'Plumbing' },
+      { id: 'welding', name: 'Welding & Metalwork' },
+      { id: 'agriculture', name: 'Agriculture & Farming' },
+      { id: 'other', name: 'Other' }
     ];
 
     // Default company types if API fails
@@ -155,6 +185,55 @@ const RegisterPage = () => {
         setJobTypes(defaultJobTypes);
       } finally {
         setLoadingJobTypes(false);
+      }
+    };
+
+    // Fetch interests for trainees
+    const fetchInterests = async () => {
+      setLoadingInterests(true);
+      try {
+        // Try to fetch interests from a dedicated training interests endpoint
+        try {
+          // First try a dedicated interests endpoint
+          const response = await axios.get(`${API_URL}/training/interests`);
+          if (response.data.success && response.data.data.length > 0) {
+            // Make sure "Other" option is included
+            const interestsData = response.data.data;
+            if (!interestsData.some(item => item.name === 'Other' || item.id === 'other')) {
+              interestsData.push({ id: 'other', name: 'Other' });
+            }
+            setInterests(interestsData);
+            return;
+          }
+        } catch (interestsError) {
+          console.log('Dedicated training interests endpoint not available:', interestsError.message);
+        }
+
+        // Try a secondary interests endpoint
+        try {
+          const response = await axios.get(`${API_URL}/categories/interests`);
+          if (response.data.success && response.data.data.length > 0) {
+            // Make sure "Other" option is included
+            const interestsData = response.data.data;
+            if (!interestsData.some(item => item.name === 'Other' || item.id === 'other')) {
+              interestsData.push({ id: 'other', name: 'Other' });
+            }
+            setInterests(interestsData);
+            return;
+          }
+        } catch (secondaryInterestsError) {
+          console.log('Secondary interests endpoint not available:', secondaryInterestsError.message);
+        }
+
+        // Instead of using categories as a fallback, use our comprehensive default interests list
+        console.log('Using predefined training interests as no API endpoint was available');
+        setInterests(defaultInterests);
+      } catch (error) {
+        console.error('Error fetching interests:', error);
+        // Use default interests in case of error
+        setInterests(defaultInterests);
+      } finally {
+        setLoadingInterests(false);
       }
     };
 
@@ -249,6 +328,7 @@ const RegisterPage = () => {
     fetchJobTypes();
     fetchCompanyTypes();
     fetchRoles();
+    fetchInterests();
   }, []);
 
   const handleChange = (e) => {
@@ -272,8 +352,8 @@ const RegisterPage = () => {
             [name]: value
           });
         }
-      } else if ((userType === 'jobSeeker' || userType === 'talent') && jobTypes.length > 0) {
-        // For job seekers and talent, we use job types
+      } else if (userType === 'jobSeeker' && jobTypes.length > 0) {
+        // For job seekers, we use job types
         const selectedJobType = jobTypes.find(type => type.name === value);
         if (selectedJobType) {
           console.log('Selected job type:', selectedJobType);
@@ -288,12 +368,47 @@ const RegisterPage = () => {
             [name]: value
           });
         }
+      } else if (userType === 'talent' && talentType === 'trainee' && interests.length > 0) {
+        // For trainees, we use interests
+        if (value === 'Other') {
+          // Show custom interest field
+          setShowCustomInterest(true);
+          setFormData({
+            ...formData,
+            jobType: value,
+            jobTypeId: 'other'
+          });
+        } else {
+          // Use selected interest
+          setShowCustomInterest(false);
+          const selectedInterest = interests.find(interest => interest.name === value);
+          if (selectedInterest) {
+            console.log('Selected interest:', selectedInterest);
+            setFormData({
+              ...formData,
+              jobType: value,
+              jobTypeId: selectedInterest.id,
+              customInterest: '' // Clear custom interest when a predefined option is selected
+            });
+          } else {
+            setFormData({
+              ...formData,
+              [name]: value
+            });
+          }
+        }
       } else {
         setFormData({
           ...formData,
           [name]: value
         });
       }
+    } else if (name === 'customInterest') {
+      // Handle custom interest field
+      setFormData({
+        ...formData,
+        customInterest: value
+      });
     } else {
       setFormData({
         ...formData,
@@ -360,7 +475,20 @@ const RegisterPage = () => {
     }
 
     if (!formData.jobType.trim()) {
-      toast.error('Please enter your job type');
+      if (userType === 'talent' && talentType === 'trainee') {
+        toast.error('Please select your training interest');
+      } else if (userType === 'employer') {
+        toast.error('Please select your company type');
+      } else {
+        toast.error('Please select your job type');
+      }
+      return false;
+    }
+
+    // Validate custom interest if "Other" is selected for trainee
+    if (userType === 'talent' && talentType === 'trainee' && 
+        formData.jobType === 'Other' && !formData.customInterest.trim()) {
+      toast.error('Please enter your custom training interest');
       return false;
     }
 
@@ -454,10 +582,18 @@ const RegisterPage = () => {
           registrationData.preferredJobType = formData.jobType;
           registrationData.jobTypeId = formData.jobTypeId;
         } else {
-          registrationData.interests = [formData.jobType];
-          // Add preferred job type
-          registrationData.preferredJobType = formData.jobType;
-          registrationData.jobTypeId = formData.jobTypeId;
+          // For trainees, store the interest properly
+          const interestValue = formData.jobType === 'Other' ? formData.customInterest : formData.jobType;
+          
+          registrationData.interests = [interestValue];
+          registrationData.preferredInterest = interestValue;
+          registrationData.interestId = formData.jobTypeId;
+          
+          // Add custom interest flag if applicable
+          if (formData.jobType === 'Other') {
+            registrationData.hasCustomInterest = true;
+            registrationData.customInterest = formData.customInterest;
+          }
         }
       }
       
@@ -496,6 +632,14 @@ const RegisterPage = () => {
                 preferredJobType: formData.jobType,
                 isJobTypeCategory: userType === 'employer', // Flag to indicate if the job type is a category (employer) or actual job type
               };
+              
+              // Add trainee-specific data if applicable
+              if (userType === 'talent' && talentType === 'trainee') {
+                storageData.interest = formData.jobType === 'Other' ? formData.customInterest : formData.jobType;
+                storageData.interestId = formData.jobTypeId;
+                storageData.hasCustomInterest = formData.jobType === 'Other';
+                storageData.customInterest = formData.customInterest;
+              }
               
               // Add employer-specific data if applicable
               if (userType === 'employer') {
@@ -1127,6 +1271,71 @@ const RegisterPage = () => {
                       className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
+                  ) : userType === 'talent' && talentType === 'trainee' ? (
+                    <div>
+                      <div className="relative">
+                        <select
+                          name="jobType"
+                          value={formData.jobType}
+                          onChange={handleChange}
+                          className="w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                        >
+                          <option value="">
+                            {loadingInterests ? 'Loading interests...' : 'Select Your Training Interest'}
+                          </option>
+                          {interests.length > 0 ? (
+                            interests.map(interest => (
+                              <option key={interest.id} value={interest.name} data-id={interest.id}>
+                                {interest.name}
+                              </option>
+                            ))
+                          ) : (
+                            <>
+                              <option value="Web Development">Web Development</option>
+                              <option value="Mobile App Development">Mobile App Development</option>
+                              <option value="Graphic Design">Graphic Design</option>
+                              <option value="UI/UX Design">UI/UX Design</option>
+                              <option value="Digital Marketing">Digital Marketing</option>
+                              <option value="Data Analysis">Data Analysis</option>
+                              <option value="Business Administration">Business Administration</option>
+                              <option value="Accounting & Finance">Accounting & Finance</option>
+                              <option value="Language & Communication">Language & Communication</option>
+                              <option value="Healthcare & Wellness">Healthcare & Wellness</option>
+                              <option value="Culinary Arts">Culinary Arts</option>
+                              <option value="Fashion & Beauty">Fashion & Beauty</option>
+                              <option value="Photography & Videography">Photography & Videography</option>
+                              <option value="Music Production">Music Production</option>
+                              <option value="Electrical Engineering">Electrical Engineering</option>
+                              <option value="Carpentry & Woodworking">Carpentry & Woodworking</option>
+                              <option value="Plumbing">Plumbing</option>
+                              <option value="Agriculture & Farming">Agriculture & Farming</option>
+                              <option value="Other">Other</option>
+                            </>
+                          )}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {/* Custom Interest field - Only shown when "Other" is selected */}
+                      {showCustomInterest && (
+                        <div className="mt-3">
+                          <input
+                            type="text"
+                            name="customInterest"
+                            placeholder="Enter your interest"
+                            value={formData.customInterest}
+                            onChange={handleChange}
+                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                          />
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="relative">
                       <select
