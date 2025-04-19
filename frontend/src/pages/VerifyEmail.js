@@ -317,13 +317,6 @@ const VerifyEmail = () => {
               >
                 Return to Login
               </button>
-              
-              <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-left">
-                <p className="font-semibold mb-1">Debug Information:</p>
-                <p>Token: {token ? `${token.substring(0, 15)}...` : 'None'}</p>
-                <p>Email: {searchParams.get('email') || 'None'}</p>
-                <p>API URL: {API_URL}</p>
-              </div>
             </div>
           </div>
         </div>

@@ -1029,7 +1029,7 @@ const PersonalInfo = () => {
     if (typeof array === 'string') return array;
     if (Array.isArray(array)) {
       // Filter out empty items and join
-      return array.filter(item => item && item.trim() !== '').join(', ');
+      return array.filter(item => item && (typeof item === 'string' ? item.trim() !== '' : true)).join(', ');
     }
     // If it's an object or something else, convert to string
     return String(array);
