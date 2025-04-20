@@ -6,9 +6,14 @@ import {
   DollarSign,
   Eye,
   Edit,
-  Trash2 
+  Trash2,
+  ArrowRight, 
+  CreditCard,
+  PieChart, 
+  TrendingUp
 } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
+import { Link } from 'react-router-dom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -104,6 +109,42 @@ const Dashboard = () => {
     }
   ];
 
+  // Payment categories summary data
+  const paymentCategorySummary = [
+    {
+      name: 'Job Seekers',
+      count: 124,
+      revenue: 6200,
+      icon: Users,
+      color: 'blue',
+      growth: '+12%'
+    },
+    {
+      name: 'Employers',
+      count: 57,
+      revenue: 5700,
+      icon: Briefcase,
+      color: 'green',
+      growth: '+8%'
+    },
+    {
+      name: 'Trainers',
+      count: 18,
+      revenue: 1800,
+      icon: FileText,
+      color: 'amber',
+      growth: '+5%'
+    },
+    {
+      name: 'Trainees',
+      count: 89,
+      revenue: 4450,
+      icon: CreditCard,
+      color: 'indigo',
+      growth: '+15%'
+    }
+  ];
+
   return (
     <div className="section-body">
       <div className="page-header mb-6">
@@ -153,8 +194,54 @@ const Dashboard = () => {
           </div>
           <div>
             <p className="text-gray-500 text-sm">Total Revenue</p>
-            <h2 className="text-2xl font-bold">$12,345</h2>
+            <h2 className="text-2xl font-bold">₵18,150</h2>
           </div>
+        </div>
+      </div>
+
+      {/* Payment Summary Section */}
+      <div className="bg-white shadow-md rounded-lg mb-6">
+        <div className="p-4 border-b flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Payment Portal Summary</h3>
+          <Link to="/admin/payments" className="text-blue-500 hover:text-blue-700 flex items-center text-sm font-medium">
+            View Payment Portal <ArrowRight className="ml-1" size={16} />
+          </Link>
+        </div>
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {paymentCategorySummary.map((category, index) => {
+            const Icon = category.icon;
+            return (
+              <div key={index} className="flex flex-col">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-gray-500 text-sm">{category.name}</p>
+                    <h3 className="text-xl font-bold text-gray-800">₵{category.revenue.toLocaleString()}</h3>
+                  </div>
+                  <div className={`bg-${category.color}-100 p-2 rounded-lg`}>
+                    <Icon className={`h-5 w-5 text-${category.color}-600`} />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-xs text-gray-500">{category.count} users</span>
+                  <span className="text-xs text-green-600">{category.growth}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="p-4 border-t flex justify-between">
+          <div className="flex items-center gap-4">
+            <Link to="/admin/payments/transactions" className="text-sm text-gray-600 hover:text-blue-600 flex items-center">
+              <CreditCard className="h-4 w-4 mr-1" /> Transactions
+            </Link>
+            <Link to="/admin/payments/analytics" className="text-sm text-gray-600 hover:text-blue-600 flex items-center">
+              <TrendingUp className="h-4 w-4 mr-1" /> Analytics
+            </Link>
+            <Link to="/admin/payments/reports" className="text-sm text-gray-600 hover:text-blue-600 flex items-center">
+              <PieChart className="h-4 w-4 mr-1" /> Reports
+            </Link>
+          </div>
+          <div className="text-sm text-gray-600">Total Revenue: <span className="font-semibold">₵18,150</span></div>
         </div>
       </div>
 
@@ -174,11 +261,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Payments (1/3 width) */}
+        {/* Recent Payments */}
         <div className="bg-white lg:col-span-2 shadow-md rounded-lg">
           <div className="p-4 border-b flex justify-between items-center">
             <h3 className="text-lg font-semibold">Recent Payments</h3>
-            <a href="#" className="text-sm text-blue-500 hover:underline">View All</a>
+            <Link to="/admin/payments/transactions" className="text-sm text-blue-500 hover:underline">View All</Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -196,7 +283,7 @@ const Dashboard = () => {
                   <tr key={payment.id} className="border-b hover:bg-gray-50">
                     <td className="p-3 text-sm">{payment.id}</td>
                     <td className="p-3 text-sm">{payment.name}</td>
-                    <td className="p-3 text-sm">${payment.amount}</td>
+                    <td className="p-3 text-sm">₵{payment.amount}</td>
                     <td className="p-3">
                       <span className={`
                         px-2 py-1 rounded-full text-xs font-medium
@@ -210,7 +297,9 @@ const Dashboard = () => {
                     </td>
                     <td className="p-3">
                       <div className="flex space-x-2">
-                        <Eye className="text-gray-500 hover:text-blue-500 cursor-pointer" size={16} />
+                        <Link to={`/admin/payments/transactions?id=${payment.id}`}>
+                          <Eye className="text-gray-500 hover:text-blue-500 cursor-pointer" size={16} />
+                        </Link>
                         <Edit className="text-gray-500 hover:text-green-500 cursor-pointer" size={16} />
                         <Trash2 className="text-gray-500 hover:text-red-500 cursor-pointer" size={16} />
                       </div>

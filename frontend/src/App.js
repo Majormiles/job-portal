@@ -59,6 +59,14 @@ import AdminJobSeekers from './components/admin/pages/JobSeekers';
 import AdminManageApplications from './components/admin/pages/ManageApplications';
 import AdminJobApplicants from './components/admin/pages/JobApplicants';
 
+// Import payment components
+import { 
+  PaymentDashboard,
+  TransactionsPage,
+  AnalyticsPage,
+  ReportsPage
+} from './components/admin/pages/payments';
+
 import './App.css';
 
 // Error Boundary Component
@@ -465,6 +473,12 @@ const AppContent = () => {
           <Route path="job-seekers" element={<AdminJobSeekers />} />
           <Route path="manage-applications" element={<AdminManageApplications />} />
           <Route path="job-applicants" element={<AdminJobApplicants />} />
+          
+          {/* Payment Portal Routes */}
+          <Route path="payments" element={<PaymentDashboard />} />
+          <Route path="payments/transactions" element={<TransactionsPage />} />
+          <Route path="payments/analytics" element={<AnalyticsPage />} />
+          <Route path="payments/reports" element={<ReportsPage />} />
         </Route>
 
         {/* Catch all route */}

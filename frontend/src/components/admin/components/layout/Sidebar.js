@@ -18,7 +18,10 @@ import {
   Grid,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  DollarSign,
+  CreditCard,
+  PieChart
 } from 'lucide-react';
 import '../../css/scrollbar.css';
 
@@ -43,6 +46,9 @@ function Sidebar({ isOpen, onClose }) {
     }
     if (path.includes('/admin/jobs') || path.includes('/admin/profile') || path.includes('/admin/invoice')) {
       newOpenMenus.manageJobs = true;
+    }
+    if (path.includes('/admin/payments')) {
+      newOpenMenus.managePayments = true;
     }
     
     setOpenMenus(newOpenMenus);
@@ -97,6 +103,19 @@ function Sidebar({ isOpen, onClose }) {
       subItems: [
         { text: 'All Categories', path: '/admin/categories' },
         { text: 'Create Category', path: '/admin/categories/create' }
+      ]
+    },
+    {
+      icon: DollarSign,
+      text: 'Payment Portal',
+      path: '/admin/payments',
+      menuKey: 'managePayments',
+      isNew: true,
+      subItems: [
+        { text: 'Overview', path: '/admin/payments' },
+        { text: 'Transactions', path: '/admin/payments/transactions' },
+        { text: 'Analytics', path: '/admin/payments/analytics' },
+        { text: 'Reports', path: '/admin/payments/reports' }
       ]
     },
     {
