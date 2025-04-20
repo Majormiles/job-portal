@@ -228,7 +228,45 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  // Add the payment fields
+  payment: {
+    isPaid: {
+      type: Boolean,
+      default: false
+    },
+    reference: {
+      type: String
+    },
+    amount: {
+      type: Number
+    },
+    currency: {
+      type: String,
+      default: 'GHS'
+    },
+    date: {
+      type: Date
+    },
+    gateway: {
+      type: String,
+      default: 'paystack'
+    },
+    metadata: {
+      type: Object
+    }
+  },
+  paymentHistory: [{
+    reference: String,
+    amount: Number,
+    status: String,
+    date: Date,
+    gateway: {
+      type: String,
+      default: 'paystack'
+    },
+    metadata: Object
+  }]
 }, {
   timestamps: true
 });

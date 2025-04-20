@@ -421,6 +421,38 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+    // Optional: Update local storage if needed
+  };
+
+  const checkPaymentStatus = async (userEmail) => {
+    try {
+      const email = userEmail || user?.email;
+      
+      if (!email) {
+        throw new Error('No user email found');
+      }
+
+      const response = await api.get(`/payment/status/${email}`);
+      
+      if (response.data.success) {
+        // Update user payment status in context
+        setUser(prev => ({
+          ...prev,
+          payment: response.data.data
+        }));
+        
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message || 'Failed to check payment status');
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -428,13 +460,15 @@ export const AuthProvider = ({ children }) => {
         loading,
         isAuthenticated,
         token,
+        onboardingStatus,
         login,
         register,
         logout,
         checkOnboardingStatus,
         updateOnboardingStatus,
         updateUserSettings,
-        setUser,
+        updateUser,
+        checkPaymentStatus,
         api
       }}
     >
