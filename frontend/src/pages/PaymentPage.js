@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const PaymentPage = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, updateUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -40,14 +40,21 @@ const PaymentPage = () => {
       if (response.data.success) {
         setPaymentStatus(response.data.data);
         
-        // If payment is complete, redirect to onboarding
+        // If payment is complete, update user context and redirect to onboarding
         if (response.data.data.isPaid) {
-          toast.success('Payment already completed!');
+          // Update user payment status in context
+          updateUser({
+            ...user,
+            payment: response.data.data
+          });
+          
+          toast.success('Payment verification complete!');
           navigate('/onboarding/personal-info');
         }
       }
     } catch (error) {
       console.error('Error checking payment status:', error);
+      toast.error('Failed to verify payment status');
     } finally {
       setPageLoading(false);
     }

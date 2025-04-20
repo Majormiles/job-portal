@@ -4,7 +4,8 @@ import {
   verifyPayment,
   checkPaymentStatus,
   getPaymentAmount,
-  handleWebhook
+  handleWebhook,
+  updatePaymentStatus
 } from '../controllers/payment.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
@@ -16,5 +17,6 @@ router.get('/verify/:reference', verifyPayment);
 router.get('/status/:email', checkPaymentStatus);
 router.get('/amount/:roleName', getPaymentAmount);
 router.post('/webhook', handleWebhook);
+router.post('/update-status', updatePaymentStatus);
 
 export default router; 

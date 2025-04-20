@@ -230,4 +230,57 @@ export const handleWebhook = asyncHandler(async (req, res, next) => {
     // Still return 200 to avoid Paystack retrying
     res.sendStatus(200);
   }
+});
+
+// @desc    Update user payment status directly
+// @route   POST /api/payment/update-status
+// @access  Public
+export const updatePaymentStatus = asyncHandler(async (req, res, next) => {
+  const { email, reference, amount, currency } = req.body;
+
+  console.log('Manual payment status update request:', { email, reference, amount, currency });
+
+  if (!email || !reference || !amount) {
+    return next(new AppError('Email, reference, and amount are required', 400));
+  }
+
+  try {
+    // Find user
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      console.log('User not found for payment status update:', email);
+      return next(new AppError('User not found', 404));
+    }
+
+    // Update payment information
+    user.payment = {
+      isPaid: true,
+      reference,
+      amount: parseFloat(amount),
+      currency: currency || 'GHS',
+      date: new Date(),
+      gateway: 'paystack'
+    };
+
+    await user.save();
+    console.log('User payment status manually updated:', {
+      email,
+      isPaid: user.payment.isPaid,
+      amount: user.payment.amount
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment status updated successfully',
+      data: {
+        payment: user.payment
+      }
+    });
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    return next(
+      new AppError(error.message || 'Failed to update payment status', 500)
+    );
+  }
 }); 

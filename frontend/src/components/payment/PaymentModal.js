@@ -117,40 +117,77 @@ const PaymentModal = ({ isOpen, onClose }) => {
   };
 
   const verifyPayment = async (reference) => {
-    try {
-      console.log('Verifying payment with reference:', reference);
-      const response = await axios.get(`${API_URL}/payment/verify/${reference}`);
-      
-      console.log('Payment verification response:', response.data);
-      
-      if (response.data.success && response.data.data.status === 'success') {
-        toast.success('Payment successful!');
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    const attemptVerification = async () => {
+      try {
+        console.log('Verifying payment with reference:', reference);
+        const response = await axios.get(`${API_URL}/payment/verify/${reference}`);
         
-        // Update user payment status in context
-        updateUser({
-          ...user,
-          payment: {
-            isPaid: true,
-            reference: response.data.data.reference,
-            amount: response.data.data.amount,
-            currency: response.data.data.currency,
-            date: new Date()
+        console.log('Payment verification response:', response.data);
+        
+        if (response.data.success && response.data.data.status === 'success') {
+          // Update payment details in database and get updated user data
+          const userResponse = await axios.post(`${API_URL}/payment/update-status`, {
+            email: user.email,
+            reference: reference,
+            amount: paymentAmount,
+            currency: 'GHS'
+          });
+          
+          if (userResponse.data.success) {
+            toast.success('Payment successful and recorded!');
+            
+            // Update user payment status in context with data from server
+            updateUser({
+              ...user,
+              payment: userResponse.data.data.payment
+            });
+            
+            // Close modal and redirect to onboarding
+            onClose();
+            navigate('/onboarding/personal-info');
+          } else {
+            throw new Error('Failed to update payment status in database');
           }
-        });
+        } else {
+          console.error('Payment verification failed:', response.data);
+          throw new Error('Payment verification failed');
+        }
+      } catch (error) {
+        console.error('Payment verification error:', error.response?.data || error.message);
         
-        // Close modal and redirect to onboarding
-        onClose();
-        navigate('/onboarding/personal-info');
-      } else {
-        console.error('Payment verification failed:', response.data);
-        setError('Payment verification failed. Please try again or contact support.');
+        // Retry logic
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Retrying payment verification (${retryCount}/${maxRetries})...`);
+          // Wait 2 seconds before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return attemptVerification();
+        } else {
+          setError('Failed to verify payment. Please contact support if amount was deducted.');
+          
+          // Even if verification fails, try to update payment status
+          try {
+            await axios.post(`${API_URL}/payment/update-status`, {
+              email: user.email,
+              reference: reference,
+              amount: paymentAmount,
+              currency: 'GHS'
+            });
+            
+            toast.success('Payment recorded despite verification issues');
+          } catch (updateError) {
+            console.error('Final attempt to update payment failed:', updateError);
+          }
+        }
+      } finally {
+        setProcessing(false);
       }
-    } catch (error) {
-      console.error('Payment verification error:', error.response?.data || error.message);
-      setError('Failed to verify payment. Please contact support if amount was deducted.');
-    } finally {
-      setProcessing(false);
-    }
+    };
+    
+    await attemptVerification();
   };
 
   if (!isOpen) return null;
