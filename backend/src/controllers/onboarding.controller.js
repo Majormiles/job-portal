@@ -4,28 +4,13 @@ import asyncHandler from '../utils/asyncHandler.js';
 import AppError from '../utils/appError.js';
 import debug from '../utils/debug.js';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import cloudinary from '../config/cloudinary.js';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import localFileStorage from '../utils/localFileStorage.js';
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Configure Cloudinary
-const cloudinaryConfig = {
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-};
-
-console.log('=== CLOUDINARY CONFIGURATION ===');
-console.log('Cloud name:', cloudinaryConfig.cloud_name);
-console.log('API Key:', cloudinaryConfig.api_key);
-console.log('API Secret:', cloudinaryConfig.api_secret ? 'Set' : 'Not set');
-
-// Configure Cloudinary
-cloudinary.config(cloudinaryConfig);
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -34,27 +19,15 @@ if (!fs.existsSync(uploadsDir)) {
   console.log('Created uploads directory:', uploadsDir);
 }
 
-// Verify uploads directory permissions
-try {
-  const stats = fs.statSync(uploadsDir);
-  console.log('Uploads directory stats:', {
-    path: uploadsDir,
-    exists: true,
-    isDirectory: stats.isDirectory(),
-    permissions: stats.mode,
-    writable: fs.accessSync(uploadsDir, fs.constants.W_OK) ? 'Yes' : 'No'
-  });
-} catch (error) {
-  console.error('Error checking uploads directory:', error);
-}
+// Initialize local storage
+localFileStorage.initLocalStorage();
 
-// Helper function to upload file to Cloudinary
-const uploadToCloudinary = async (file, folder = 'job-portal') => {
+// Helper function to upload file to local storage
+const uploadToLocalStorage = async (file, userId) => {
   try {
-    console.log('=== CLOUDINARY UPLOAD START ===');
+    console.log('=== LOCAL STORAGE UPLOAD START ===');
     console.log('File details:', {
       path: file.path,
-      folder: folder,
       fileSize: file.size,
       mimetype: file.mimetype,
       originalname: file.originalname,
@@ -66,50 +39,19 @@ const uploadToCloudinary = async (file, folder = 'job-portal') => {
       throw new Error('File path is missing');
     }
 
-    // Verify file is readable
-    if (!fs.existsSync(file.path)) {
-      throw new Error('File does not exist at path: ' + file.path);
-    }
+    // Validate file
+    localFileStorage.validateFile(file, 
+      [localFileStorage.SUPPORTED_FILE_TYPES.pdf], 
+      5 * 1024 * 1024
+    );
 
-    // Read file stats
-    const stats = fs.statSync(file.path);
-    if (!stats.isFile()) {
-      throw new Error('Path exists but is not a file');
-    }
-    if (stats.size === 0) {
-      throw new Error('File exists but is empty');
-    }
+    // Save file to local storage
+    const fileInfo = await localFileStorage.saveFileToLocal(file, 'resumes', userId);
+    console.log('File saved to local storage:', fileInfo);
 
-    console.log('File verified:', {
-      size: stats.size,
-      isFile: stats.isFile(),
-      permissions: stats.mode
-    });
-
-    // Upload to Cloudinary
-    console.log('Starting Cloudinary upload with config:', {
-      cloud_name: cloudinary.config().cloud_name,
-      api_key: cloudinary.config().api_key,
-      folder: folder
-    });
-
-    const uploadOptions = {
-      folder: folder,
-      resource_type: 'raw',
-      public_id: `resume-${Date.now()}`,
-      format: 'pdf'
-    };
-
-    const result = await cloudinary.uploader.upload(file.path, uploadOptions);
-    console.log('Cloudinary upload result:', result);
-
-    // Clean up local file
-    fs.unlinkSync(file.path);
-    console.log('Local file cleaned up');
-
-    return result.secure_url;
+    return fileInfo.url;
   } catch (error) {
-    console.error('Error in uploadToCloudinary:', error);
+    console.error('Error in uploadToLocalStorage:', error);
     throw error;
   }
 };
@@ -241,8 +183,8 @@ export const updateOnboardingSection = asyncHandler(async (req, res, next) => {
     // Handle file upload if present
     if (req.files && req.files.resume) {
       console.log('Processing file upload:', req.files.resume[0]);
-      resumeUrl = await uploadToCloudinary(req.files.resume[0], 'resumes');
-      console.log('File uploaded to Cloudinary:', resumeUrl);
+      resumeUrl = await uploadToLocalStorage(req.files.resume[0], userId);
+      console.log('File uploaded to local storage:', resumeUrl);
 
       if (section === 'professionalInfo') {
         // Parse the data field if present
@@ -286,89 +228,71 @@ export const updateOnboardingSection = asyncHandler(async (req, res, next) => {
         await onboarding.save();
         console.log('Updated onboarding document:', onboarding);
 
-        // Return response with resume URL
-        const response = {
+        return res.status(200).json({
           success: true,
           data: {
-            ...onboarding.toObject(),
-            professionalInfo: {
-              ...onboarding.professionalInfo,
-              data: {
-                ...onboarding.professionalInfo.data,
-                resume: resumeUrl
-              }
-            }
+            professionalInfo: onboarding.professionalInfo
           }
-        };
-
-        console.log('Response with resume URL:', JSON.stringify(response, null, 2));
-        return res.status(200).json(response);
+        });
       }
     }
 
-    // Update the section with new data if no file was uploaded
-    if (!req.files || !req.files.resume) {
-      // Make sure the section object exists before trying to access its data property
-      if (!onboarding[section]) {
-        onboarding[section] = { completed: false, data: {} };
-      }
-      
-      // Ensure there's a data object to spread from
-      if (!onboarding[section].data) {
-        onboarding[section].data = {};
-      }
-      
-      onboarding[section] = {
+    // Handle other section updates
+    if (section === 'personalInfo') {
+      onboarding.personalInfo = {
         completed: true,
-        data: {
-          ...onboarding[section].data,
-          ...(data || {})
-        }
+        data: data
+      };
+
+      // If profile picture was uploaded, update it
+      if (req.file) {
+        // Save profile picture to local storage
+        const fileInfo = await localFileStorage.saveFileToLocal(
+          req.file, 
+          'profiles', 
+          userId
+        );
+        
+        // Update user profile with profile picture URL
+        await User.findByIdAndUpdate(
+          userId,
+          { 
+            $set: { 
+              'personalInfo.profilePicture': fileInfo.url,
+              'personalInfo.firstName': data.firstName,
+              'personalInfo.lastName': data.lastName,
+              'personalInfo.email': data.email,
+              'personalInfo.phone': data.phone,
+              'personalInfo.location': data.location
+            } 
+          }
+        );
+
+        // Update onboarding data with profile picture URL
+        onboarding.personalInfo.data.profilePicture = fileInfo.url;
+      }
+    } else if (section === 'skills') {
+      onboarding.skills = {
+        completed: true,
+        data: data
+      };
+    } else if (section === 'preferences') {
+      onboarding.preferences = {
+        completed: true,
+        data: data
       };
     }
 
-    // Check if all sections are complete
-    const isComplete = onboarding.personalInfo?.completed &&
-      onboarding.professionalInfo?.completed &&
-      onboarding.skills?.completed &&
-      onboarding.preferences?.completed;
-
-    if (isComplete) {
-      onboarding.isComplete = true;
-      onboarding.completedAt = new Date();
-
-      // Update user's onboarding status
-      await User.findByIdAndUpdate(userId, {
-        onboardingComplete: true,
-        onboardingCompletedAt: onboarding.completedAt
-      });
-    }
-
-    // Save the updated onboarding document
     await onboarding.save();
 
-    // Get the updated user to include the resume URL
-    const updatedUser = await User.findById(userId);
-
-    // Safely construct the response with null checks for data
-    const response = {
+    res.status(200).json({
       success: true,
       data: {
-        ...onboarding.toObject(),
-        professionalInfo: {
-          ...onboarding.professionalInfo,
-          data: {
-            ...(onboarding.professionalInfo?.data || {}),
-            resume: resumeUrl || updatedUser?.professionalInfo?.resume || null
-          }
-        }
+        [section]: onboarding[section]
       }
-    };
-
-    console.log('Response with resume URL:', JSON.stringify(response, null, 2));
-    res.status(200).json(response);
+    });
   } catch (error) {
-    console.error('Error in updateOnboardingSection:', error);
+    console.error(`Error updating ${req.params.section}:`, error);
     next(error);
   }
 });
@@ -376,81 +300,34 @@ export const updateOnboardingSection = asyncHandler(async (req, res, next) => {
 // @desc    Complete onboarding
 // @route   POST /api/users/onboarding/complete
 // @access  Private
-export const completeOnboarding = async (req, res, next) => {
+export const completeOnboarding = asyncHandler(async (req, res, next) => {
   try {
     const userId = req.user._id;
-    console.log('Completing onboarding for user:', userId);
-
-    // Find onboarding document
-    const onboarding = await Onboarding.findOne({ user: userId });
+    
+    // Update onboarding document
+    const onboarding = await Onboarding.findOneAndUpdate(
+      { user: userId },
+      { isComplete: true },
+      { new: true, runValidators: true }
+    );
+    
     if (!onboarding) {
-      console.error('Onboarding document not found', { userId });
       return next(new AppError('Onboarding document not found', 404));
     }
-
-    // Check if all required sections are complete
-    const requiredSections = ['personalInfo', 'professionalInfo', 'skills', 'preferences'];
-    const sectionStatus = {};
     
-    // Initialize any missing sections to avoid errors
-    requiredSections.forEach(section => {
-      if (!onboarding[section]) {
-        onboarding[section] = { completed: false, data: {} };
-      }
-      if (!onboarding[section].data) {
-        onboarding[section].data = {};
-      }
-
-      sectionStatus[section] = {
-        completed: onboarding[section].completed,
-        hasData: !!onboarding[section].data
-      };
-    });
-
-    console.log('Completion status:', sectionStatus);
-
-    // Auto-complete any sections that are still marked as incomplete
-    let sectionsUpdated = false;
-    for (const section of requiredSections) {
-      if (!onboarding[section].completed) {
-        console.log(`Auto-completing section: ${section}`);
-        onboarding[section].completed = true;
-        onboarding[section].data = onboarding[section].data || {};
-        sectionsUpdated = true;
-      }
-    }
-
-    if (sectionsUpdated) {
-      await onboarding.save();
-      console.log('Updated incomplete sections');
-    }
-
-    // Mark onboarding as complete without transaction for simpler processing
-    onboarding.isComplete = true;
-    onboarding.completedAt = new Date();
-    
-    await onboarding.save();
-    
-    // Update user's onboarding status
+    // Update user document to mark onboarding as complete
     await User.findByIdAndUpdate(
       userId,
-      {
-        onboardingComplete: true,
-        onboardingCompletedAt: new Date()
-      }
+      { onboardingComplete: true }
     );
-
-    console.log('Onboarding completed successfully');
+    
     res.status(200).json({
       success: true,
       data: {
-        isComplete: true,
-        completedAt: onboarding.completedAt,
-        sections: sectionStatus
+        isComplete: true
       }
     });
   } catch (error) {
-    console.error('Error completing onboarding:', error);
-    next(new AppError('Error completing onboarding: ' + error.message, 500));
+    next(error);
   }
-}; 
+}); 

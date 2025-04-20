@@ -5,12 +5,54 @@ import { Pie, Bar } from 'react-chartjs-2';
 import { toast } from 'react-toastify';
 import adminApi from '../../../utils/adminApi';
 import axios from 'axios';
+import path from 'path';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 // API URL from environment
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+// Helper function to get auth token
+const getAuthToken = () => localStorage.getItem('token');
+
+// Helper function to check if a URL is a local file or Cloudinary
+const isLocalFileUrl = (url) => {
+  return url && (url.startsWith('/api/files/') || url.includes('/files/'));
+};
+
+// Function to extract user ID and filename from URL
+const extractFileInfo = (url) => {
+  // Handle format: /api/files/resumes/userId/filename
+  // or: /api/files/resumes/user/userId/filename
+  const parts = url.split('/');
+  
+  // Find the position of 'files' in the URL
+  const filesIndex = parts.findIndex(part => part === 'files' || part === 'api');
+  
+  if (filesIndex !== -1) {
+    // Get type (resumes, profiles, etc.)
+    const type = parts[filesIndex + 1] === 'files' ? parts[filesIndex + 2] : parts[filesIndex + 1];
+    
+    // Check if URL has user ID in the path
+    let userId = null;
+    let filename = null;
+    
+    if (parts.includes('user')) {
+      const userIndex = parts.findIndex(part => part === 'user');
+      userId = parts[userIndex + 1];
+      filename = parts[userIndex + 2];
+    } else {
+      // This is for URLs where userId is directly after type
+      userId = parts[filesIndex + 3];
+      filename = parts[filesIndex + 4];
+    }
+    
+    return { type, userId, filename };
+  }
+  
+  return { type: null, userId: null, filename: null };
+};
 
 const Resume = () => {
   // State variables
@@ -443,8 +485,46 @@ const Resume = () => {
   
   // Handle resume actions
   const handleViewResume = (resume) => {
-    setSelectedResume(resume);
-    setShowResumeModal(true);
+    if (!resume || !resume.resumeUrl) {
+      toast.error('Resume URL not available');
+      return;
+    }
+    
+    // Check if viewing directly will work or if we need to handle it differently
+    if (isLocalFileUrl(resume.resumeUrl)) {
+      // For locally stored files, we need to use a proper fetch with authentication
+      const token = getAuthToken();
+      if (!token) {
+        toast.error('Authentication required. Please log in again.');
+        return;
+      }
+      
+      // Set selected resume to show in modal
+      setSelectedResume(resume);
+      setShowResumeModal(true);
+      
+      // Pre-fetch the file to make it available in the modal
+      const { type, userId, filename } = extractFileInfo(resume.resumeUrl);
+      if (type && filename) {
+        // Prepare the URL for viewing
+        let fileViewUrl;
+        if (userId) {
+          fileViewUrl = `${API_URL}/files/${type}/user/${userId}/${filename}`;
+        } else {
+          fileViewUrl = `${API_URL}/files/${type}/${filename}`;
+        }
+        
+        // Update the resume object with the full URL for viewing
+        setSelectedResume(prev => ({
+          ...prev,
+          fullResumeUrl: fileViewUrl
+        }));
+      }
+    } else {
+      // For Cloudinary or other external URLs, open directly
+      setSelectedResume(resume);
+      setShowResumeModal(true);
+    }
   };
   
   const handleCloseModal = () => {
@@ -490,17 +570,89 @@ const Resume = () => {
         return;
       }
       
-      // Check if it's a Cloudinary URL
-      if (resumeUrl.includes('cloudinary.com')) {
-        // For Cloudinary URLs, we need to use a proper fetch with authentication
-        const token = localStorage.getItem('token');
+      // Get auth token
+      const token = getAuthToken();
+      if (!token) {
+        toast.error('Authentication required. Please log in again.');
+        return;
+      }
+      
+      toast.info('Preparing resume for download...');
+      
+      // Handle based on URL type
+      if (isLocalFileUrl(resumeUrl)) {
+        // For locally stored files
+        const { type, userId, filename } = extractFileInfo(resumeUrl);
         
-        // Use a proxy endpoint to handle authentication if possible
+        if (!type || !filename) {
+          toast.error('Invalid file URL format');
+          return;
+        }
+        
+        // Construct the proper API URL
+        let downloadUrl;
+        if (userId) {
+          downloadUrl = `${API_URL}/files/${type}/user/${userId}/${filename}`;
+        } else {
+          downloadUrl = `${API_URL}/files/${type}/${filename}`;
+        }
+        
+        try {
+          // Use Axios to download with proper authentication
+          const response = await axios.get(downloadUrl, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            responseType: 'blob',
+            timeout: 30000 // 30 seconds timeout
+          });
+          
+          // Check if the response is valid
+          if (response.status !== 200) {
+            throw new Error(`Server returned status ${response.status}`);
+          }
+          
+          // Check for empty or invalid blob
+          if (!response.data || response.data.size === 0) {
+            throw new Error('Received empty file from server');
+          }
+          
+          // Create blob link to download
+          const blob = new Blob([response.data], { 
+            type: response.headers['content-type'] || 'application/pdf' 
+          });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          
+          // Use a proper filename with fallbacks
+          const downloadName = resumeName 
+            ? `${resumeName.replace(/\s+/g, '_')}_resume${path.extname(filename) || '.pdf'}`
+            : filename;
+            
+          link.setAttribute('download', downloadName);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Clean up the blob URL
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+          }, 100);
+          
+          toast.success('Resume downloaded successfully');
+        } catch (error) {
+          console.error('Error downloading file:', error);
+          toast.error(`Download failed: ${error.message || 'Server error'}`);
+          
+          // Fallback - try opening in a new window
+          window.open(downloadUrl, '_blank');
+        }
+      } else if (resumeUrl.includes('cloudinary.com')) {
+        // For Cloudinary URLs
         try {
           const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
           const proxyUrl = `${baseUrl}/proxy/download`;
-          
-          toast.info('Preparing resume for download...');
           
           const formData = new FormData();
           formData.append('fileUrl', resumeUrl);
@@ -510,7 +662,8 @@ const Resume = () => {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'multipart/form-data'
             },
-            responseType: 'blob'
+            responseType: 'blob',
+            timeout: 30000 // 30 seconds timeout
           };
           
           const response = await axios.post(proxyUrl, formData, config);
@@ -525,30 +678,21 @@ const Resume = () => {
           link.click();
           document.body.removeChild(link);
           
-          toast.success('Resume downloaded successfully');
+          // Clean up the blob URL
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+          }, 100);
           
+          toast.success('Resume downloaded successfully');
         } catch (err) {
           console.error('Error downloading through proxy:', err);
           
-          // Fallback - try direct iframe approach
-          toast.info('Opening resume in a new window');
-          
-          // Create a temporary iframe with authentication
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = resumeUrl;
-          document.body.appendChild(iframe);
-          
-          // Remove the iframe after load attempt
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 5000);
-          
-          // Also try opening in a new tab as fallback
+          // Fallback - try direct download
+          toast.info('Trying direct download method...');
           window.open(resumeUrl, '_blank');
         }
       } else {
-        // For non-Cloudinary URLs, try direct download
+        // For other URLs, try direct download
         const link = document.createElement('a');
         link.href = resumeUrl;
         link.setAttribute('download', `${resumeName.replace(/\s+/g, '_')}_resume.pdf`);
@@ -560,11 +704,11 @@ const Resume = () => {
         toast.success('Resume download initiated');
       }
     } catch (error) {
-      console.error('Error handling resume:', error);
+      console.error('Error handling resume download:', error);
       toast.error('Could not download resume. Please try a different method.');
       
-      // Final fallback - direct user how to download manually
-      toast.info('Try right-clicking on the download button and selecting "Save link as..."');
+      // Fallback - open in new tab
+      window.open(resumeUrl, '_blank');
     }
   };
   
@@ -1362,6 +1506,78 @@ const ResumeModal = ({ resume, onClose, handleChangeStatus, handleDownloadResume
   // Determine if it's a job seeker or trainer resume
   const isJobSeeker = Boolean(resume.position);
   const category = isJobSeeker ? 'jobSeekers' : 'trainers';
+  const [isPdfLoading, setPdfLoading] = useState(true);
+  const [pdfError, setPdfError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  
+  // Helper function to determine if this is a local file URL
+  const isLocalFile = resume && resume.resumeUrl && 
+    (resume.resumeUrl.startsWith('/api/files/') || resume.resumeUrl.includes('/files/'));
+    
+  // Use fullResumeUrl if available, otherwise use resumeUrl
+  const displayUrl = resume?.fullResumeUrl || resume?.resumeUrl;
+  
+  // Add authentication for local file viewing if needed
+  const token = localStorage.getItem('token');
+  
+  // Create URL with token for iframe
+  const getIframeUrl = () => {
+    if (!displayUrl) return '';
+    
+    // If it's a local file, append the token
+    if (isLocalFile) {
+      const separator = displayUrl.includes('?') ? '&' : '?';
+      return `${displayUrl}${separator}token=${encodeURIComponent(token)}`;
+    }
+    
+    // For external URLs (like Cloudinary), use as is
+    return displayUrl;
+  };
+  
+  const iframeUrl = getIframeUrl();
+  
+  // Function to handle iframe load events
+  const handleIframeLoad = () => {
+    setPdfLoading(false);
+    setPdfError(false);
+  };
+  
+  // Function to handle iframe error events
+  const handleIframeError = () => {
+    setPdfLoading(false);
+    
+    // Only increment retry count and attempt refresh for the first 2 errors
+    if (retryCount < 2) {
+      setRetryCount(prevCount => prevCount + 1);
+      
+      // Try to refresh the iframe
+      const iframe = document.getElementById('resumePreviewFrame');
+      if (iframe) {
+        setTimeout(() => {
+          iframe.src = getIframeUrl() + `&retry=${retryCount + 1}`;
+        }, 1000);
+      }
+    } else {
+      setPdfError(true);
+    }
+  };
+  
+  // Alternative method to directly download the file
+  const handleDirectDownload = () => {
+    handleDownloadResume(resume.resumeUrl, resume.name);
+  };
+  
+  // Refresh the iframe with a new URL
+  const handleRefreshIframe = () => {
+    setPdfLoading(true);
+    setPdfError(false);
+    setRetryCount(0);
+    
+    const iframe = document.getElementById('resumePreviewFrame');
+    if (iframe) {
+      iframe.src = getIframeUrl() + `&refresh=${Date.now()}`;
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -1370,7 +1586,7 @@ const ResumeModal = ({ resume, onClose, handleChangeStatus, handleDownloadResume
 
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
           {/* Modal header */}
           <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
             <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
@@ -1388,131 +1604,197 @@ const ResumeModal = ({ resume, onClose, handleChangeStatus, handleDownloadResume
             </button>
           </div>
 
-          {/* Modal body */}
+          {/* Modal body - Modified to include PDF display */}
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="sm:flex sm:items-start">
-              <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  {/* Left column - Basic info */}
-                  <div className="md:col-span-2">
-                    <div className="mb-4">
-                      <h4 className="text-lg font-medium text-gray-900">{resume.name}</h4>
-                      <p className="text-sm text-gray-500">
-                        {isJobSeeker ? resume.position : resume.specialty}
-                      </p>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Left column - Basic info */}
+              <div className="md:col-span-1">
+                <div className="mb-4">
+                  <h4 className="text-lg font-medium text-gray-900">{resume.name}</h4>
+                  <p className="text-sm text-gray-500">
+                    {isJobSeeker ? resume.position : resume.specialty}
+                  </p>
+                </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <h5 className="text-sm font-medium text-gray-700">Contact Information</h5>
-                        <ul className="mt-2 space-y-2">
-                          <li className="text-sm text-gray-600 flex items-center">
-                            <svg className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            {resume.email}
-                          </li>
-                          <li className="text-sm text-gray-600 flex items-center">
-                            <svg className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            {resume.phone}
-                          </li>
-                          <li className="text-sm text-gray-600 flex items-center">
-                            <svg className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            {resume.location}
-                          </li>
-                        </ul>
+                <div className="space-y-4">
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700">Contact Information</h5>
+                    <ul className="mt-2 space-y-2">
+                      <li className="text-sm text-gray-600 flex items-center">
+                        <svg className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        {resume.email}
+                      </li>
+                      <li className="text-sm text-gray-600 flex items-center">
+                        <svg className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        {resume.phone}
+                      </li>
+                      <li className="text-sm text-gray-600 flex items-center">
+                        <svg className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {resume.location}
+                      </li>
+                    </ul>
+                  </div>
+
+                  {isJobSeeker && resume.keywords && resume.keywords.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700">Skills</h5>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {resume.keywords.map((keyword, index) => (
+                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                            {keyword}
+                          </span>
+                        ))}
                       </div>
+                    </div>
+                  )}
 
-                      {isJobSeeker && resume.keywords && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700">Skills</h5>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {resume.keywords.map((keyword, index) => (
-                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                                {keyword}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {!isJobSeeker && resume.certification && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700">Certifications</h5>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {resume.certification.map((cert, index) => (
-                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                {cert}
-                              </span>
-                            ))}
-                          </div>
-                          {resume.experience && (
-                            <p className="mt-2 text-sm text-gray-600">
-                              <span className="font-medium">Experience:</span> {resume.experience}
-                            </p>
-                          )}
-                        </div>
+                  {!isJobSeeker && resume.certification && resume.certification.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700">Certifications</h5>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {resume.certification.map((cert, index) => (
+                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {cert}
+                          </span>
+                        ))}
+                      </div>
+                      {resume.experience && (
+                        <p className="mt-2 text-sm text-gray-600">
+                          <span className="font-medium">Experience:</span> {resume.experience}
+                        </p>
                       )}
                     </div>
+                  )}
 
-                    <div className="mt-4">
-                      <h5 className="text-sm font-medium text-gray-700">Notes</h5>
-                      <p className="mt-1 text-sm text-gray-600">
-                        {resume.notes || 'No notes available.'}
-                      </p>
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700">Status</h5>
+                    <span className={`mt-2 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      resume.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      resume.status === 'pending' ? 'bg-blue-100 text-blue-800' :
+                      resume.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {resume.status.charAt(0).toUpperCase() + resume.status.slice(1)}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700">Resume File</h5>
+                    <div className="mt-2 flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center">
+                        <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-900">
+                          {resume.resumeUrl ? resume.resumeUrl.split('/').pop() : 'Resume'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {resume.fileType?.toUpperCase() || 'PDF'} · {resume.fileSize || 'Unknown size'}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right column - Status and actions */}
-                  <div className="space-y-4 border-l pl-4">
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700">Status</h5>
-                      <span className={`mt-2 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        resume.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        resume.status === 'pending' ? 'bg-blue-100 text-blue-800' :
-                        resume.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {resume.status.charAt(0).toUpperCase() + resume.status.slice(1)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700">Resume File</h5>
-                      <div className="mt-2 flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center">
-                          <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900">
-                            {resume.resumeUrl.split('/').pop()}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {resume.fileType?.toUpperCase()} · {resume.fileSize}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700">Uploaded</h5>
-                      <p className="mt-1 text-sm text-gray-600">
-                        {new Date(resume.submitted).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </p>
-                    </div>
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700">Uploaded</h5>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {new Date(resume.submitted).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Right column - PDF Display */}
+              <div className="md:col-span-2 border-l pl-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h5 className="text-sm font-medium text-gray-700">Resume Preview</h5>
+                  
+                  {/* Add refresh button */}
+                  {displayUrl && (
+                    <button 
+                      onClick={handleRefreshIframe}
+                      className="text-sm text-teal-600 hover:text-teal-800 flex items-center"
+                    >
+                      <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Refresh
+                    </button>
+                  )}
+                </div>
+                
+                {displayUrl ? (
+                  <div className="relative border rounded-md overflow-hidden" style={{ height: '65vh' }}>
+                    {/* Loading indicator */}
+                    {isPdfLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+                      </div>
+                    )}
+                    
+                    {/* Error display */}
+                    {pdfError && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 p-4">
+                        <svg className="h-12 w-12 text-red-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p className="text-center text-gray-800 font-medium">Unable to display resume preview</p>
+                        <p className="text-center text-gray-600 mt-1">Please try downloading the file instead</p>
+                        <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                          <button
+                            onClick={handleRefreshIframe}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                          >
+                            Try Again
+                          </button>
+                          <button
+                            onClick={handleDirectDownload}
+                            className="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700"
+                          >
+                            Download Resume
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* PDF iframe */}
+                    <iframe
+                      id="resumePreviewFrame"
+                      src={iframeUrl}
+                      className="w-full h-full"
+                      title="Resume Preview"
+                      onLoad={handleIframeLoad}
+                      onError={handleIframeError}
+                    ></iframe>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center bg-gray-50 rounded-md p-8" style={{ height: '65vh' }}>
+                    <svg className="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-center text-gray-600">Resume preview unavailable</p>
+                    <button
+                      onClick={handleDirectDownload}
+                      className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 flex items-center"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Resume
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1522,7 +1804,7 @@ const ResumeModal = ({ resume, onClose, handleChangeStatus, handleDownloadResume
             <button
               type="button"
               className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-teal-600 text-base font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 sm:ml-3 sm:w-auto sm:text-sm"
-              onClick={() => handleDownloadResume(resume.resumeUrl, resume.name)}
+              onClick={handleDirectDownload}
             >
               Download Resume
             </button>
@@ -1562,13 +1844,13 @@ const ResumeModal = ({ resume, onClose, handleChangeStatus, handleDownloadResume
                   onClose();
                 }}
               >
-                Flag for Review
+                Flag
               </button>
             )}
             
             <button
               type="button"
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              className="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 sm:ml-3 sm:w-auto sm:text-sm"
               onClick={onClose}
             >
               Close
