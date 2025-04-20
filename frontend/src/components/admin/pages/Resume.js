@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Filter, Download, Eye, CheckCircle, XCircle, Flag, FileText, BarChart, PieChart, Calendar, MapPin, Users, FileType, ChevronDown, ChevronUp, Briefcase, Clock, User, MoreVertical } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -6,6 +7,8 @@ import { toast } from 'react-toastify';
 import adminApi from '../../../utils/adminApi';
 import axios from 'axios';
 import path from 'path';
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -61,7 +64,7 @@ const Resume = () => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('all');
   const [filterFileType, setFilterFileType] = useState('all');
-  const [activeTab, setActiveTab] = useState('summary'); // 'summary', 'jobSeekers', 'trainers'
+  const [activeTab, setActiveTab] = useState('jobSeekers'); // 'summary', 'jobSeekers', 'trainers'
   const [selectedResume, setSelectedResume] = useState(null);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [selectedResumeIds, setSelectedResumeIds] = useState([]);
@@ -84,6 +87,9 @@ const Resume = () => {
   const [statusChartData, setStatusChartData] = useState({ labels: [], datasets: [] });
   const [fileTypeChartData, setFileTypeChartData] = useState({ labels: [], datasets: [] });
   const [uploadsChartData, setUploadsChartData] = useState({ labels: [], datasets: [] });
+  
+  // Add state for export loading
+  const [exportLoading, setExportLoading] = useState(false);
   
   // Fetch data on component mount
   useEffect(() => {
@@ -850,6 +856,14 @@ const Resume = () => {
   const filteredJobSeekers = getFilteredResumes('jobSeekers');
   const filteredTrainers = getFilteredResumes('trainers');
   
+  // Get current category based on active tab
+  const category = activeTab === 'summary' ? 'all' : activeTab;
+  
+  // Get resumes based on active tab/category
+  const resumes = activeTab === 'jobSeekers' ? filteredJobSeekers : 
+                 activeTab === 'trainers' ? filteredTrainers : 
+                 [...filteredJobSeekers, ...filteredTrainers];
+  
   // Get resume counts
   const getResumeCountByStatus = (status, category) => {
     if (category === 'all') {
@@ -891,6 +905,141 @@ const Resume = () => {
       .sort((a, b) => new Date(b.submitted) - new Date(a.submitted))
       .slice(0, limit);
   };
+  
+  // Log export activity for audit purposes
+  const logExport = async (data) => {
+    try {
+      // Attempt to log to the backend if an audit endpoint exists
+      await adminApi.post('/admin/audit/log', {
+        action: 'export',
+        details: data
+      }).catch(error => {
+        // If the endpoint doesn't exist, just log to console
+        console.log('Export logging endpoint not available, logging to console only');
+      });
+      
+      // Always log to console as a fallback
+      console.log('EXPORT AUDIT LOG:', data);
+    } catch (error) {
+      // Silent fail - logging shouldn't stop the export
+      console.error('Error logging export activity:', error);
+    }
+  };
+  
+  // Export user data function
+  const exportUserData = async (category, format, selectedOnly = false) => {
+    try {
+      setExportLoading(true);
+      
+      // Get the data to export - either all filtered records or just selected ones
+      let resumes;
+      if (selectedOnly) {
+        resumes = getFilteredResumes(category).filter(resume => selectedResumeIds.includes(resume.id));
+      } else {
+        resumes = getFilteredResumes(category);
+      }
+      
+      if (resumes.length === 0) {
+        toast.error('No data to export. Please adjust your filters or select records.');
+        setExportLoading(false);
+        return;
+      }
+      
+      // Define the fields to export
+      const exportData = resumes.map(resume => ({
+        Name: resume.name || 'N/A',
+        Email: resume.email || 'N/A',
+        Phone: resume.phone || 'N/A',
+        Location: resume.location || 'N/A',
+        Position: category === 'jobSeekers' ? resume.position : resume.specialty || 'N/A',
+        Status: resume.status ? resume.status.charAt(0).toUpperCase() + resume.status.slice(1) : 'Pending',
+        Submitted: new Date(resume.submitted).toLocaleDateString(),
+        'User Type': category === 'jobSeekers' ? 'Job Seeker' : 'Trainer'
+      }));
+      
+      // Export based on requested format
+      if (format === 'excel') {
+        exportToExcel(exportData, category, selectedOnly);
+      } else if (format === 'csv') {
+        exportToCSV(exportData, category, selectedOnly);
+      }
+      
+      // Prepare audit data
+      const auditData = {
+        timestamp: new Date().toISOString(),
+        category: category,
+        format: format,
+        selectedOnly: selectedOnly,
+        recordCount: exportData.length,
+        filter: {
+          searchTerm: searchTerm,
+          status: filterStatus,
+          dateRange: filterDateRange,
+          fileType: filterFileType
+        }
+      };
+      
+      // Log the export activity for audit
+      await logExport(auditData);
+      
+      toast.success(`Successfully exported ${exportData.length} records as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast.error('Failed to export data. Please try again.');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+  
+  // Export to Excel
+  const exportToExcel = (data, category, selectedOnly = false) => {
+    try {
+      // Create worksheet from data
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      
+      // Create workbook and add the worksheet
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, category === 'jobSeekers' ? 'Job Seekers' : 'Trainers');
+      
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      
+      // Create Blob and save the file
+      const EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const selectionSuffix = selectedOnly ? '_Selected' : '';
+      const fileName = `${category === 'jobSeekers' ? 'JobSeekers' : 'Trainers'}${selectionSuffix}_Export_${currentDate}.xlsx`;
+      
+      const excelBlob = new Blob([excelBuffer], { type: EXCEL_TYPE });
+      saveAs(excelBlob, fileName);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Failed to export Excel file. Please try again.');
+    }
+  };
+  
+  // Export to CSV
+  const exportToCSV = (data, category, selectedOnly = false) => {
+    try {
+      // Create worksheet from data
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      
+      // Convert worksheet to CSV
+      const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+      
+      // Create Blob and save the file
+      const CSV_TYPE = 'text/csv;charset=utf-8;';
+      const currentDate = new Date().toISOString().slice(0, 10);
+      const selectionSuffix = selectedOnly ? '_Selected' : '';
+      const fileName = `${category === 'jobSeekers' ? 'JobSeekers' : 'Trainers'}${selectionSuffix}_Export_${currentDate}.csv`;
+      
+      const csvBlob = new Blob([csvOutput], { type: CSV_TYPE });
+      saveAs(csvBlob, fileName);
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      toast.error('Failed to export CSV file. Please try again.');
+    }
+  };
 
   return (
     <div className="admin-job-container">
@@ -922,116 +1071,160 @@ const Resume = () => {
                   <Flag className="w-4 h-4 mr-1" />
                   Flag ({selectedResumeIds.length})
                 </button>
+                <button 
+                  onClick={() => handleBatchAction('delete')}
+                  className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Delete ({selectedResumeIds.length})
+                </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8">
-            <button
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'summary'
-                  ? 'border-teal-500 text-teal-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab('summary')}
-            >
-              Dashboard
-            </button>
-            <button
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'jobSeekers'
-                  ? 'border-teal-500 text-teal-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab('jobSeekers')}
-            >
-              Job Seeker Resumes
-            </button>
-            <button
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'trainers'
-                  ? 'border-teal-500 text-teal-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab('trainers')}
-            >
-              Trainer Resumes
-            </button>
-          </nav>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+        {/* Resumes Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                      checked={selectedResumeIds.length > 0 && selectedResumeIds.length === resumes.length}
+                      onChange={() => toggleSelectAll(resumes)}
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                  {category === 'jobSeekers' ? (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                  ) : (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specialty</th>
+                  )}
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {resumes.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
+                      No resumes found matching the current filters.
+                    </td>
+                  </tr>
+                ) : (
+                  resumes.map((resume) => (
+                    <tr key={resume.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                          checked={selectedResumeIds.includes(resume.id)}
+                          onChange={() => toggleSelectResume(resume.id)}
+                        />
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{resume.name}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{resume.email}</div>
+                        <div className="text-sm text-gray-500">{resume.phone}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {category === 'jobSeekers' ? resume.position : resume.specialty}
+                        </div>
+                        {category === 'trainers' && resume.experience && (
+                          <div className="text-xs text-gray-500">{resume.experience} experience</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500 flex items-center">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {resume.location}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {resume.fileType ? resume.fileType.toUpperCase() : '—'}
+                        </div>
+                        <div className="text-xs text-gray-400">{resume.fileSize}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          resume.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          resume.status === 'pending' ? 'bg-blue-100 text-blue-800' :
+                          resume.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {resume.status.charAt(0).toUpperCase() + resume.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(resume.submitted).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleViewResume(resume)}
+                            className="text-teal-600 hover:text-teal-900"
+                            title="View resume"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDownloadResume(resume.resumeUrl, resume.name)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Download resume"
+                          >
+                            <Download className="w-5 h-5" />
+                          </button>
+                          {resume.status !== 'approved' && (
+                            <button
+                              onClick={() => handleChangeStatus(resume.id, 'approved', category)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Approve resume"
+                            >
+                              <CheckCircle className="w-5 h-5" />
+                            </button>
+                          )}
+                          {resume.status !== 'rejected' && (
+                            <button
+                              onClick={() => handleChangeStatus(resume.id, 'rejected', category)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Reject resume"
+                            >
+                              <XCircle className="w-5 h-5" />
+                            </button>
+                          )}
+                          {resume.status !== 'flagged' && (
+                            <button
+                              onClick={() => handleChangeStatus(resume.id, 'flagged', category)}
+                              className="text-yellow-600 hover:text-yellow-900"
+                              title="Flag resume"
+                            >
+                              <Flag className="w-5 h-5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          <>
-            {activeTab === 'summary' && (
-              <DashboardView 
-                analytics={analytics}
-                statusChartData={statusChartData}
-                fileTypeChartData={fileTypeChartData}
-                uploadsChartData={uploadsChartData}
-                pieChartOptions={pieChartOptions}
-                barChartOptions={barChartOptions}
-                getRecentUploads={getRecentUploads}
-                handleViewResume={handleViewResume}
-              />
-            )}
-
-            {activeTab === 'jobSeekers' && (
-              <ResumeListView
-                category="jobSeekers"
-                resumes={filteredJobSeekers}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                filterStatus={filterStatus}
-                setFilterStatus={setFilterStatus}
-                filterDateRange={filterDateRange}
-                setFilterDateRange={setFilterDateRange}
-                filterFileType={filterFileType}
-                setFilterFileType={setFilterFileType}
-                selectedResumeIds={selectedResumeIds}
-                toggleSelectResume={toggleSelectResume}
-                toggleSelectAll={toggleSelectAll}
-                handleViewResume={handleViewResume}
-                handleChangeStatus={handleChangeStatus}
-                handleDownloadResume={handleDownloadResume}
-                handleBatchAction={handleBatchAction}
-              />
-            )}
-
-            {activeTab === 'trainers' && (
-              <ResumeListView
-                category="trainers"
-                resumes={filteredTrainers}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                filterStatus={filterStatus}
-                setFilterStatus={setFilterStatus}
-                filterDateRange={filterDateRange}
-                setFilterDateRange={setFilterDateRange}
-                filterFileType={filterFileType}
-                setFilterFileType={setFilterFileType}
-                selectedResumeIds={selectedResumeIds}
-                toggleSelectResume={toggleSelectResume}
-                toggleSelectAll={toggleSelectAll}
-                handleViewResume={handleViewResume}
-                handleChangeStatus={handleChangeStatus}
-                handleDownloadResume={handleDownloadResume}
-                handleBatchAction={handleBatchAction}
-              />
-            )}
-          </>
-        )}
+        </div>
       </div>
-
-      {/* Resume Preview Modal */}
+      
+      {/* Resume Modal */}
       {showResumeModal && selectedResume && (
-        <ResumeModal
+        <ResumeModal 
           resume={selectedResume}
           onClose={handleCloseModal}
           handleChangeStatus={handleChangeStatus}
@@ -1039,465 +1232,6 @@ const Resume = () => {
         />
       )}
     </div>
-  );
-};
-
-// Dashboard View Component
-const DashboardView = ({ 
-  analytics, 
-  statusChartData, 
-  fileTypeChartData, 
-  uploadsChartData, 
-  pieChartOptions, 
-  barChartOptions, 
-  getRecentUploads, 
-  handleViewResume 
-}) => {
-  const recentUploads = getRecentUploads('all');
-
-  return (
-    <>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-teal-100 text-teal-500 mr-4">
-              <FileText size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Resumes</p>
-              <p className="text-lg font-semibold">{analytics.totalResumes}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100 text-blue-500 mr-4">
-              <Briefcase size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Job Seeker Resumes</p>
-              <p className="text-lg font-semibold">{analytics.jobSeekerCount}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-purple-100 text-purple-500 mr-4">
-              <User size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Trainer Resumes</p>
-              <p className="text-lg font-semibold">{analytics.trainerCount}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100 text-green-500 mr-4">
-              <CheckCircle size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Approved Resumes</p>
-              <p className="text-lg font-semibold">{analytics.statusCounts.approved}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Status Distribution */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-            <PieChart className="w-5 h-5 mr-2 text-gray-500" />
-            Resume Status Distribution
-          </h2>
-          <div className="h-64">
-            <Pie data={statusChartData} options={pieChartOptions} />
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="text-sm">Approved:</span>
-              <span className="text-sm font-medium">{analytics.statusCounts.approved}</span>
-            </div>
-            <div className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="text-sm">Pending:</span>
-              <span className="text-sm font-medium">{analytics.statusCounts.pending}</span>
-            </div>
-            <div className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="text-sm">Rejected:</span>
-              <span className="text-sm font-medium">{analytics.statusCounts.rejected}</span>
-            </div>
-            <div className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="text-sm">Flagged:</span>
-              <span className="text-sm font-medium">{analytics.statusCounts.flagged}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* File Type Distribution */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-            <FileType className="w-5 h-5 mr-2 text-gray-500" />
-            Resume File Format Distribution
-          </h2>
-          <div className="h-64">
-            <Pie data={fileTypeChartData} options={pieChartOptions} />
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="text-sm">PDF:</span>
-              <span className="text-sm font-medium">{analytics.fileTypeCounts.pdf}</span>
-            </div>
-            <div className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="text-sm">DOCX:</span>
-              <span className="text-sm font-medium">{analytics.fileTypeCounts.docx}</span>
-            </div>
-            <div className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="text-sm">Other:</span>
-              <span className="text-sm font-medium">{analytics.fileTypeCounts.other}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Upload Trends */}
-      <div className="bg-white p-4 rounded-lg shadow mt-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-          <BarChart className="w-5 h-5 mr-2 text-gray-500" />
-          Upload Trends (Last 6 Months)
-        </h2>
-        <div className="h-80">
-          <Bar data={uploadsChartData} options={barChartOptions} />
-        </div>
-      </div>
-
-      {/* Recent Uploads */}
-      <div className="bg-white p-4 rounded-lg shadow mt-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-          <Clock className="w-5 h-5 mr-2 text-gray-500" />
-          Recent Uploads
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {recentUploads.map((resume, index) => (
-                <tr key={`resume-${resume.id}-${index}`} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{resume.name}</div>
-                        <div className="text-sm text-gray-500">{resume.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {resume.position ? 'Job Seeker' : 'Trainer'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {resume.position || resume.specialty}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      resume.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      resume.status === 'pending' ? 'bg-blue-100 text-blue-800' :
-                      resume.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {resume.status.charAt(0).toUpperCase() + resume.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(resume.submitted).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleViewResume(resume)}
-                      className="text-teal-600 hover:text-teal-900"
-                    >
-                      <Eye className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
-  );
-};
-
-// Resume List View Component
-const ResumeListView = ({
-  category,
-  resumes,
-  searchTerm,
-  setSearchTerm,
-  filterStatus,
-  setFilterStatus,
-  filterDateRange,
-  setFilterDateRange,
-  filterFileType,
-  setFilterFileType,
-  selectedResumeIds,
-  toggleSelectResume,
-  toggleSelectAll,
-  handleViewResume,
-  handleChangeStatus,
-  handleDownloadResume,
-  handleBatchAction
-}) => {
-  return (
-    <>
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder={`Search ${category === 'jobSeekers' ? 'job seeker' : 'trainer'} resumes...`}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex flex-wrap md:flex-nowrap gap-2">
-            <div className="flex items-center gap-2">
-              <Filter className="text-gray-400" size={18} />
-              <select
-                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="all">All Status</option>
-                <option value="approved">Approved</option>
-                <option value="pending">Pending</option>
-                <option value="rejected">Rejected</option>
-                <option value="flagged">Flagged</option>
-              </select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Calendar className="text-gray-400" size={18} />
-              <select
-                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                value={filterDateRange}
-                onChange={(e) => setFilterDateRange(e.target.value)}
-              >
-                <option value="all">All Time</option>
-                <option value="last7days">Last 7 Days</option>
-                <option value="last30days">Last 30 Days</option>
-                <option value="last90days">Last 90 Days</option>
-              </select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <FileType className="text-gray-400" size={18} />
-              <select
-                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                value={filterFileType}
-                onChange={(e) => setFilterFileType(e.target.value)}
-              >
-                <option value="all">All File Types</option>
-                <option value="pdf">PDF</option>
-                <option value="docx">DOCX</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Batch Actions */}
-      {selectedResumeIds.length > 0 && (
-        <div className="mb-4 flex gap-2">
-          <button 
-            onClick={() => handleBatchAction('approve')}
-            className="flex items-center px-3 py-2 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-          >
-            <CheckCircle className="w-4 h-4 mr-1" />
-            Approve ({selectedResumeIds.length})
-          </button>
-          <button 
-            onClick={() => handleBatchAction('reject')}
-            className="flex items-center px-3 py-2 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-          >
-            <XCircle className="w-4 h-4 mr-1" />
-            Reject ({selectedResumeIds.length})
-          </button>
-          <button 
-            onClick={() => handleBatchAction('flag')}
-            className="flex items-center px-3 py-2 text-sm bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors"
-          >
-            <Flag className="w-4 h-4 mr-1" />
-            Flag ({selectedResumeIds.length})
-          </button>
-          <button 
-            onClick={() => handleBatchAction('delete')}
-            className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-          >
-            Delete ({selectedResumeIds.length})
-          </button>
-        </div>
-      )}
-      
-      {/* Resumes Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                    checked={selectedResumeIds.length > 0 && selectedResumeIds.length === resumes.length}
-                    onChange={() => toggleSelectAll(resumes)}
-                  />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                {category === 'jobSeekers' ? (
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                ) : (
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specialty</th>
-                )}
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {resumes.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
-                    No resumes found matching the current filters.
-                  </td>
-                </tr>
-              ) : (
-                resumes.map((resume) => (
-                  <tr key={resume.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                        checked={selectedResumeIds.includes(resume.id)}
-                        onChange={() => toggleSelectResume(resume.id)}
-                      />
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{resume.name}</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{resume.email}</div>
-                      <div className="text-sm text-gray-500">{resume.phone}</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {category === 'jobSeekers' ? resume.position : resume.specialty}
-                      </div>
-                      {category === 'trainers' && resume.experience && (
-                        <div className="text-xs text-gray-500">{resume.experience} experience</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {resume.location}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {resume.fileType ? resume.fileType.toUpperCase() : '—'}
-                      </div>
-                      <div className="text-xs text-gray-400">{resume.fileSize}</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        resume.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        resume.status === 'pending' ? 'bg-blue-100 text-blue-800' :
-                        resume.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {resume.status.charAt(0).toUpperCase() + resume.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(resume.submitted).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleViewResume(resume)}
-                          className="text-teal-600 hover:text-teal-900"
-                          title="View resume"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDownloadResume(resume.resumeUrl, resume.name)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Download resume"
-                        >
-                          <Download className="w-5 h-5" />
-                        </button>
-                        {resume.status !== 'approved' && (
-                          <button
-                            onClick={() => handleChangeStatus(resume.id, 'approved', category)}
-                            className="text-green-600 hover:text-green-900"
-                            title="Approve resume"
-                          >
-                            <CheckCircle className="w-5 h-5" />
-                          </button>
-                        )}
-                        {resume.status !== 'rejected' && (
-                          <button
-                            onClick={() => handleChangeStatus(resume.id, 'rejected', category)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Reject resume"
-                          >
-                            <XCircle className="w-5 h-5" />
-                          </button>
-                        )}
-                        {resume.status !== 'flagged' && (
-                          <button
-                            onClick={() => handleChangeStatus(resume.id, 'flagged', category)}
-                            className="text-yellow-600 hover:text-yellow-900"
-                            title="Flag resume"
-                          >
-                            <Flag className="w-5 h-5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
   );
 };
 

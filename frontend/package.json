@@ -26,6 +26,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "feather-icons": "^4.29.2",
+    "file-saver": "^2.0.5",
     "form-data": "^4.0.2",
     "framer-motion": "^10.12.16",
     "lucide-react": "^0.486.0",
@@ -41,7 +42,8 @@
     "react-toastify": "^11.0.5",
     "socket.io-client": "^4.8.1",
     "swiper": "^10.0.4",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "craco start",
