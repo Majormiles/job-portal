@@ -133,7 +133,7 @@ const AdminProfile = () => {
           </div>
         </div>
 
-        <div className="p-6 bg-gray-50">
+        {/* <div className="p-6 bg-gray-50">
           <h3 className="text-lg font-semibold mb-4 text-gray-800">Account Security</h3>
           <button 
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -141,7 +141,7 @@ const AdminProfile = () => {
           >
             Change Password
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
