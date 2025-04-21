@@ -525,29 +525,48 @@ const calculateProfileCompletion = (user, onboarding) => {
  */
 export const updateUserRole = asyncHandler(async (req, res, next) => {
   try {
-    const { role, userType, roleName } = req.body;
+    const { role, userType, roleName, talentType } = req.body;
     
-    if (!role && !userType && !roleName) {
-      return next(new AppError('Please provide at least one of: role, userType, or roleName', 400));
+    if (!role && !userType && !roleName && !talentType) {
+      return next(new AppError('Please provide at least one of: role, userType, roleName, or talentType', 400));
     }
     
     // Log the incoming request for debugging
-    console.log('Role update request received:', { role, userType, roleName, userId: req.user.id });
+    console.log('Role update request received:', { role, userType, roleName, talentType, userId: req.user.id });
     
-    // Use the first available value in order of priority: role, userType, roleName
-    const roleToUse = role || userType || roleName;
+    // Determine the role to use based on the provided parameters
+    let dbRoleName;
+    
+    // Handle the "talent" special case
+    if (role === 'talent' || userType === 'talent' || roleName === 'talent') {
+      // If talent is specified, we need to look at talentType to determine the actual role
+      if (talentType === 'trainer') {
+        dbRoleName = 'trainer';
+        console.log('Mapping "talent" with talentType "trainer" to "trainer" role');
+      } else if (talentType === 'trainee') {
+        dbRoleName = 'trainee';
+        console.log('Mapping "talent" with talentType "trainee" to "trainee" role');
+      } else {
+        // Default to jobSeeker if talentType is not specified
+        dbRoleName = 'jobSeeker';
+        console.log('Mapping "talent" with no talentType to "jobSeeker" role');
+      }
+    } else {
+      // Use the first available value in order of priority: role, userType, roleName
+      dbRoleName = role || userType || roleName;
+      
+      // Map "user" to "jobSeeker" if needed
+      if (dbRoleName === 'user') {
+        dbRoleName = 'jobSeeker';
+        console.log('Mapping "user" to "jobSeeker" role');
+      }
+    }
     
     // Valid roles check
     const validRoleNames = ['admin', 'jobSeeker', 'employer', 'trainer', 'trainee'];
-    if (!validRoleNames.includes(roleToUse)) {
-      console.log(`Invalid role specified: ${roleToUse}`);
-      return next(new AppError('Invalid role specified', 400));
-    }
-    
-    // Map frontend role names to database role names if needed
-    let dbRoleName = roleToUse;
-    if (roleToUse === 'user') {
-      dbRoleName = 'jobSeeker';
+    if (!validRoleNames.includes(dbRoleName)) {
+      console.log(`Invalid role specified: ${dbRoleName}`);
+      return next(new AppError(`Invalid role specified: ${dbRoleName}. Valid roles are: ${validRoleNames.join(', ')}`, 400));
     }
     
     console.log(`Looking for role document with name: ${dbRoleName}`);

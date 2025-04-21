@@ -1000,14 +1000,43 @@ const PersonalInfo = () => {
         // Update user role explicitly based on the detected user type
         try {
           console.log(`Attempting to explicitly update user role to ${userType}`);
-          const updateRoleResponse = await onboardingApi.put('/users/role', { 
+          
+          // Create the role update payload
+          const roleUpdatePayload = { 
             role: userType,
             userType: userType,
             roleName: userType
-          });
+          };
+          
+          // If this is a talent user type, we need to include the talent type
+          if (userType === 'talent') {
+            // Determine talent type based on role helpers
+            if (isTrainer()) {
+              roleUpdatePayload.talentType = 'trainer';
+            } else if (isTrainee()) {
+              roleUpdatePayload.talentType = 'trainee';
+            } else {
+              // Try to get talent type from local storage if available
+              try {
+                const storageData = localStorage.getItem('registrationData');
+                if (storageData) {
+                  const parsedData = JSON.parse(storageData);
+                  if (parsedData.talentType) {
+                    roleUpdatePayload.talentType = parsedData.talentType;
+                  }
+                }
+              } catch (e) {
+                console.error('Error retrieving talent type from storage:', e);
+              }
+            }
+            
+            console.log(`Including talent type in role update: ${roleUpdatePayload.talentType}`);
+          }
+          
+          const updateRoleResponse = await onboardingApi.put('/users/role', roleUpdatePayload);
           
           if (updateRoleResponse.data && updateRoleResponse.data.success) {
-            console.log(`Successfully updated user role to ${userType}`);
+            console.log(`Successfully updated user role to ${userType}${roleUpdatePayload.talentType ? ' (' + roleUpdatePayload.talentType + ')' : ''}`);
           } else {
             console.warn('Role update API call succeeded but returned success:false');
           }

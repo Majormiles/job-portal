@@ -77,8 +77,21 @@ const VerifyEmail = () => {
           } else if (email) {
             // Try to login the user automatically if email is available
             try {
+              // Save user type from localStorage before login attempts, since login might clear it
+              const registrationData = localStorage.getItem('registrationData');
+              const userType = registrationData ? JSON.parse(registrationData)?.userType : null;
+              const isEmployer = userType === 'employer';
+              
+              console.log('Attempting auto-login after verification with email:', email);
               await login({ email });
-              setTimeout(() => navigate('/payment'), 2000);
+              console.log('Auto-login successful, user type:', isEmployer ? 'employer' : 'job seeker');
+              
+              // Redirect based on user type
+              if (isEmployer) {
+                setTimeout(() => navigate('/payment'), 2000);
+              } else {
+                setTimeout(() => navigate('/dashboard-jobseeker'), 2000);
+              }
             } catch (loginError) {
               console.error('Auto login failed after verification:', loginError);
               // Will show the continue button instead of auto-redirecting
@@ -152,7 +165,26 @@ const VerifyEmail = () => {
   }, [token, email, navigate, isAuthenticated, login]);
 
   const handleContinueToPayment = () => {
-    navigate('/payment');
+    // Check localStorage for registration data to identify user type
+    try {
+      const registrationDataStr = localStorage.getItem('registrationData');
+      if (registrationDataStr) {
+        const registrationData = JSON.parse(registrationDataStr);
+        const userType = registrationData?.userType;
+        
+        if (userType === 'employer') {
+          console.log('Redirecting employer to payment page');
+          navigate('/payment');
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing registration data:', error);
+    }
+    
+    // Default behavior - if not an employer, go to jobseeker dashboard
+    console.log('Redirecting non-employer to jobseeker dashboard');
+    navigate('/dashboard-jobseeker');
   };
 
   const handleLoginRedirect = () => {
