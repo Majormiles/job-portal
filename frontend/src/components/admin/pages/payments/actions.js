@@ -1,5 +1,6 @@
 // Payment Portal Action Functions
 import axios from 'axios';
+import { exportReportData } from './reportUtils';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -95,15 +96,13 @@ export const calculateTransactionFee = (amount, userType) => {
  * @param {string} format - Export format (csv, pdf, excel, etc)
  * @param {string} filename - Name for the exported file
  */
-export const exportData = (data, format, filename) => {
-  // Mock implementation for file export
-  console.log(`Exporting ${data.length} records to ${format} format as ${filename}`);
-  
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, message: `Successfully exported to ${format}` });
-    }, 800);
-  });
+export const exportData = async (data, format, filename) => {
+  try {
+    return await exportReportData(data, format, filename);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
 };
 
 /**

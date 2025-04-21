@@ -116,8 +116,14 @@ const ReportsPage = () => {
       setIsGenerating(true);
       toast.loading(`Exporting report as ${format.toUpperCase()}...`);
       
+      // Add reportType to data if it doesn't exist
+      const dataToExport = {
+        ...reportData,
+        reportType: reportType || 'summary'
+      };
+      
       // Call export function
-      const result = await exportData(reportData, format, `payment-report-${Date.now()}.${format}`);
+      const result = await exportData(dataToExport, format, `payment-report-${Date.now()}.${format}`);
       
       toast.dismiss();
       toast.success(result.message);
@@ -125,7 +131,7 @@ const ReportsPage = () => {
     } catch (error) {
       console.error('Error exporting report:', error);
       toast.dismiss();
-      toast.error('Failed to export report');
+      toast.error('Failed to export report: ' + (error.message || ''));
       setIsGenerating(false);
     }
   };
