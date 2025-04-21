@@ -20,6 +20,9 @@ const VerifyEmail = () => {
     message: '',
     error: ''
   });
+  
+  // Add a ref to track if a success toast has been shown
+  const [toastShown, setToastShown] = useState(false);
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -46,7 +49,11 @@ const VerifyEmail = () => {
             message: 'Your email has been verified successfully.',
             error: ''
           });
-          toast.success('Email verified successfully!');
+          
+          if (!toastShown) {
+            toast.success('Email verified successfully!');
+            setToastShown(true);
+          }
           
           // If user is authenticated, redirect to payment page
           if (isAuthenticated) {
@@ -69,7 +76,11 @@ const VerifyEmail = () => {
             message: response.data.message || 'Email verified successfully!',
             error: ''
           });
-          toast.success('Email verified successfully!');
+          
+          if (!toastShown) {
+            toast.success('Email verified successfully!');
+            setToastShown(true);
+          }
           
           // If user is authenticated, redirect to payment page
           if (isAuthenticated) {
@@ -121,7 +132,11 @@ const VerifyEmail = () => {
               message: 'Your email has been verified successfully.',
               error: ''
             });
-            toast.success('Email verified successfully!');
+            
+            if (!toastShown) {
+              toast.success('Email verified successfully!');
+              setToastShown(true);
+            }
             
             // If user is authenticated, redirect to payment page
             if (isAuthenticated) {
@@ -140,6 +155,11 @@ const VerifyEmail = () => {
               message: 'Your email is already verified. You can now continue to payment.',
               error: ''
             });
+            
+            if (!toastShown) {
+              toast.success('Email verified successfully!');
+              setToastShown(true);
+            }
             
             // If user is authenticated, redirect to payment page
             if (isAuthenticated) {
@@ -162,7 +182,7 @@ const VerifyEmail = () => {
     };
 
     verifyEmail();
-  }, [token, email, navigate, isAuthenticated, login]);
+  }, [token, email, navigate, isAuthenticated, login, toastShown]);
 
   const handleContinueToPayment = () => {
     // Check localStorage for registration data to identify user type
