@@ -10,7 +10,9 @@ import {
   ArrowRight, 
   CreditCard,
   PieChart, 
-  TrendingUp
+  TrendingUp,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Bar } from 'react-chartjs-2';
 import { Link } from 'react-router-dom';
@@ -53,6 +55,9 @@ const Dashboard = () => {
     resumeUploads: 0
   });
   const [recentPayments, setRecentPayments] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPayments, setTotalPayments] = useState(0);
+  const paymentsPerPage = 10;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,7 +68,7 @@ const Dashboard = () => {
         const paymentStats = await fetchPaymentStats('monthly');
         
         // Fetch recent transactions
-        const transactionsData = await fetchTransactions({}, 1, 5); // Limit to 5 recent transactions
+        const transactionsData = await fetchTransactions({}, 1, 50); // Fetch more to have data for pagination
         
         console.log('Transactions data:', transactionsData);
         
@@ -90,6 +95,7 @@ const Dashboard = () => {
         
         // Set recent payments with normalized IDs
         setRecentPayments(normalizedTransactions);
+        setTotalPayments(normalizedTransactions.length);
         
         // Debug: check structure of transaction objects
         if (normalizedTransactions.length > 0) {
@@ -110,6 +116,14 @@ const Dashboard = () => {
 
     fetchData();
   }, []);
+
+  // Get current payments
+  const indexOfLastPayment = currentPage * paymentsPerPage;
+  const indexOfFirstPayment = indexOfLastPayment - paymentsPerPage;
+  const currentPayments = recentPayments.slice(indexOfFirstPayment, indexOfLastPayment);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   // Revenue chart configuration based on real data
   const revenueData = {
@@ -347,8 +361,8 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {recentPayments.length > 0 ? (
-                recentPayments.map((payment, index) => (
+              {currentPayments.length > 0 ? (
+                currentPayments.map((payment, index) => (
                   <tr key={`payment-${index}-${payment.safeId || payment._id || payment.id || payment.reference}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {payment.reference || payment._id || payment.id}
@@ -399,6 +413,78 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {recentPayments.length > paymentsPerPage && (
+          <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => paginate(currentPage < Math.ceil(recentPayments.length / paymentsPerPage) ? currentPage + 1 : currentPage)}
+                disabled={currentPage >= Math.ceil(recentPayments.length / paymentsPerPage)}
+                className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  currentPage >= Math.ceil(recentPayments.length / paymentsPerPage) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{Math.min(indexOfFirstPayment + 1, totalPayments)}</span> to{' '}
+                  <span className="font-medium">{Math.min(indexOfLastPayment, totalPayments)}</span> of{' '}
+                  <span className="font-medium">{totalPayments}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
+                      currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="sr-only">Previous</span>
+                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  {Array.from({ length: Math.ceil(recentPayments.length / paymentsPerPage) }, (_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => paginate(i + 1)}
+                      className={`relative inline-flex items-center px-4 py-2 border ${
+                        currentPage === i + 1
+                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      } text-sm font-medium`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => paginate(currentPage < Math.ceil(recentPayments.length / paymentsPerPage) ? currentPage + 1 : currentPage)}
+                    disabled={currentPage >= Math.ceil(recentPayments.length / paymentsPerPage)}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
+                      currentPage >= Math.ceil(recentPayments.length / paymentsPerPage) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="sr-only">Next</span>
+                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
