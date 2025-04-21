@@ -62,9 +62,13 @@ export const formatDate = (dateString, options = {}) => {
  * @return {string} Unique transaction reference
  */
 export const generateTransactionReference = (prefix = 'TXN') => {
-  const timestamp = Date.now().toString().slice(-6);
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `${prefix}-${timestamp}-${random}`;
+  // Use full timestamp with milliseconds for higher uniqueness
+  const timestamp = Date.now();
+  // Add more randomness with larger random number
+  const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+  // Add a unique component based on a UUID-like approach
+  const uniqueId = Math.random().toString(36).substring(2, 10);
+  return `${prefix}-${timestamp}-${random}-${uniqueId}`;
 };
 
 /**
