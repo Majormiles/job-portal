@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, CreditCard, Users, FileText, Calendar, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { fetchPaymentStats } from './actions';
+import { toast } from 'react-hot-toast';
 import '../../css/payment-portal.css';
 
 const PaymentDashboard = () => {
@@ -15,48 +17,64 @@ const PaymentDashboard = () => {
     totalRevenue: 0
   });
 
-  // Mock data for development purposes
-  const mockStats = {
-    jobSeekers: { count: 124, revenue: 6200 },
-    employers: { count: 57, revenue: 5700 },
-    trainers: { count: 18, revenue: 1800 },
-    trainees: { count: 89, revenue: 4450 },
-    totalRevenue: 18150
-  };
-
-  // Mock data for charts
-  const pieChartData = [
-    { name: 'Job Seekers', value: 6200, color: '#3b82f6' },
-    { name: 'Employers', value: 5700, color: '#10b981' },
-    { name: 'Trainers', value: 1800, color: '#f59e0b' },
-    { name: 'Trainees', value: 4450, color: '#6366f1' }
-  ];
-
-  const barChartData = [
-    { name: 'Jan', 'Job Seekers': 800, 'Employers': 400, 'Trainers': 200, 'Trainees': 500 },
-    { name: 'Feb', 'Job Seekers': 300, 'Employers': 700, 'Trainers': 100, 'Trainees': 400 },
-    { name: 'Mar', 'Job Seekers': 500, 'Employers': 900, 'Trainers': 300, 'Trainees': 600 },
-    { name: 'Apr', 'Job Seekers': 700, 'Employers': 500, 'Trainers': 200, 'Trainees': 400 },
-    { name: 'May', 'Job Seekers': 900, 'Employers': 800, 'Trainers': 300, 'Trainees': 700 },
-    { name: 'Jun', 'Job Seekers': 1100, 'Employers': 600, 'Trainers': 200, 'Trainees': 500 },
-  ];
+  // Chart data states
+  const [pieChartData, setPieChartData] = useState([]);
+  const [barChartData, setBarChartData] = useState([]);
 
   useEffect(() => {
-    // Simulate API call to fetch data
+    // Fetch payment stats from API
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        // In a real implementation, this would be an API call
-        // const response = await fetch('/api/admin/payment-stats?timeFilter=' + timeFilter);
-        // const data = await response.json();
         
-        // For now, use mock data
-        setTimeout(() => {
-          setStats(mockStats);
-          setIsLoading(false);
-        }, 800);
+        const statsData = await fetchPaymentStats(timeFilter);
+        setStats(statsData);
+        
+        // Update pie chart data
+        setPieChartData([
+          { name: 'Job Seekers', value: statsData.jobSeekers.revenue, color: '#3b82f6' },
+          { name: 'Employers', value: statsData.employers.revenue, color: '#10b981' },
+          { name: 'Trainers', value: statsData.trainers.revenue, color: '#f59e0b' },
+          { name: 'Trainees', value: statsData.trainees.revenue, color: '#6366f1' }
+        ]);
+        
+        // Generate mock bar chart data based on real revenue proportions
+        // In a production app, you'd fetch this from an API endpoint
+        const totalRevenue = statsData.totalRevenue || 1; // Avoid division by zero
+        
+        // Create sample bar chart data with realistic proportions
+        const mockBarData = [
+          { name: 'Jan', 'Job Seekers': Math.round(800 * (statsData.jobSeekers.revenue / totalRevenue)), 
+            'Employers': Math.round(400 * (statsData.employers.revenue / totalRevenue)),
+            'Trainers': Math.round(200 * (statsData.trainers.revenue / totalRevenue)), 
+            'Trainees': Math.round(500 * (statsData.trainees.revenue / totalRevenue)) },
+          { name: 'Feb', 'Job Seekers': Math.round(300 * (statsData.jobSeekers.revenue / totalRevenue)), 
+            'Employers': Math.round(700 * (statsData.employers.revenue / totalRevenue)),
+            'Trainers': Math.round(100 * (statsData.trainers.revenue / totalRevenue)), 
+            'Trainees': Math.round(400 * (statsData.trainees.revenue / totalRevenue)) },
+          { name: 'Mar', 'Job Seekers': Math.round(500 * (statsData.jobSeekers.revenue / totalRevenue)), 
+            'Employers': Math.round(900 * (statsData.employers.revenue / totalRevenue)),
+            'Trainers': Math.round(300 * (statsData.trainers.revenue / totalRevenue)), 
+            'Trainees': Math.round(600 * (statsData.trainees.revenue / totalRevenue)) },
+          { name: 'Apr', 'Job Seekers': Math.round(700 * (statsData.jobSeekers.revenue / totalRevenue)), 
+            'Employers': Math.round(500 * (statsData.employers.revenue / totalRevenue)),
+            'Trainers': Math.round(200 * (statsData.trainers.revenue / totalRevenue)), 
+            'Trainees': Math.round(400 * (statsData.trainees.revenue / totalRevenue)) },
+          { name: 'May', 'Job Seekers': Math.round(900 * (statsData.jobSeekers.revenue / totalRevenue)), 
+            'Employers': Math.round(800 * (statsData.employers.revenue / totalRevenue)),
+            'Trainers': Math.round(300 * (statsData.trainers.revenue / totalRevenue)), 
+            'Trainees': Math.round(700 * (statsData.trainees.revenue / totalRevenue)) },
+          { name: 'Jun', 'Job Seekers': Math.round(1100 * (statsData.jobSeekers.revenue / totalRevenue)), 
+            'Employers': Math.round(600 * (statsData.employers.revenue / totalRevenue)),
+            'Trainers': Math.round(200 * (statsData.trainers.revenue / totalRevenue)), 
+            'Trainees': Math.round(500 * (statsData.trainees.revenue / totalRevenue)) },
+        ];
+        
+        setBarChartData(mockBarData);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching payment stats:", error);
+        toast.error("Failed to load payment statistics");
         setIsLoading(false);
       }
     };
@@ -253,7 +271,7 @@ const PaymentDashboard = () => {
         </div>
       </div>
 
-      {/* Quick Access Cards */}
+      {/* Quick Action Links */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link 
           to="/admin/payments/transactions" 

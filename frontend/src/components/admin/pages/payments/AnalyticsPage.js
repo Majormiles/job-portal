@@ -4,6 +4,8 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
+import { fetchPaymentAnalytics } from './actions';
+import { toast } from 'react-hot-toast';
 import '../../css/payment-portal.css';
 
 const AnalyticsPage = () => {
@@ -11,9 +13,17 @@ const AnalyticsPage = () => {
   const [comparisonMode, setComparisonMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState({
-    summary: {},
+    summary: {
+      totalRevenue: 0,
+      previousPeriodRevenue: 0,
+      percentageChange: 0,
+      averageTransaction: 0,
+      successRate: 0,
+      topUserType: ''
+    },
     trends: [],
     distribution: [],
+    userGrowth: [],
     forecast: [],
     comparison: {
       current: [],
@@ -21,135 +31,26 @@ const AnalyticsPage = () => {
     }
   });
 
-  // Mock data for development
-  const mockAnalyticsData = {
-    summary: {
-      totalRevenue: 18150,
-      previousPeriodRevenue: 16200,
-      percentageChange: 12.03,
-      averageTransaction: 75.62,
-      successRate: 92,
-      topUserType: 'Job Seekers'
-    },
-    trends: [
-      { month: 'Jan', revenue: 1500 },
-      { month: 'Feb', revenue: 1800 },
-      { month: 'Mar', revenue: 2200 },
-      { month: 'Apr', revenue: 1900 },
-      { month: 'May', revenue: 2500 },
-      { month: 'Jun', revenue: 3000 },
-      { month: 'Jul', revenue: 2800 },
-      { month: 'Aug', revenue: 3200 },
-      { month: 'Sep', revenue: 3500 },
-      { month: 'Oct', revenue: 3800 },
-      { month: 'Nov', revenue: 4100 },
-      { month: 'Dec', revenue: 4300 }
-    ],
-    dailyTrends: [
-      { day: '1', revenue: 120 },
-      { day: '2', revenue: 140 },
-      { day: '3', revenue: 110 },
-      { day: '4', revenue: 180 },
-      { day: '5', revenue: 190 },
-      { day: '6', revenue: 170 },
-      { day: '7', revenue: 150 },
-      { day: '8', revenue: 210 },
-      { day: '9', revenue: 200 },
-      { day: '10', revenue: 230 },
-      { day: '11', revenue: 210 },
-      { day: '12', revenue: 180 },
-      { day: '13', revenue: 220 },
-      { day: '14', revenue: 260 }
-    ],
-    weeklyTrends: [
-      { week: 'Week 1', revenue: 800 },
-      { week: 'Week 2', revenue: 950 },
-      { week: 'Week 3', revenue: 1100 },
-      { week: 'Week 4', revenue: 950 },
-      { week: 'Week 5', revenue: 1200 },
-      { week: 'Week 6', revenue: 1050 },
-      { week: 'Week 7', revenue: 1300 },
-      { week: 'Week 8', revenue: 1150 }
-    ],
-    yearlyTrends: [
-      { year: '2020', revenue: 12000 },
-      { year: '2021', revenue: 18000 },
-      { year: '2022', revenue: 24000 },
-      { year: '2023', revenue: 34000 }
-    ],
-    distribution: [
-      { name: 'Job Seekers', value: 6200, color: '#3b82f6' },
-      { name: 'Employers', value: 5700, color: '#10b981' },
-      { name: 'Trainers', value: 1800, color: '#f59e0b' },
-      { name: 'Trainees', value: 4450, color: '#6366f1' }
-    ],
-    userGrowth: [
-      { month: 'Jan', 'Job Seekers': 5, 'Employers': 3, 'Trainers': 1, 'Trainees': 4 },
-      { month: 'Feb', 'Job Seekers': 8, 'Employers': 5, 'Trainers': 2, 'Trainees': 6 },
-      { month: 'Mar', 'Job Seekers': 12, 'Employers': 7, 'Trainers': 3, 'Trainees': 9 },
-      { month: 'Apr', 'Job Seekers': 15, 'Employers': 9, 'Trainers': 2, 'Trainees': 12 },
-      { month: 'May', 'Job Seekers': 20, 'Employers': 12, 'Trainers': 4, 'Trainees': 15 },
-      { month: 'Jun', 'Job Seekers': 25, 'Employers': 15, 'Trainers': 4, 'Trainees': 18 }
-    ],
-    forecast: [
-      { month: 'Jan', actual: 1500, forecast: null },
-      { month: 'Feb', actual: 1800, forecast: null },
-      { month: 'Mar', actual: 2200, forecast: null },
-      { month: 'Apr', actual: 1900, forecast: null },
-      { month: 'May', actual: 2500, forecast: null },
-      { month: 'Jun', actual: 3000, forecast: null },
-      { month: 'Jul', actual: 2800, forecast: null },
-      { month: 'Aug', actual: 3200, forecast: null },
-      { month: 'Sep', actual: 3500, forecast: null },
-      { month: 'Oct', actual: 3800, forecast: null },
-      { month: 'Nov', actual: 4100, forecast: null },
-      { month: 'Dec', actual: 4300, forecast: null },
-      { month: 'Jan (Forecast)', actual: null, forecast: 4500 },
-      { month: 'Feb (Forecast)', actual: null, forecast: 4800 },
-      { month: 'Mar (Forecast)', actual: null, forecast: 5200 }
-    ],
-    comparison: {
-      current: [
-        { month: 'Jul', revenue: 2800 },
-        { month: 'Aug', revenue: 3200 },
-        { month: 'Sep', revenue: 3500 },
-        { month: 'Oct', revenue: 3800 },
-        { month: 'Nov', revenue: 4100 },
-        { month: 'Dec', revenue: 4300 }
-      ],
-      previous: [
-        { month: 'Jul', revenue: 2200 },
-        { month: 'Aug', revenue: 2600 },
-        { month: 'Sep', revenue: 2900 },
-        { month: 'Oct', revenue: 3100 },
-        { month: 'Nov', revenue: 3500 },
-        { month: 'Dec', revenue: 3900 }
-      ]
-    }
-  };
-
   useEffect(() => {
-    // Simulate API call
-    const fetchAnalyticsData = async () => {
+    // Fetch analytics data from API
+    const loadAnalyticsData = async () => {
       try {
         setIsLoading(true);
-        // In a real implementation, this would be an API call
-        // const response = await fetch(`/api/admin/payment-analytics?timeRange=${timeRange}`);
-        // const data = await response.json();
         
-        // For now, use mock data
-        setTimeout(() => {
-          setAnalyticsData(mockAnalyticsData);
-          setIsLoading(false);
-        }, 800);
+        // Get analytics data from API
+        const data = await fetchPaymentAnalytics(timeRange, comparisonMode);
+        setAnalyticsData(data);
+        
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching analytics data:", error);
+        toast.error("Failed to load analytics data");
         setIsLoading(false);
       }
     };
 
-    fetchAnalyticsData();
-  }, [timeRange]);
+    loadAnalyticsData();
+  }, [timeRange, comparisonMode]);
 
   const handleTimeRangeChange = (range) => {
     setTimeRange(range);
@@ -159,19 +60,29 @@ const AnalyticsPage = () => {
     setComparisonMode(!comparisonMode);
   };
 
-  const getTimeRangeData = () => {
-    switch (timeRange) {
-      case 'daily':
-        return mockAnalyticsData.dailyTrends;
-      case 'weekly':
-        return mockAnalyticsData.weeklyTrends;
-      case 'yearly':
-        return mockAnalyticsData.yearlyTrends;
-      default:
-        return mockAnalyticsData.trends;
+  // Get the correct data based on the selected time range
+  const getTrendsData = () => {
+    if (!analyticsData.trends || analyticsData.trends.length === 0) {
+      // Return empty array if no data
+      return [];
     }
+    
+    // Return trends data, but ensure it has the right x-axis key
+    return analyticsData.trends.map(item => {
+      // Check if we need to rename the keys based on time range
+      if (timeRange === 'daily' && item.day) {
+        return item;
+      } else if (timeRange === 'weekly' && item.week) {
+        return item;
+      } else if (timeRange === 'yearly' && item.year) {
+        return item;
+      } else {
+        return item; // Default to monthly format
+      }
+    });
   };
 
+  // Get the appropriate X-axis key for the selected time range
   const getXAxisKey = () => {
     switch (timeRange) {
       case 'daily':
@@ -183,6 +94,46 @@ const AnalyticsPage = () => {
       default:
         return 'month';
     }
+  };
+
+  // Generate forecast data if not provided by API
+  const getForecastData = () => {
+    if (analyticsData.forecast && analyticsData.forecast.length > 0) {
+      return analyticsData.forecast;
+    }
+    
+    // Generate simple forecast if not provided
+    const trends = getTrendsData();
+    if (trends.length === 0) return [];
+    
+    // Get the average growth rate
+    let avgGrowth = 0;
+    for (let i = 1; i < trends.length; i++) {
+      const current = trends[i].revenue;
+      const previous = trends[i-1].revenue;
+      if (previous > 0) {
+        avgGrowth += (current - previous) / previous;
+      }
+    }
+    avgGrowth = avgGrowth / (trends.length - 1) || 0.05; // Default to 5% if can't calculate
+    
+    // Create forecast data (3 periods ahead)
+    const forecast = [...trends];
+    const lastRevenue = trends[trends.length - 1]?.revenue || 0;
+    const xAxisKey = getXAxisKey();
+    
+    // Add forecast points
+    for (let i = 1; i <= 3; i++) {
+      const nextValue = lastRevenue * (1 + avgGrowth * i);
+      let nextItem = { revenue: Math.round(nextValue) };
+      
+      // Set appropriate key for x-axis
+      nextItem[xAxisKey] = `${xAxisKey.charAt(0).toUpperCase() + xAxisKey.slice(1)} ${trends.length + i} (Forecast)`;
+      
+      forecast.push(nextItem);
+    }
+    
+    return forecast;
   };
 
   if (isLoading) {
@@ -255,94 +206,60 @@ const AnalyticsPage = () => {
               {Math.abs(analyticsData.summary.percentageChange).toFixed(1)}%
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-800">₵{analyticsData.summary.totalRevenue.toLocaleString()}</div>
+          <div className="text-xl font-bold text-gray-800">₵{analyticsData.summary.totalRevenue.toLocaleString()}</div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-500">Previous Period</h3>
-            <Calendar className="h-4 w-4 text-gray-400" />
+            <h3 className="text-sm font-medium text-gray-500">Avg. Transaction</h3>
           </div>
-          <div className="text-2xl font-bold text-gray-800">₵{analyticsData.summary.previousPeriodRevenue.toLocaleString()}</div>
+          <div className="text-xl font-bold text-gray-800">₵{analyticsData.summary.averageTransaction.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-500">Avg Transaction</h3>
-            <BarChart2 className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-800">₵{analyticsData.summary.averageTransaction.toFixed(2)}</div>
-        </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-500">Success Rate</h3>
-            <TrendingUp className="h-4 w-4 text-gray-400" />
           </div>
-          <div className="text-2xl font-bold text-gray-800">{analyticsData.summary.successRate}%</div>
+          <div className="text-xl font-bold text-gray-800">{analyticsData.summary.successRate}%</div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 col-span-1 md:col-span-2 xl:col-span-2">
+
+        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-500">Top Contributor</h3>
-            <PieChartIcon className="h-4 w-4 text-gray-400" />
           </div>
-          <div className="text-2xl font-bold text-gray-800">{analyticsData.summary.topUserType}</div>
-          <div className="text-sm text-gray-500 mt-1">34% of total revenue</div>
+          <div className="text-xl font-bold text-gray-800">{analyticsData.summary.topUserType}</div>
         </div>
       </div>
 
-      {/* Revenue Trends Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 lg:col-span-2">
+      {/* Main Charts Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+        {/* Revenue Trends Chart */}
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Revenue Trends</h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              {comparisonMode ? (
-                <BarChart
-                  data={analyticsData.comparison.current.map((item, index) => ({
-                    name: item.month,
-                    current: item.revenue,
-                    previous: analyticsData.comparison.previous[index]?.revenue || 0
-                  }))}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value) => `₵${value}`}
-                    labelFormatter={(label) => `Month: ${label}`}
-                  />
-                  <Legend />
-                  <Bar dataKey="current" name="Current Period" fill="#3b82f6" />
-                  <Bar dataKey="previous" name="Previous Period" fill="#93c5fd" />
-                </BarChart>
-              ) : (
-                <AreaChart
-                  data={getTimeRangeData()}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey={getXAxisKey()} />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `₵${value}`} />
-                  <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fillOpacity={1} fill="url(#colorRevenue)" />
-                </AreaChart>
-              )}
+              <AreaChart
+                data={getTrendsData()}
+                margin={{
+                  top: 10,
+                  right: 30,
+                  left: 0,
+                  bottom: 0,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey={getXAxisKey()} />
+                <YAxis />
+                <Tooltip formatter={(value) => `₵${value}`} />
+                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#dbeafe" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Payment Distribution */}
+        {/* Payment Distribution Chart */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Payment Distribution by User Type</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Payment Distribution</h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -367,52 +284,105 @@ const AnalyticsPage = () => {
             </ResponsiveContainer>
           </div>
         </div>
-        
-        {/* User Growth Chart */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">User Growth by Category</h2>
+      </div>
+
+      {/* Comparison Chart (if comparison mode is enabled) */}
+      {comparisonMode && (
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Period Comparison</h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={analyticsData.userGrowth}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              <BarChart
+                data={analyticsData.comparison.current.map((item, index) => ({
+                  name: item[getXAxisKey()],
+                  current: item.revenue,
+                  previous: analyticsData.comparison.previous[index]?.revenue || 0
+                }))}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip formatter={(value) => `₵${value}`} />
                 <Legend />
-                <Line type="monotone" dataKey="Job Seekers" stroke="#3b82f6" activeDot={{ r: 8 }} />
-                <Line type="monotone" dataKey="Employers" stroke="#10b981" />
-                <Line type="monotone" dataKey="Trainers" stroke="#f59e0b" />
-                <Line type="monotone" dataKey="Trainees" stroke="#6366f1" />
-              </LineChart>
+                <Bar name="Current Period" dataKey="current" fill="#3b82f6" />
+                <Bar name="Previous Period" dataKey="previous" fill="#93c5fd" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Revenue Forecast */}
+      {/* Forecast Chart */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Revenue Forecast</h2>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
-              data={analyticsData.forecast}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              data={getForecastData()}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey={getXAxisKey()} />
+              <YAxis />
+              <Tooltip formatter={(value) => `₵${value}`} />
+              <Legend />
+              <Line
+                name="Actual Revenue"
+                type="monotone"
+                dataKey="revenue"
+                stroke="#3b82f6"
+                activeDot={{ r: 8 }}
+                strokeWidth={2}
+              />
+              <Line
+                name="Forecast Revenue"
+                type="monotone"
+                dataKey="forecast"
+                stroke="#f59e0b"
+                strokeDasharray="5 5"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* User Growth Chart */}
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Payment Growth by User Type</h2>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={analyticsData.userGrowth}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => value ? `₵${value}` : 'N/A'} />
+              <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="actual" name="Actual Revenue" stroke="#3b82f6" strokeWidth={2} dot={{ r: 5 }} />
-              <Line type="monotone" dataKey="forecast" name="Forecasted Revenue" stroke="#f59e0b" strokeDasharray="5 5" strokeWidth={2} dot={{ r: 5 }} />
-            </LineChart>
+              <Bar dataKey="Job Seekers" stackId="a" fill="#3b82f6" />
+              <Bar dataKey="Employers" stackId="a" fill="#10b981" />
+              <Bar dataKey="Trainers" stackId="a" fill="#f59e0b" />
+              <Bar dataKey="Trainees" stackId="a" fill="#6366f1" />
+            </BarChart>
           </ResponsiveContainer>
-        </div>
-        <div className="mt-4 text-sm text-gray-500">
-          <p>Forecast based on historical data and seasonal trends. Forecast shows projected revenue for the next 3 months.</p>
         </div>
       </div>
     </div>

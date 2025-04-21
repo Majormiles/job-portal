@@ -1,4 +1,7 @@
 // Payment Portal Action Functions
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 /**
  * Format currency values for display
@@ -22,6 +25,7 @@ export const getStatusColorClasses = (status) => {
   switch (status.toUpperCase()) {
     case 'COMPLETED':
     case 'SUCCESS':
+    case 'SUCCESSFUL':
       return 'bg-green-100 text-green-800';
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
@@ -96,4 +100,122 @@ export const exportData = (data, format, filename) => {
       resolve({ success: true, message: `Successfully exported to ${format}` });
     }, 800);
   });
+};
+
+/**
+ * Fetch payment dashboard stats from API
+ * @param {string} timeFilter - Time filter for stats (daily, weekly, monthly, yearly)
+ * @return {Promise} Promise resolving to payment stats 
+ */
+export const fetchPaymentStats = async (timeFilter = 'monthly') => {
+  try {
+    const adminToken = localStorage.getItem('adminToken');
+    
+    const response = await axios.get(`${API_URL}/payment/admin/stats`, {
+      params: { timeFilter },
+      headers: {
+        Authorization: adminToken ? `Bearer ${adminToken}` : ''
+      }
+    });
+    
+    if (response.data.success) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message || 'Failed to fetch payment stats');
+    }
+  } catch (error) {
+    console.error('Error fetching payment stats:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch transactions from API
+ * @param {object} filters - Filter criteria
+ * @param {number} page - Page number for pagination
+ * @param {number} limit - Results per page
+ * @return {Promise} Promise resolving to transactions data
+ */
+export const fetchTransactions = async (filters = {}, page = 1, limit = 10) => {
+  try {
+    const adminToken = localStorage.getItem('adminToken');
+    
+    const response = await axios.get(`${API_URL}/payment/admin/transactions`, {
+      params: { 
+        ...filters,
+        page,
+        limit
+      },
+      headers: {
+        Authorization: adminToken ? `Bearer ${adminToken}` : ''
+      }
+    });
+    
+    if (response.data.success) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message || 'Failed to fetch transactions');
+    }
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch payment analytics data from API
+ * @param {string} timeRange - Time range for analytics
+ * @param {boolean} comparisonMode - Whether to include comparison data
+ * @return {Promise} Promise resolving to analytics data
+ */
+export const fetchPaymentAnalytics = async (timeRange = 'monthly', comparisonMode = false) => {
+  try {
+    const adminToken = localStorage.getItem('adminToken');
+    
+    const response = await axios.get(`${API_URL}/payment/admin/analytics`, {
+      params: { 
+        timeRange,
+        comparison: comparisonMode 
+      },
+      headers: {
+        Authorization: adminToken ? `Bearer ${adminToken}` : ''
+      }
+    });
+    
+    if (response.data.success) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message || 'Failed to fetch payment analytics');
+    }
+  } catch (error) {
+    console.error('Error fetching payment analytics:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generate payment reports from API
+ * @param {object} reportOptions - Report configuration options
+ * @return {Promise} Promise resolving to report data
+ */
+export const generatePaymentReport = async (reportOptions = {}) => {
+  try {
+    const adminToken = localStorage.getItem('adminToken');
+    
+    const response = await axios.get(`${API_URL}/payment/admin/reports`, {
+      params: reportOptions,
+      headers: {
+        Authorization: adminToken ? `Bearer ${adminToken}` : ''
+      }
+    });
+    
+    if (response.data.success) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message || 'Failed to generate payment report');
+    }
+  } catch (error) {
+    console.error('Error generating payment report:', error);
+    throw error;
+  }
 }; 

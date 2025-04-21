@@ -5,9 +5,13 @@ import {
   checkPaymentStatus,
   getPaymentAmount,
   handleWebhook,
-  updatePaymentStatus
+  updatePaymentStatus,
+  getAdminPaymentStats,
+  getAdminTransactions,
+  getAdminPaymentAnalytics,
+  getAdminPaymentReports
 } from '../controllers/payment.controller.js';
-import { protect } from '../middleware/auth.middleware.js';
+import { protect, authorize } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -18,5 +22,11 @@ router.get('/status/:email', checkPaymentStatus);
 router.get('/amount/:roleName', getPaymentAmount);
 router.post('/webhook', handleWebhook);
 router.post('/update-status', updatePaymentStatus);
+
+// Admin routes
+router.get('/admin/stats', protect, authorize('admin'), getAdminPaymentStats);
+router.get('/admin/transactions', protect, authorize('admin'), getAdminTransactions);
+router.get('/admin/analytics', protect, authorize('admin'), getAdminPaymentAnalytics);
+router.get('/admin/reports', protect, authorize('admin'), getAdminPaymentReports);
 
 export default router; 
