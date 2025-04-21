@@ -1060,7 +1060,7 @@ const RegisterPage = () => {
 
   // Determine payment amount based on user type
   const getPaymentAmount = () => {
-    if (userType === 'employer') {
+    if (userType === 'employer' || (userType === 'talent' && talentType === 'trainer')) {
       return '100 GHS';
     }
     return '50 GHS';
@@ -1288,7 +1288,11 @@ const RegisterPage = () => {
                   <input
                     type="text"
                     name="fullName"
-                    placeholder="Full Name or Business Name"
+                    placeholder={
+                      userType === 'employer' 
+                        ? "Company Name or Business Name" 
+                        : "Full Name"
+                    }
                     value={formData.fullName}
                     onChange={handleChange}
                     className={`w-full p-3 border ${formErrors.fullName ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
