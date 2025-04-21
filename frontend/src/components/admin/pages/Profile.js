@@ -16,7 +16,20 @@ const AdminProfile = () => {
           throw new Error('No admin token found');
         }
         
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/admin/profile`, {
+        // Use the locally stored admin user data since there's no specific admin profile endpoint
+        const adminUserData = localStorage.getItem('adminUser');
+        if (adminUserData) {
+          try {
+            const parsedData = JSON.parse(adminUserData);
+            setAdminUser(parsedData);
+            return; // Exit the function since we have the data
+          } catch (e) {
+            console.error('Error parsing admin user data:', e);
+          }
+        }
+        
+        // If local data not available, try to fetch user profile using the token
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -27,19 +40,16 @@ const AdminProfile = () => {
         }
         
         const data = await response.json();
-        setAdminUser(data);
+        if (data.success && data.data) {
+          setAdminUser(data.data);
+          // Save to localStorage for future use
+          localStorage.setItem('adminUser', JSON.stringify(data.data));
+        } else {
+          throw new Error('Invalid response format from server');
+        }
       } catch (err) {
         console.error('Error fetching admin profile:', err);
         setError(err.message);
-        // Use fallback from local storage if API fails
-        const adminUserData = localStorage.getItem('adminUser');
-        if (adminUserData) {
-          try {
-            setAdminUser(JSON.parse(adminUserData));
-          } catch (e) {
-            console.error('Error parsing admin user data:', e);
-          }
-        }
       } finally {
         setLoading(false);
       }
