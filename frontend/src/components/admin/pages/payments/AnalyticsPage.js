@@ -287,7 +287,7 @@ const AnalyticsPage = () => {
       </div>
 
       {/* Comparison Chart (if comparison mode is enabled) */}
-      {comparisonMode && (
+      {comparisonMode && analyticsData.comparison && analyticsData.comparison.current && analyticsData.comparison.current.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Period Comparison</h2>
           <div className="h-80">
