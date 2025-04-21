@@ -6,6 +6,7 @@ import AppError from '../utils/appError.js';
 import { sendEmail } from '../utils/emailService.js';
 import crypto from 'crypto';
 import Application from '../models/application.model.js';
+import mongoose from 'mongoose';
 
 // @desc    Get current logged in user
 // @route   GET /api/users/me
@@ -515,4 +516,67 @@ const calculateProfileCompletion = (user, onboarding) => {
   }
 
   return Math.round((completionScore / totalFields) * 100);
-}; 
+};
+
+/**
+ * Update user role
+ * @route   PUT /api/users/role
+ * @access  Private
+ */
+export const updateUserRole = asyncHandler(async (req, res, next) => {
+  try {
+    const { role, userType, roleName } = req.body;
+    
+    if (!role && !userType && !roleName) {
+      return next(new AppError('Please provide at least one of: role, userType, or roleName', 400));
+    }
+    
+    // Use the first available value in order of priority: role, userType, roleName
+    const roleToUse = role || userType || roleName;
+    
+    // Valid roles check
+    const validRoleNames = ['admin', 'jobSeeker', 'employer', 'trainer', 'trainee'];
+    if (!validRoleNames.includes(roleToUse)) {
+      return next(new AppError('Invalid role specified', 400));
+    }
+    
+    // Map frontend role names to database role names if needed
+    let dbRoleName = roleToUse;
+    if (roleToUse === 'user') {
+      dbRoleName = 'jobSeeker';
+    }
+    
+    // Find the Role document based on role name
+    const Role = mongoose.model('Role');
+    const roleDoc = await Role.findOne({ name: dbRoleName });
+    
+    if (!roleDoc) {
+      return next(new AppError(`Role "${dbRoleName}" not found in the database`, 404));
+    }
+    
+    // Update the user role
+    const updateData = { 
+      role: roleDoc._id,
+      roleName: dbRoleName
+    };
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id, 
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: user,
+      message: `User role updated to ${dbRoleName} successfully`
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    return next(new AppError(`Failed to update user role: ${error.message}`, 500));
+  }
+}); 

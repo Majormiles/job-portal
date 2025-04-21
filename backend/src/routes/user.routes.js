@@ -11,7 +11,8 @@ import {
   forgotPassword,
   resetPassword,
   deleteAccount,
-  updateUserSettings
+  updateUserSettings,
+  updateUserRole
 } from '../controllers/user.controller.js';
 import {
   getOnboardingStatus,
@@ -88,6 +89,7 @@ router.put('/update-profile', updateProfile);
 router.put('/update-password', updatePassword);
 router.delete('/me', deleteAccount);
 router.put('/settings', updateUserSettings);
+router.put('/role', updateUserRole);
 
 // Onboarding routes
 router.get('/onboarding-status', getOnboardingStatus);

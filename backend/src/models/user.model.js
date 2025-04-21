@@ -88,6 +88,12 @@ const userSchema = new mongoose.Schema({
     resume: String,
     jobPreferences: {
       jobType: [String],
+      preferredJobTypes: [{
+        type: String,
+        ref: 'JobType',
+        localField: 'jobType',
+        foreignField: 'id'
+      }],
       salary: {
         min: Number,
         max: Number,
@@ -107,6 +113,12 @@ const userSchema = new mongoose.Schema({
   employerProfile: {
     companyName: String,
     industry: String,
+    companyType: {
+      type: String,
+      ref: 'CompanyType',
+      localField: 'industry',
+      foreignField: '_id'
+    },
     companySize: String,
     companyDescription: String,
     companyLogo: String,
@@ -142,6 +154,12 @@ const userSchema = new mongoose.Schema({
   traineeProfile: {
     educationLevel: String,
     interests: [String],
+    preferredInterests: [{
+      type: String,
+      ref: 'Interest',
+      localField: 'interests',
+      foreignField: 'id'
+    }],
     previousTrainings: [
       {
         title: String,

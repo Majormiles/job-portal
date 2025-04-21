@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import jobService from '../services/jobService';
+import jobTypeService from '../services/jobTypeService';
+import interestService from '../services/interestService';
+import interestTypeService from '../services/interestTypeService';
+import companyTypeService from '../services/companyTypeService';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -75,66 +79,6 @@ const RegisterPage = () => {
       { _id: 'other', name: 'Other' }
     ];
 
-    // Default job types if API fails
-    const defaultJobTypes = [
-      { id: 'full-time', name: 'Full-time' },
-      { id: 'part-time', name: 'Part-time' },
-      { id: 'contract', name: 'Contract' },
-      { id: 'temporary', name: 'Temporary' },
-      { id: 'internship', name: 'Internship' },
-      { id: 'remote', name: 'Remote' },
-      { id: 'hybrid', name: 'Hybrid' },
-      { id: 'seasonal', name: 'Seasonal' },
-      { id: 'freelance', name: 'Freelance' },
-      { id: 'volunteer', name: 'Volunteer' }
-    ];
-
-    // Default interests for trainees if API fails
-    const defaultInterests = [
-      { id: 'web-development', name: 'Web Development' },
-      { id: 'mobile-app-development', name: 'Mobile App Development' },
-      { id: 'graphic-design', name: 'Graphic Design' },
-      { id: 'ui-ux-design', name: 'UI/UX Design' },
-      { id: 'digital-marketing', name: 'Digital Marketing' },
-      { id: 'data-analysis', name: 'Data Analysis' },
-      { id: 'business-admin', name: 'Business Administration' },
-      { id: 'accounting', name: 'Accounting & Finance' },
-      { id: 'language', name: 'Language & Communication' },
-      { id: 'healthcare', name: 'Healthcare & Wellness' },
-      { id: 'culinary', name: 'Culinary Arts' },
-      { id: 'fashion', name: 'Fashion & Beauty' },
-      { id: 'photography', name: 'Photography & Videography' },
-      { id: 'music-production', name: 'Music Production' },
-      { id: 'electrical', name: 'Electrical Engineering' },
-      { id: 'mechanical', name: 'Mechanical Engineering' },
-      { id: 'carpentry', name: 'Carpentry & Woodworking' },
-      { id: 'plumbing', name: 'Plumbing' },
-      { id: 'welding', name: 'Welding & Metalwork' },
-      { id: 'agriculture', name: 'Agriculture & Farming' },
-      { id: 'other', name: 'Other' }
-    ];
-
-    // Default company types if API fails
-    const defaultCompanyTypes = [
-      { _id: 'corporation', name: 'Corporation' },
-      { _id: 'limited-liability', name: 'Limited Liability Company (LLC)' },
-      { _id: 'partnership', name: 'Partnership' },
-      { _id: 'sole-proprietorship', name: 'Sole Proprietorship' },
-      { _id: 'non-profit', name: 'Non-Profit Organization' },
-      { _id: 'startup', name: 'Startup' },
-      { _id: 'government', name: 'Government Agency' },
-      { _id: 'educational', name: 'Educational Institution' },
-      { _id: 'other', name: 'Other' }
-    ];
-
-    // Default roles if API fails
-    const defaultRoles = [
-      { name: 'user', displayName: 'User' },
-      { name: 'employer', displayName: 'Employer' },
-      { name: 'trainer', displayName: 'Trainer' },
-      { name: 'trainee', displayName: 'Trainee' }
-    ];
-
     const fetchLocations = async () => {
       try {
         const response = await axios.get(`${API_URL}/locations`);
@@ -174,18 +118,13 @@ const RegisterPage = () => {
     const fetchJobTypes = async () => {
       setLoadingJobTypes(true);
       try {
-        // Use the job service instead of direct axios call
-        const response = await jobService.getJobTypes();
+        // Use the dedicated job type service instead of job service
+        const response = await jobTypeService.getJobTypes();
         if (response.success && response.data.length > 0) {
           setJobTypes(response.data);
-        } else {
-          // Use default job types if API returns empty data
-          setJobTypes(defaultJobTypes);
         }
       } catch (error) {
         console.error('Error fetching job types:', error);
-        // Use default job types in case of error
-        setJobTypes(defaultJobTypes);
       } finally {
         setLoadingJobTypes(false);
       }
@@ -195,46 +134,18 @@ const RegisterPage = () => {
     const fetchInterests = async () => {
       setLoadingInterests(true);
       try {
-        // Try to fetch interests from a dedicated training interests endpoint
-        try {
-          // First try a dedicated interests endpoint
-          const response = await axios.get(`${API_URL}/training/interests`);
-          if (response.data.success && response.data.data.length > 0) {
-            // Make sure "Other" option is included
-            const interestsData = response.data.data;
-            if (!interestsData.some(item => item.name === 'Other' || item.id === 'other')) {
-              interestsData.push({ id: 'other', name: 'Other' });
-            }
-            setInterests(interestsData);
-            return;
+        // Use the dedicated interest type service
+        const response = await interestTypeService.getInterestTypes();
+        if (response.success && response.data.length > 0) {
+          // Make sure "Other" option is included
+          const interestsData = response.data;
+          if (!interestsData.some(item => item.name === 'Other' || item.id === 'other')) {
+            interestsData.push({ id: 'other', name: 'Other' });
           }
-        } catch (interestsError) {
-          console.log('Dedicated training interests endpoint not available:', interestsError.message);
+          setInterests(interestsData);
         }
-
-        // Try a secondary interests endpoint
-        try {
-          const response = await axios.get(`${API_URL}/categories/interests`);
-          if (response.data.success && response.data.data.length > 0) {
-            // Make sure "Other" option is included
-            const interestsData = response.data.data;
-            if (!interestsData.some(item => item.name === 'Other' || item.id === 'other')) {
-              interestsData.push({ id: 'other', name: 'Other' });
-            }
-            setInterests(interestsData);
-            return;
-          }
-        } catch (secondaryInterestsError) {
-          console.log('Secondary interests endpoint not available:', secondaryInterestsError.message);
-        }
-
-        // Instead of using categories as a fallback, use our comprehensive default interests list
-        console.log('Using predefined training interests as no API endpoint was available');
-        setInterests(defaultInterests);
       } catch (error) {
         console.error('Error fetching interests:', error);
-        // Use default interests in case of error
-        setInterests(defaultInterests);
       } finally {
         setLoadingInterests(false);
       }
@@ -244,41 +155,13 @@ const RegisterPage = () => {
     const fetchCompanyTypes = async () => {
       setLoadingCompanyTypes(true);
       try {
-        // Try different endpoints that might contain company types
-        const endpoints = [
-          '/company-types',
-          '/industries', 
-          '/categories/industries',
-          '/employer/industries'
-        ];
-        
-        let companyTypesData = null;
-        
-        for (const endpoint of endpoints) {
-          try {
-            console.log(`Attempting to fetch company types from ${API_URL}${endpoint}`);
-            const response = await axios.get(`${API_URL}${endpoint}`);
-            if (response.data && (response.data.success || response.data.data)) {
-              companyTypesData = response.data.data || response.data;
-              console.log('Successfully fetched company types:', companyTypesData);
-              break;
-            }
-          } catch (err) {
-            // Try the next endpoint
-            console.log(`Endpoint ${endpoint} failed:`, err.message);
-          }
-        }
-        
-        if (companyTypesData && Array.isArray(companyTypesData) && companyTypesData.length > 0) {
-          setCompanyTypes(companyTypesData);
-        } else {
-          // Use job categories as company types if no dedicated endpoint exists
-          console.log('Using job categories as company types');
-          setCompanyTypes(defaultCompanyTypes);
+        // Use the company type service
+        const response = await companyTypeService.getCompanyTypes();
+        if (response.success && response.data.length > 0) {
+          setCompanyTypes(response.data);
         }
       } catch (error) {
         console.error('Error fetching company types:', error);
-        setCompanyTypes(defaultCompanyTypes);
       } finally {
         setLoadingCompanyTypes(false);
       }
@@ -316,12 +199,22 @@ const RegisterPage = () => {
           setRoles(rolesData);
           console.log('Valid role names are:', rolesData.map(r => r.name));
         } else {
-          console.log('Using default roles:', defaultRoles);
-          setRoles(defaultRoles);
+          console.log('Using default roles');
+          setRoles([
+            { name: 'user', displayName: 'User' },
+            { name: 'employer', displayName: 'Employer' },
+            { name: 'trainer', displayName: 'Trainer' },
+            { name: 'trainee', displayName: 'Trainee' }
+          ]);
         }
       } catch (error) {
         console.error('Error fetching roles:', error);
-        setRoles(defaultRoles);
+        setRoles([
+          { name: 'user', displayName: 'User' },
+          { name: 'employer', displayName: 'Employer' },
+          { name: 'trainer', displayName: 'Trainer' },
+          { name: 'trainee', displayName: 'Trainee' }
+        ]);
       }
     };
 

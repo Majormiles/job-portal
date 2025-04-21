@@ -16,6 +16,9 @@ import roleRouter from './routes/role.routes.js';
 import fileRouter from './routes/file.routes.js';
 import paymentRouter from './routes/payment.routes.js';
 import indexRouter from './routes/index.js';
+import jobTypeRouter from './routes/jobType.routes.js';
+import interestRouter from './routes/interest.routes.js';
+import companyTypeRouter from './routes/companyType.routes.js';
 import errorHandler from './middleware/error.middleware.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -54,6 +57,9 @@ app.use('/api/locations', locationRouter);
 app.use('/api/roles', roleRouter);
 app.use('/api/files', fileRouter);
 app.use('/api/payment', paymentRouter);
+app.use('/api/job-types', jobTypeRouter);
+app.use('/api/interests', interestRouter);
+app.use('/api/company-types', companyTypeRouter);
 
 // Error handling
 app.use(errorHandler);

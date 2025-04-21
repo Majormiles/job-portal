@@ -40,6 +40,12 @@ const jobSchema = new mongoose.Schema({
     enum: ['full-time', 'part-time', 'contract', 'temporary', 'internship', 'remote', 'hybrid', 'seasonal', 'freelance', 'volunteer'],
     required: [true, 'Please add a job type']
   },
+  jobType: {
+    type: String,
+    ref: 'JobType',
+    localField: 'type',
+    foreignField: 'id'
+  },
   salary: {
     min: {
       type: Number,
