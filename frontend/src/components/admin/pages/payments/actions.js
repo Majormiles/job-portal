@@ -233,39 +233,92 @@ export const fetchTransactionById = async (id) => {
     
     const adminToken = localStorage.getItem('adminToken');
     
+    // Step 1: Instead of using a direct path parameter, use query parameters which are more flexible
+    // This API approach is less likely to have routing issues with special characters in IDs
     try {
-      // First try direct API call to get transaction by ID
-      const response = await axios.get(`${API_URL}/payment/admin/transactions/${id}`, {
+      const response = await axios.get(`${API_URL}/payment/admin/transactions`, {
+        params: { 
+          id,
+          reference: id, // Try to match by both id and reference
+          single: true,  // Flag to return a single result
+          limit: 1
+        },
         headers: {
           Authorization: adminToken ? `Bearer ${adminToken}` : ''
         }
       });
       
-      if (response.data.success) {
-        return response.data.data;
+      if (response.data.success && response.data.data.transactions && response.data.data.transactions.length > 0) {
+        return response.data.data.transactions[0];
       }
     } catch (directError) {
-      console.log('Direct transaction fetch failed, trying fallback...', directError);
-      // If direct API call fails, try to fetch all transactions and filter
+      console.log('First transaction fetch approach failed, trying alternative...', directError);
     }
     
-    // Fallback: Fetch all transactions and find the one with matching ID
-    const allTransactionsData = await fetchTransactions({}, 1, 100); // Get a large batch
-    
-    if (allTransactionsData && allTransactionsData.transactions) {
-      const transaction = allTransactionsData.transactions.find(
-        t => (t._id === id || t.id === id || t.reference === id)
-      );
+    // Step 2: If the first approach fails, try a different endpoint structure
+    try {
+      const response = await axios.get(`${API_URL}/payment/transactions/find`, {
+        params: { 
+          identifier: id  // Generic identifier field
+        },
+        headers: {
+          Authorization: adminToken ? `Bearer ${adminToken}` : ''
+        }
+      });
       
-      if (transaction) {
-        console.log('Found transaction via fallback method:', transaction);
-        return transaction;
+      if (response.data.success && response.data.data) {
+        return response.data.data;
       }
+    } catch (error) {
+      console.log('Second transaction fetch approach failed, trying final approach...', error);
     }
     
-    throw new Error('Transaction not found');
+    // Step 3: Final approach - get all transactions and filter client-side
+    const allTransactionsResponse = await axios.get(`${API_URL}/payment/admin/transactions`, {
+      params: { limit: 100 }, // Get more transactions to increase chances of finding the one we want
+      headers: {
+        Authorization: adminToken ? `Bearer ${adminToken}` : ''
+      }
+    });
+    
+    if (!allTransactionsResponse.data.success) {
+      throw new Error(allTransactionsResponse.data.message || 'Failed to fetch transactions');
+    }
+    
+    const transactions = allTransactionsResponse.data.data.transactions || [];
+    
+    // Find transaction by ID, reference, or any other possible identifier
+    // We're doing this comprehensive check to handle various ID formats
+    const transaction = transactions.find(t => {
+      const possibleIds = [
+        t._id, 
+        t.id, 
+        t.reference, 
+        t.transactionId,
+        t.txnId,
+        t.paymentId,
+        t.orderId
+      ].filter(Boolean); // Remove any null/undefined values
+      
+      // Check if any of the transaction's IDs match the requested ID
+      return possibleIds.some(possibleId => 
+        // Exact match
+        possibleId === id || 
+        // Case-insensitive match
+        possibleId?.toLowerCase() === id?.toLowerCase() ||
+        // Contains match (for partial IDs)
+        possibleId?.includes(id) ||
+        id?.includes(possibleId)
+      );
+    });
+    
+    if (transaction) {
+      return transaction;
+    }
+    
+    throw new Error(`Transaction with identifier "${id}" not found`);
   } catch (error) {
-    console.error('Error fetching transaction details:', error);
+    console.error('Error fetching transaction by ID:', error);
     throw error;
   }
 }; 

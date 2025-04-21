@@ -24,9 +24,51 @@ const TransactionDetails = () => {
           return;
         }
         
-        const transactionData = await fetchTransactionById(id);
-        console.log('Transaction data received:', transactionData);
-        setTransaction(transactionData);
+        try {
+          // First attempt: Try to fetch from API
+          const transactionData = await fetchTransactionById(id);
+          console.log('Transaction data received from API:', transactionData);
+          setTransaction(transactionData);
+        } catch (apiError) {
+          console.error('Error fetching from API, trying localStorage fallback:', apiError);
+          
+          // Second attempt: Try to get from localStorage (saved when clicking the eye icon)
+          const storedTransaction = localStorage.getItem('lastViewedTransaction');
+          if (storedTransaction) {
+            try {
+              const parsedTransaction = JSON.parse(storedTransaction);
+              
+              // Verify this is the transaction we want by comparing IDs
+              const storedIds = [
+                parsedTransaction._id,
+                parsedTransaction.id,
+                parsedTransaction.reference,
+                parsedTransaction.safeId,
+                parsedTransaction.transactionId
+              ].filter(Boolean);
+              
+              // Check if any of the stored transaction's IDs match the requested ID
+              const isMatchingTransaction = storedIds.some(storedId => 
+                storedId === id || 
+                storedId?.toLowerCase() === id?.toLowerCase() ||
+                storedId?.includes(id) ||
+                id?.includes(storedId)
+              );
+              
+              if (isMatchingTransaction) {
+                console.log('Found matching transaction in localStorage:', parsedTransaction);
+                setTransaction(parsedTransaction);
+              } else {
+                throw new Error('Stored transaction does not match the requested ID');
+              }
+            } catch (parseError) {
+              console.error('Error parsing stored transaction:', parseError);
+              throw apiError; // Throw the original API error
+            }
+          } else {
+            throw apiError; // Re-throw the original API error if no stored transaction
+          }
+        }
       } catch (error) {
         console.error('Error fetching transaction details:', error);
         setError(error.message || 'An error occurred while fetching transaction details');
@@ -37,6 +79,11 @@ const TransactionDetails = () => {
     };
 
     fetchTransaction();
+    
+    // Cleanup function to remove stored transaction on component unmount
+    return () => {
+      localStorage.removeItem('lastViewedTransaction');
+    };
   }, [id]);
 
   const getStatusIcon = (status) => {

@@ -12,7 +12,7 @@ import {
   PieChart, 
   TrendingUp
 } from 'lucide-react';
-import { Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { fetchPaymentStats, fetchTransactions, formatDate, getStatusColorClasses } from '../pages/payments/actions';
@@ -22,6 +22,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -34,6 +35,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -71,13 +73,31 @@ const Dashboard = () => {
           resumeUploads: paymentStats.jobSeekers.count * 0.8 // Assuming 80% of job seekers uploaded resumes
         });
         
-        // Set recent payments
-        setRecentPayments(transactionsData.transactions || []);
+        // Normalize transaction IDs to ensure consistent format
+        const normalizedTransactions = (transactionsData.transactions || []).map(transaction => {
+          // Store original IDs for reference
+          const originalId = transaction._id || transaction.id;
+          const originalRef = transaction.reference;
+          
+          // Create a clean consistent ID format for transaction details page
+          // This helps avoid issues with special characters or formatting in IDs
+          if (originalId && !transaction.safeId) {
+            transaction.safeId = originalId.replace(/[^a-zA-Z0-9-]/g, '');
+          }
+          
+          return transaction;
+        });
+        
+        // Set recent payments with normalized IDs
+        setRecentPayments(normalizedTransactions);
         
         // Debug: check structure of transaction objects
-        if (transactionsData.transactions && transactionsData.transactions.length > 0) {
-          console.log('First transaction object:', transactionsData.transactions[0]);
-          console.log('Transaction ID property:', transactionsData.transactions[0]._id || transactionsData.transactions[0].id);
+        if (normalizedTransactions.length > 0) {
+          console.log('First transaction object:', normalizedTransactions[0]);
+          console.log('Transaction ID property:', 
+            normalizedTransactions[0].safeId || 
+            normalizedTransactions[0]._id || 
+            normalizedTransactions[0].id);
         }
         
         setIsLoading(false);
@@ -103,10 +123,19 @@ const Dashboard = () => {
           stats.trainers.revenue,
           stats.trainees.revenue
         ],
-        borderColor: '#3b82f6',
-        tension: 0.4,
-        fill: true,
-        backgroundColor: 'rgba(59, 130, 246, 0.1)'
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.7)',
+          'rgba(34, 197, 94, 0.7)', 
+          'rgba(245, 158, 11, 0.7)',
+          'rgba(99, 102, 241, 0.7)'
+        ],
+        borderColor: [
+          'rgb(59, 130, 246)',
+          'rgb(34, 197, 94)', 
+          'rgb(245, 158, 11)',
+          'rgb(99, 102, 241)'
+        ],
+        borderWidth: 1
       }
     ]
   };
@@ -280,7 +309,7 @@ const Dashboard = () => {
             <h2 className="text-lg font-semibold text-gray-800">Revenue by Category</h2>
           </div>
           <div className="p-4 h-80">
-            <Line data={revenueData} options={revenueOptions} />
+            <Bar data={revenueData} options={revenueOptions} />
           </div>
         </div>
       </div>
@@ -319,13 +348,13 @@ const Dashboard = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {recentPayments.length > 0 ? (
-                recentPayments.map((payment) => (
-                  <tr key={payment._id || payment.id}>
+                recentPayments.map((payment, index) => (
+                  <tr key={`payment-${index}-${payment.safeId || payment._id || payment.id || payment.reference}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {payment.reference || payment._id}
+                      {payment.reference || payment._id || payment.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {payment.user?.name || payment.email || 'Unknown User'}
+                      {payment.user?.name || payment.userName || payment.email || 'Unknown User'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       ₵{payment.amount?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}
@@ -340,8 +369,15 @@ const Dashboard = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        {(payment._id || payment.id) ? (
-                          <Link to={`/admin/payments/transactions/${payment._id || payment.id}`} className="text-blue-600 hover:text-blue-900">
+                        {(payment.safeId || payment._id || payment.id || payment.reference) ? (
+                          <Link 
+                            to={`/admin/payments/transactions/${payment.safeId || payment._id || payment.id}`} 
+                            className="text-blue-600 hover:text-blue-900"
+                            onClick={(e) => {
+                              // Store transaction data in localStorage for fallback access
+                              localStorage.setItem('lastViewedTransaction', JSON.stringify(payment));
+                            }}
+                          >
                             <Eye size={16} />
                           </Link>
                         ) : (

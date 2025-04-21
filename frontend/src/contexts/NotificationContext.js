@@ -77,42 +77,60 @@ export const NotificationProvider = ({ children }) => {
   const handleIncomingMessage = useCallback((data) => {
     switch (data.type) {
       case 'notification':
-        // Add new notification
-        const newNotification = {
-          id: data.id || `notification-${Date.now()}`,
-          type: data.notificationType || 'info',
-          message: data.message || 'New notification',
-          timestamp: data.timestamp || new Date().toISOString(),
-          read: false,
-          data: data.data || {}
-        };
-        
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Show toast notification
-        toast[newNotification.type || 'info'](newNotification.message);
+        // Handle notification
+        handleNotification(data);
         break;
-        
       case 'job_update':
         // Handle job updates
-        toast.info(`Job "${data.title}" has been updated`);
+        handleJobUpdate(data);
         break;
-        
       case 'application_update':
         // Handle application status updates
-        toast.info(`Your application status has changed to: ${data.status}`);
+        handleApplicationUpdate(data);
         break;
-        
       case 'message':
         // Handle direct messages
-        toast.info(`New message: ${data.message}`);
+        handleDirectMessage(data);
         break;
-        
+      case 'auth_success':
+        // Authentication success message - can be safely acknowledged
+        console.log('WebSocket authentication successful');
+        break;
       default:
         console.log('Unknown WebSocket message type:', data.type);
     }
   }, []);
+
+  // Handler functions for WebSocket messages
+  const handleNotification = (data) => {
+    // Add new notification
+    const newNotification = {
+      id: data.id || `notification-${Date.now()}`,
+      type: data.notificationType || 'info',
+      message: data.message || 'New notification',
+      timestamp: data.timestamp || new Date().toISOString(),
+      read: false,
+      data: data.data || {}
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    
+    // Show toast notification
+    toast[newNotification.type || 'info'](newNotification.message);
+  };
+
+  const handleJobUpdate = (data) => {
+    toast.info(`Job "${data.title}" has been updated`);
+  };
+
+  const handleApplicationUpdate = (data) => {
+    toast.info(`Your application status has changed to: ${data.status}`);
+  };
+
+  const handleDirectMessage = (data) => {
+    toast.info(`New message: ${data.message}`);
+  };
 
   // Mark notification as read
   const markAsRead = useCallback((notificationId) => {
@@ -209,8 +227,7 @@ export const NotificationProvider = ({ children }) => {
   }, [socket]);
 
   // Context value
-  const contextValue = {
-    isConnected,
+  const value = {
     notifications,
     unreadCount,
     markAsRead,
@@ -218,11 +235,15 @@ export const NotificationProvider = ({ children }) => {
     deleteNotification,
     clearAllNotifications,
     sendEvent,
-    reconnect
+    reconnect,
+    handleNotification,
+    handleJobUpdate,
+    handleApplicationUpdate,
+    handleDirectMessage
   };
 
   return (
-    <NotificationContext.Provider value={contextValue}>
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );
