@@ -64,7 +64,8 @@ import {
   PaymentDashboard,
   TransactionsPage,
   AnalyticsPage,
-  ReportsPage
+  ReportsPage,
+  TransactionDetails
 } from './components/admin/pages/payments';
 
 import './App.css';
@@ -477,6 +478,7 @@ const AppContent = () => {
           {/* Payment Portal Routes */}
           <Route path="payments" element={<PaymentDashboard />} />
           <Route path="payments/transactions" element={<TransactionsPage />} />
+          <Route path="payments/transactions/:id" element={<TransactionDetails />} />
           <Route path="payments/analytics" element={<AnalyticsPage />} />
           <Route path="payments/reports" element={<ReportsPage />} />
         </Route>

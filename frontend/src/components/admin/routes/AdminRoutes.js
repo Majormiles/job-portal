@@ -19,7 +19,8 @@ import {
   PaymentDashboard,
   TransactionsPage,
   AnalyticsPage,
-  ReportsPage
+  ReportsPage,
+  TransactionDetails
 } from '../pages/payments';
 
 const AdminRoutes = () => {
@@ -54,6 +55,7 @@ const AdminRoutes = () => {
         <Route path="payments">
           <Route index element={<PaymentDashboard />} />
           <Route path="transactions" element={<TransactionsPage />} />
+          <Route path="transactions/:id" element={<TransactionDetails />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="reports" element={<ReportsPage />} />
         </Route>

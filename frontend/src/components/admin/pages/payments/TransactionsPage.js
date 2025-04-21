@@ -3,6 +3,7 @@ import { Search, Filter, Download, Check, X, Eye, RefreshCw } from 'lucide-react
 import { formatDate, getStatusColorClasses, fetchTransactions, exportData } from './actions';
 import { toast } from 'react-hot-toast';
 import '../../css/payment-portal.css';
+import { Link } from 'react-router-dom';
 
 const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
@@ -338,9 +339,9 @@ const TransactionsPage = () => {
                       {transaction.paymentMethod}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900">
+                      <Link to={`/admin/payments/transactions/${transaction.id || transaction._id || transaction.reference}`} className="text-blue-600 hover:text-blue-900">
                         <Eye className="h-4 w-4" />
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 ))}

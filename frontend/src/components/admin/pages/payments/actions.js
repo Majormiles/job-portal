@@ -218,4 +218,54 @@ export const generatePaymentReport = async (reportOptions = {}) => {
     console.error('Error generating payment report:', error);
     throw error;
   }
+};
+
+/**
+ * Fetch a single transaction by ID
+ * @param {string} id - Transaction ID
+ * @return {Promise} Promise resolving to transaction data
+ */
+export const fetchTransactionById = async (id) => {
+  try {
+    if (!id) {
+      throw new Error('Transaction ID is required');
+    }
+    
+    const adminToken = localStorage.getItem('adminToken');
+    
+    try {
+      // First try direct API call to get transaction by ID
+      const response = await axios.get(`${API_URL}/payment/admin/transactions/${id}`, {
+        headers: {
+          Authorization: adminToken ? `Bearer ${adminToken}` : ''
+        }
+      });
+      
+      if (response.data.success) {
+        return response.data.data;
+      }
+    } catch (directError) {
+      console.log('Direct transaction fetch failed, trying fallback...', directError);
+      // If direct API call fails, try to fetch all transactions and filter
+    }
+    
+    // Fallback: Fetch all transactions and find the one with matching ID
+    const allTransactionsData = await fetchTransactions({}, 1, 100); // Get a large batch
+    
+    if (allTransactionsData && allTransactionsData.transactions) {
+      const transaction = allTransactionsData.transactions.find(
+        t => (t._id === id || t.id === id || t.reference === id)
+      );
+      
+      if (transaction) {
+        console.log('Found transaction via fallback method:', transaction);
+        return transaction;
+      }
+    }
+    
+    throw new Error('Transaction not found');
+  } catch (error) {
+    console.error('Error fetching transaction details:', error);
+    throw error;
+  }
 }; 
