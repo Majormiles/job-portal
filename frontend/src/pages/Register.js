@@ -461,8 +461,26 @@ const RegisterPage = () => {
       
       // Explicitly set the role and user type based on selection
       registrationData.userType = userType;
-      registrationData.role = userType;
-      registrationData.roleName = userType;
+      
+      // Map the frontend user types to the backend role names
+      if (userType === 'talent') {
+        if (talentType === 'trainee') {
+          registrationData.roleName = 'trainee';
+          registrationData.role = 'trainee';
+        } else if (talentType === 'trainer') {
+          registrationData.roleName = 'trainer';
+          registrationData.role = 'trainer';
+        } else {
+          registrationData.roleName = 'jobSeeker'; // default fallback
+          registrationData.role = 'jobSeeker';
+        }
+      } else if (userType === 'employer') {
+        registrationData.roleName = 'employer';
+        registrationData.role = 'employer';
+      } else {
+        registrationData.roleName = 'jobSeeker'; // default fallback
+        registrationData.role = 'jobSeeker';
+      }
       
       // Add role-specific data based on user selection
       if (userType === 'jobSeeker') {
@@ -526,6 +544,22 @@ const RegisterPage = () => {
           console.log('Registration server response status:', directResponse.status);
           console.log('Registration server response headers:', directResponse.headers);
           console.log('Registration server response data:', directResponse.data);
+          
+          // Check for role-related errors
+          if (directResponse.status === 500 && 
+              directResponse.data && 
+              typeof directResponse.data.message === 'string' &&
+              (directResponse.data.message.includes('role') || 
+               directResponse.data.message.includes('Role'))) {
+            console.error('Role-related error detected:', directResponse.data.message);
+            console.error('Attempted registration with role:', registrationData.roleName);
+            console.error('User type:', userType, 'Talent type:', talentType);
+            
+            toast.error('Registration failed due to a role configuration issue. Please try again or contact support.');
+            
+            setLoading(false);
+            return;
+          }
           
           // Handle specific error for existing user
           if (directResponse.status === 500 && 
@@ -626,6 +660,20 @@ const RegisterPage = () => {
         } catch (directError) {
           console.error('Direct registration attempt failed:', directError);
           console.error('Error details:', directError.response?.data || directError.message);
+          
+          // Check for role-related errors
+          if (directError.response?.data?.message &&
+              (directError.response.data.message.includes('role') || 
+               directError.response.data.message.includes('Role'))) {
+            console.error('Role-related error detected:', directError.response.data.message);
+            console.error('Attempted registration with role:', registrationData.roleName);
+            console.error('User type:', userType, 'Talent type:', talentType);
+            
+            toast.error('Registration failed due to a role configuration issue. Please try again or contact support.');
+            
+            setLoading(false);
+            return;
+          }
           
           // Handle specific error for existing user
           if (directError.message && 

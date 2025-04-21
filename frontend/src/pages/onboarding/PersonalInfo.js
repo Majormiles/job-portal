@@ -870,9 +870,27 @@ const PersonalInfo = () => {
           console.error('Error checking storage in submit:', e);
         }
         
+        // Check current interface state for role type
+        if (isTrainer()) {
+          return 'trainer';
+        }
+        
+        if (isTrainee()) {
+          return 'trainee';
+        }
+        
         // If company fields are filled, this is likely an employer
         if (formData.companyName || formData.industry || formData.companySize) {
           return 'employer';
+        }
+        
+        // Check current userRole value from state
+        if (userRole === 'trainer' || userRole.includes('trainer')) {
+          return 'trainer';
+        }
+        
+        if (userRole === 'trainee' || userRole.includes('trainee')) {
+          return 'trainee';
         }
         
         // Default to whatever state we have
@@ -979,25 +997,23 @@ const PersonalInfo = () => {
       if (response && response.data && response.data.success) {
         toast.success('Personal information saved successfully');
         
-        // If the user is an employer, explicitly update their role
-        if (finalIsEmployer) {
-          try {
-            console.log('Attempting to explicitly update user role to employer');
-            const updateRoleResponse = await onboardingApi.put('/users/role', { 
-              role: 'employer',
-              userType: 'employer',
-              roleName: 'employer'
-            });
-            
-            if (updateRoleResponse.data && updateRoleResponse.data.success) {
-              console.log('Successfully updated user role to employer');
-            } else {
-              console.warn('Role update API call succeeded but returned success:false');
-            }
-          } catch (roleError) {
-            console.error('Error updating user role:', roleError);
-            // Continue with the flow even if role update fails
+        // Update user role explicitly based on the detected user type
+        try {
+          console.log(`Attempting to explicitly update user role to ${userType}`);
+          const updateRoleResponse = await onboardingApi.put('/users/role', { 
+            role: userType,
+            userType: userType,
+            roleName: userType
+          });
+          
+          if (updateRoleResponse.data && updateRoleResponse.data.success) {
+            console.log(`Successfully updated user role to ${userType}`);
+          } else {
+            console.warn('Role update API call succeeded but returned success:false');
           }
+        } catch (roleError) {
+          console.error('Error updating user role:', roleError);
+          // Continue with the flow even if role update fails
         }
         
         // Navigate to next step

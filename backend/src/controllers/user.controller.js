@@ -531,12 +531,16 @@ export const updateUserRole = asyncHandler(async (req, res, next) => {
       return next(new AppError('Please provide at least one of: role, userType, or roleName', 400));
     }
     
+    // Log the incoming request for debugging
+    console.log('Role update request received:', { role, userType, roleName, userId: req.user.id });
+    
     // Use the first available value in order of priority: role, userType, roleName
     const roleToUse = role || userType || roleName;
     
     // Valid roles check
     const validRoleNames = ['admin', 'jobSeeker', 'employer', 'trainer', 'trainee'];
     if (!validRoleNames.includes(roleToUse)) {
+      console.log(`Invalid role specified: ${roleToUse}`);
       return next(new AppError('Invalid role specified', 400));
     }
     
@@ -546,19 +550,43 @@ export const updateUserRole = asyncHandler(async (req, res, next) => {
       dbRoleName = 'jobSeeker';
     }
     
+    console.log(`Looking for role document with name: ${dbRoleName}`);
+    
     // Find the Role document based on role name
     const Role = mongoose.model('Role');
-    const roleDoc = await Role.findOne({ name: dbRoleName });
+    let roleDoc = await Role.findOne({ name: dbRoleName });
     
     if (!roleDoc) {
-      return next(new AppError(`Role "${dbRoleName}" not found in the database`, 404));
+      console.log(`Role "${dbRoleName}" not found in the database`);
+      
+      // If role document doesn't exist, try to initialize it
+      try {
+        const { initializeRoles } = await import('../models/role.model.js');
+        await initializeRoles();
+        console.log('Initialized default roles, trying to find role again');
+        
+        // Try again after initialization
+        roleDoc = await Role.findOne({ name: dbRoleName });
+        if (!roleDoc) {
+          return next(new AppError(`Role "${dbRoleName}" not found in the database even after initialization`, 404));
+        }
+        
+        console.log(`Role document found after initialization: ${roleDoc._id}`);
+      } catch (initError) {
+        console.error('Error initializing roles:', initError);
+        return next(new AppError(`Role "${dbRoleName}" not found and could not initialize roles`, 500));
+      }
     }
+    
+    console.log(`Found role document: ${roleDoc._id}`);
     
     // Update the user role
     const updateData = { 
       role: roleDoc._id,
       roleName: dbRoleName
     };
+    
+    console.log(`Updating user ${req.user.id} with role data:`, updateData);
     
     const user = await User.findByIdAndUpdate(
       req.user.id, 
@@ -567,8 +595,11 @@ export const updateUserRole = asyncHandler(async (req, res, next) => {
     );
     
     if (!user) {
+      console.log('User not found for role update');
       return next(new AppError('User not found', 404));
     }
+    
+    console.log(`Successfully updated user role to ${dbRoleName}`);
     
     res.status(200).json({
       success: true,
