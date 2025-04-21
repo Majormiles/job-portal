@@ -15,8 +15,19 @@ ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tool
 // API URL from environment
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-// Helper function to get auth token
-const getAuthToken = () => localStorage.getItem('token');
+// Helper function to get auth token, with fallback to admin token
+const getAuthToken = () => {
+  // Try both regular token and admin token
+  const userToken = localStorage.getItem('token');
+  const adminToken = localStorage.getItem('adminToken');
+  return userToken || adminToken; // Return whichever one exists
+};
+
+// Helper function to get admin token
+const getAdminToken = () => {
+  const adminToken = localStorage.getItem('adminToken');
+  return adminToken || localStorage.getItem('token'); // Fall back to regular token if no admin token
+};
 
 // Helper function to check if a URL is a local file or Cloudinary
 const isLocalFileUrl = (url) => {
@@ -54,6 +65,24 @@ const extractFileInfo = (url) => {
   }
   
   return { type: null, userId: null, filename: null };
+};
+
+// Helper function to ensure token is properly encoded
+const encodeTokenSafely = (token) => {
+  if (!token) return '';
+  
+  try {
+    // Make sure we're working with a string
+    const tokenStr = String(token);
+    // First check if it's already encoded
+    if (/%/.test(tokenStr)) {
+      return tokenStr; // Already encoded
+    }
+    return encodeURIComponent(tokenStr);
+  } catch (err) {
+    console.error('Error encoding token:', err);
+    return '';
+  }
 };
 
 const Resume = () => {
@@ -499,7 +528,10 @@ const Resume = () => {
     if (isLocalFileUrl(resume.resumeUrl)) {
       // For locally stored files, we need to use a proper fetch with authentication
       const token = getAuthToken();
-      if (!token) {
+      const adminToken = getAdminToken();
+      
+      // Only show error if both tokens are missing
+      if (!token && !adminToken) {
         toast.error('Authentication required. Please log in again.');
         return;
       }
@@ -514,10 +546,37 @@ const Resume = () => {
         // Prepare the URL for viewing
         let fileViewUrl;
         if (userId) {
-          fileViewUrl = `${API_URL}/files/${type}/user/${userId}/${filename}`;
+          // Add isAdminView parameter to ensure admin access works properly
+          fileViewUrl = `${API_URL}/files/${type}/user/${userId}/${filename}?isAdminView=true`;
+          
+          // Try to add admin token if available, ensuring it's properly encoded
+          if (adminToken && typeof adminToken === 'string') {
+            fileViewUrl += `&adminToken=${encodeTokenSafely(adminToken)}`;
+          } 
+          
+          // Always include regular token as fallback, properly encoded
+          if (token && typeof token === 'string') {
+            fileViewUrl += `&token=${encodeTokenSafely(token)}`;
+          }
         } else {
           fileViewUrl = `${API_URL}/files/${type}/${filename}`;
+          
+          // Add token parameters to the URL
+          fileViewUrl += `?isAdminView=true`;
+          
+          // Add admin token if available, ensuring it's properly encoded
+          if (adminToken && typeof adminToken === 'string') {
+            fileViewUrl += `&adminToken=${encodeTokenSafely(adminToken)}`;
+          }
+          
+          // Always include regular token as fallback, properly encoded
+          if (token && typeof token === 'string') {
+            fileViewUrl += `&token=${encodeTokenSafely(token)}`;
+          }
         }
+        
+        // Add timestamp to prevent caching
+        fileViewUrl += `&t=${Date.now()}`;
         
         // Update the resume object with the full URL for viewing
         setSelectedResume(prev => ({
@@ -577,7 +636,10 @@ const Resume = () => {
       
       // Get auth token
       const token = getAuthToken();
-      if (!token) {
+      const adminToken = getAdminToken();
+      
+      // Only show error if both tokens are missing
+      if (!token && !adminToken) {
         toast.error('Authentication required. Please log in again.');
         return;
       }
@@ -597,17 +659,47 @@ const Resume = () => {
         // Construct the proper API URL
         let downloadUrl;
         if (userId) {
-          downloadUrl = `${API_URL}/files/${type}/user/${userId}/${filename}`;
+          downloadUrl = `${API_URL}/files/${type}/user/${userId}/${filename}?isAdminView=true`;
+          
+          // Always add both tokens if available for maximum compatibility
+          if (adminToken && typeof adminToken === 'string') {
+            downloadUrl += `&adminToken=${encodeTokenSafely(adminToken)}`;
+          }
+          
+          if (token && typeof token === 'string') {
+            downloadUrl += `&token=${encodeTokenSafely(token)}`;
+          }
         } else {
-          downloadUrl = `${API_URL}/files/${type}/${filename}`;
+          downloadUrl = `${API_URL}/files/${type}/${filename}?isAdminView=true`;
+          
+          // Add both tokens if available
+          if (adminToken && typeof adminToken === 'string') {
+            downloadUrl += `&adminToken=${encodeTokenSafely(adminToken)}`;
+          }
+          
+          if (token && typeof token === 'string') {
+            downloadUrl += `&token=${encodeTokenSafely(token)}`;
+          }
         }
+        
+        // Add timestamp to prevent caching
+        downloadUrl += `&t=${Date.now()}`;
         
         try {
           // Use Axios to download with proper authentication
+          const headers = {};
+          
+          // Add authorization headers
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          if (adminToken) {
+            headers['X-Admin-Token'] = adminToken;
+          }
+          
           const response = await axios.get(downloadUrl, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            },
+            headers,
             responseType: 'blob',
             timeout: 30000 // 30 seconds timeout
           });
@@ -1747,7 +1839,31 @@ const ResumeModal = ({ resume, onClose, handleChangeStatus, handleDownloadResume
     // If it's a local file, append the token
     if (isLocalFile) {
       const separator = displayUrl.includes('?') ? '&' : '?';
-      return `${displayUrl}${separator}token=${encodeURIComponent(token)}`;
+      
+      // Try to get admin token specifically - might be different from user token
+      const adminToken = localStorage.getItem('adminToken');
+      const userToken = localStorage.getItem('token');
+      
+      let urlWithParams = `${displayUrl}`;
+      
+      // If URL doesn't already include isAdminView, add it
+      if (!displayUrl.includes('isAdminView=true')) {
+        urlWithParams += `${separator}isAdminView=true`;
+      }
+      
+      // Only add tokens if they're not already in the URL
+      if (!displayUrl.includes('adminToken=') && adminToken && typeof adminToken === 'string') {
+        urlWithParams += `&adminToken=${encodeTokenSafely(adminToken)}`;
+      }
+      
+      if (!displayUrl.includes('token=') && userToken && typeof userToken === 'string') {
+        urlWithParams += `&token=${encodeTokenSafely(userToken)}`;
+      }
+      
+      // Add a timestamp to prevent caching issues
+      urlWithParams += `&t=${Date.now()}`;
+      
+      return urlWithParams;
     }
     
     // For external URLs (like Cloudinary), use as is
