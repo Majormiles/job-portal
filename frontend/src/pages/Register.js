@@ -1591,7 +1591,11 @@ const RegisterPage = () => {
                 
                 <button
                   type="submit"
-                  className="w-full bg-blue-500 text-white py-3 rounded-md font-medium hover:bg-blue-600 transition duration-300"
+                  className={`w-full py-3 rounded-md font-medium transition duration-300 ${
+                    loading 
+                      ? 'bg-gray-400 text-white cursor-not-allowed' 
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
                   disabled={loading}
                 >
                   {loading ? 'Processing...' : 'Register'}

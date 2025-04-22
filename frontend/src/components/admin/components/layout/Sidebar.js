@@ -38,9 +38,6 @@ function Sidebar({ isOpen, onClose }) {
     const path = location.pathname;
     const newOpenMenus = { ...openMenus };
     
-    if (path.includes('/admin/categories')) {
-      newOpenMenus.manageCategories = true;
-    }
     if (path.includes('/admin/resume') || path.includes('/admin/calendar')) {
       newOpenMenus.manageResumes = true;
     }
@@ -93,16 +90,6 @@ function Sidebar({ isOpen, onClose }) {
       subItems: [
         { text: 'Resumes', path: '/admin/resume' },
         { text: 'Calendar', path: '/admin/calendar' }
-      ]
-    },
-    {
-      icon: Mail,
-      text: 'Manage Categories',
-      path: '/admin/categories',
-      menuKey: 'manageCategories',
-      subItems: [
-        { text: 'All Categories', path: '/admin/categories' },
-        { text: 'Create Category', path: '/admin/categories/create' }
       ]
     },
     {
@@ -248,8 +235,8 @@ function Sidebar({ isOpen, onClose }) {
                     to={subItem.path} 
                     className={`block py-2 text-sm transition-colors hover:text-blue-600 ${
                       isActive(subItem.path) ? 'text-blue-600 font-medium' : 'text-gray-600'
-                    } ${disabled ? 'pointer-events-none opacity-50' : ''}`}
-                    onClick={disabled ? (e) => e.preventDefault() : onClose}
+                    }`}
+                    onClick={onClose}
                   >
                     {subItem.text}
                   </Link>
@@ -266,14 +253,14 @@ function Sidebar({ isOpen, onClose }) {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={onClose}
         ></div>
       )}
-      
+
       {/* Sidebar */}
-      <aside 
+      <aside
         ref={sidebarRef}
         className={`bg-white h-screen border-r shadow-md transition-all duration-300 ease-in-out ${
           isCollapsed ? 'w-16' : 'w-64'
@@ -287,23 +274,23 @@ function Sidebar({ isOpen, onClose }) {
             <div className="font-bold text-lg text-blue-600">Job Portal</div>
           )}
           <div className="flex items-center">
-            <button 
-              onClick={toggleSidebar} 
+            <button
+              onClick={toggleSidebar}
               className="p-1 hover:bg-gray-100 rounded-md text-gray-500 transition-colors lg:block hidden"
             >
               {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="p-1 hover:bg-gray-100 rounded-md text-gray-500 transition-colors lg:hidden ml-2"
             >
               <X size={20} />
             </button>
           </div>
         </div>
-        
+
         {/* Scrollable content */}
-        <div 
+        <div
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto sidebar-scroll scrollbar-extra-light p-3"
         >
@@ -314,8 +301,8 @@ function Sidebar({ isOpen, onClose }) {
         
         {/* Logout button at the bottom */}
         <div className="p-3 border-t mt-auto">
-          <button 
-            onClick={handleLogout} 
+          <button
+            onClick={handleLogout}
             className={`flex items-center p-2 w-full text-left rounded-md hover:bg-red-50 hover:text-red-600 transition-colors duration-200 ${
               isCollapsed ? 'justify-center' : ''
             }`}
