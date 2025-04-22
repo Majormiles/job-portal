@@ -13,6 +13,7 @@ const TransactionsPage = () => {
     dateRange: 'all',
     paymentStatus: 'all',
     userType: 'all',
+    searchQuery: ''
   });
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,49 +21,64 @@ const TransactionsPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const transactionsPerPage = 10;
 
-  useEffect(() => {
-    // Fetch transactions from API
-    const loadTransactions = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Get transactions from API with current filters and pagination
-        const result = await fetchTransactions(filters, currentPage, transactionsPerPage);
-        
-        setTransactions(result.transactions);
-        setTotalTransactions(result.pagination.total);
-        setTotalPages(result.pagination.pages);
-        
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-        toast.error("Failed to load transactions");
-        setIsLoading(false);
+  const loadTransactions = async () => {
+    try {
+      setIsLoading(true);
+      
+      const apiFilters = {...filters};
+      if (searchTerm.trim()) {
+        apiFilters.searchQuery = searchTerm.trim();
       }
-    };
+      
+      const result = await fetchTransactions(apiFilters, currentPage, transactionsPerPage);
+      
+      setTransactions(result.transactions);
+      setTotalTransactions(result.pagination.total);
+      setTotalPages(result.pagination.pages);
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      toast.error("Failed to load transactions");
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadTransactions();
   }, [filters, currentPage]);
 
-  // Apply search filter locally (search is not sent to API)
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm.trim() !== filters.searchQuery) {
+        loadTransactions();
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
   const filteredTransactions = transactions.filter(transaction => {
     if (!searchTerm) return true;
     
-    // Search term filter
-    return transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.email.toLowerCase().includes(searchTerm.toLowerCase());
+    return (
+      (transaction.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (transaction._id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (transaction.userName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (transaction.userId?.toString().toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (transaction.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (transaction.transactionId?.toString().toLowerCase().includes(searchTerm.toLowerCase()) || false)
+    );
   });
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters({
-      ...filters,
+    setFilters(prevFilters => ({
+      ...prevFilters,
       [name]: value
-    });
-    setCurrentPage(1); // Reset to first page after filter change
+    }));
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -70,9 +86,15 @@ const TransactionsPage = () => {
       dateRange: 'all',
       paymentStatus: 'all',
       userType: 'all',
+      searchQuery: ''
     });
     setSearchTerm('');
     setCurrentPage(1);
+  };
+
+  const applyFilters = () => {
+    loadTransactions();
+    setShowFilters(false);
   };
 
   const handleExport = async (format) => {
@@ -80,7 +102,6 @@ const TransactionsPage = () => {
       setIsLoading(true);
       toast.loading('Preparing export...');
       
-      // Export data - in a real app, this would create and download the file
       const result = await exportData(transactions, format, `payment-transactions-${Date.now()}.${format}`);
       
       toast.dismiss();
@@ -105,6 +126,8 @@ const TransactionsPage = () => {
   };
 
   const getStatusColor = (status) => {
+    if (!status) return 'bg-gray-100 text-gray-800';
+    
     switch (status.toLowerCase()) {
       case 'successful':
       case 'success':
@@ -122,6 +145,8 @@ const TransactionsPage = () => {
   };
 
   const getUserTypeLabel = (userType) => {
+    if (!userType) return 'Unknown';
+    
     switch (userType) {
       case 'jobSeeker':
         return 'Job Seeker';
@@ -215,7 +240,7 @@ const TransactionsPage = () => {
                   </button>
                   <button
                     className="bg-blue-600 text-white rounded-lg px-3 py-2 text-sm hover:bg-blue-700"
-                    onClick={() => setShowFilters(false)}
+                    onClick={applyFilters}
                   >
                     Apply Filters
                   </button>
@@ -258,10 +283,17 @@ const TransactionsPage = () => {
               </ul>
             </div>
           </div>
+          
+          <button 
+            className="bg-white border border-gray-300 rounded-lg p-2 text-gray-600 hover:bg-gray-50"
+            onClick={() => loadTransactions()}
+            title="Refresh data"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
         </div>
       </div>
       
-      {/* Search bar */}
       <div className="relative mb-6">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-gray-400" />
@@ -272,16 +304,20 @@ const TransactionsPage = () => {
           className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              loadTransactions();
+            }
+          }}
         />
       </div>
       
-      {/* Transactions Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
         {isLoading ? (
           <div className="flex justify-center items-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-        ) : filteredTransactions.length === 0 ? (
+        ) : transactions.length === 0 ? (
           <div className="text-center p-8">
             <p className="text-gray-500">No transactions found</p>
           </div>
@@ -314,29 +350,29 @@ const TransactionsPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTransactions.map((transaction) => (
-                  <tr key={`${transaction.id}-${transaction.reference}-${transaction._id || Date.now()}`} className="hover:bg-gray-50">
+                {transactions.map((transaction) => (
+                  <tr key={`${transaction.id || transaction._id || transaction.reference || Date.now()}-${Math.random().toString(36).substr(2, 9)}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{transaction.id}</div>
-                      <div className="text-xs text-gray-500">{transaction.reference}</div>
+                      <div className="text-sm font-medium text-gray-900">{transaction.id || transaction._id || "N/A"}</div>
+                      <div className="text-xs text-gray-500">{transaction.reference || "No reference"}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{transaction.userName}</div>
+                      <div className="text-sm font-medium text-gray-900">{transaction.userName || "Unknown user"}</div>
                       <div className="text-xs text-gray-500">{getUserTypeLabel(transaction.userType)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">₵{transaction.amount?.toFixed(2)}</div>
+                      <div className="text-sm text-gray-900">₵{transaction.amount ? transaction.amount.toFixed(2) : "0.00"}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatDate(transaction.date)}</div>
+                      <div className="text-sm text-gray-900">{transaction.date ? formatDate(transaction.date) : "N/A"}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(transaction.status)}`}>
-                        {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                        {transaction.status ? transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1) : "Unknown"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {transaction.paymentMethod}
+                      {transaction.paymentMethod || "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link to={`/admin/payments/transactions/${transaction.id || transaction._id || transaction.reference}`} className="text-blue-600 hover:text-blue-900">
@@ -351,7 +387,6 @@ const TransactionsPage = () => {
         )}
       </div>
       
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between bg-white p-4 rounded-lg border">
           <div className="flex-1 flex justify-between sm:hidden">
@@ -395,7 +430,6 @@ const TransactionsPage = () => {
                   &larr;
                 </button>
                 
-                {/* Page numbers */}
                 {[...Array(totalPages).keys()].map(number => (
                   <button
                     key={number + 1}
