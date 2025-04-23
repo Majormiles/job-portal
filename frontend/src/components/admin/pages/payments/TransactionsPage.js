@@ -26,13 +26,37 @@ const TransactionsPage = () => {
       setIsLoading(true);
       
       const apiFilters = {...filters};
+      
+      // If searchTerm is an exact ID match (e.g., TRX-XXXXX, REF-XXXXX format), prioritize it
       if (searchTerm.trim()) {
         apiFilters.searchQuery = searchTerm.trim();
+        
+        // Enhanced pattern matching to catch all transaction ID formats
+        // This pattern now properly handles combined prefixes like "TRX-REF-1745402"
+        if (searchTerm.trim().includes('TRX-') || searchTerm.trim().includes('REF-') || 
+            /^[A-Za-z0-9\-]+$/.test(searchTerm.trim())) {
+          apiFilters.exactMatch = true;
+          // For exact ID searches, we want to pass the raw ID without modifications
+          apiFilters.exactId = searchTerm.trim();
+        }
       }
       
       const result = await fetchTransactions(apiFilters, currentPage, transactionsPerPage);
       
-      setTransactions(result.transactions);
+      // Process transactions to avoid duplicates by using a Map with reference or id as key
+      const transactionsMap = new Map();
+      
+      result.transactions.forEach(transaction => {
+        const key = transaction.reference || transaction.id || transaction._id;
+        if (key && !transactionsMap.has(key)) {
+          transactionsMap.set(key, transaction);
+        }
+      });
+      
+      // Convert Map back to array
+      const uniqueTransactions = Array.from(transactionsMap.values());
+      
+      setTransactions(uniqueTransactions);
       setTotalTransactions(result.pagination.total);
       setTotalPages(result.pagination.pages);
       
@@ -50,27 +74,18 @@ const TransactionsPage = () => {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
+      // Only reload if the search term has changed
       if (searchTerm.trim() !== filters.searchQuery) {
-        loadTransactions();
+        setCurrentPage(1); // Reset to first page on new search
+        setFilters(prev => ({
+          ...prev,
+          searchQuery: searchTerm.trim()
+        }));
       }
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
-
-  const filteredTransactions = transactions.filter(transaction => {
-    if (!searchTerm) return true;
-    
-    return (
-      (transaction.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (transaction._id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (transaction.userName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (transaction.userId?.toString().toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (transaction.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (transaction.transactionId?.toString().toLowerCase().includes(searchTerm.toLowerCase()) || false)
-    );
-  });
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -134,13 +149,44 @@ const TransactionsPage = () => {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'pending':
+      case 'awaiting':
+      case 'processing':
         return 'bg-yellow-100 text-yellow-800';
       case 'failed':
+      case 'declined':
+      case 'cancelled':
+      case 'canceled':
+      case 'error':
         return 'bg-red-100 text-red-800';
       case 'refunded':
+      case 'reversed':
+      case 'chargeback':
         return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatStatus = (status) => {
+    if (!status) return "Unknown";
+    
+    // Make first letter uppercase and rest lowercase
+    const formattedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+    
+    // Map similar statuses to consistent display names
+    switch (status.toLowerCase()) {
+      case 'success':
+      case 'completed':
+        return 'Successful';
+      case 'cancelled':
+        return 'Canceled';
+      case 'awaiting':
+        return 'Pending';
+      case 'reversed':
+      case 'chargeback':
+        return 'Refunded';
+      default:
+        return formattedStatus;
     }
   };
 
@@ -162,6 +208,15 @@ const TransactionsPage = () => {
   };
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Add this helper function to format transaction IDs for display
+  const formatTransactionId = (id) => {
+    // If the ID is very long, truncate it for display purposes
+    if (id && id.length > 20) {
+      return `${id.substring(0, 20)}...`;
+    }
+    return id || "N/A";
+  };
 
   return (
     <div className="section-body">
@@ -350,37 +405,42 @@ const TransactionsPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {transactions.map((transaction) => (
-                  <tr key={`${transaction.id || transaction._id || transaction.reference || Date.now()}-${Math.random().toString(36).substr(2, 9)}`} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{transaction.id || transaction._id || "N/A"}</div>
-                      <div className="text-xs text-gray-500">{transaction.reference || "No reference"}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{transaction.userName || "Unknown user"}</div>
-                      <div className="text-xs text-gray-500">{getUserTypeLabel(transaction.userType)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">₵{transaction.amount ? transaction.amount.toFixed(2) : "0.00"}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{transaction.date ? formatDate(transaction.date) : "N/A"}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(transaction.status)}`}>
-                        {transaction.status ? transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1) : "Unknown"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {transaction.paymentMethod || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link to={`/admin/payments/transactions/${transaction.id || transaction._id || transaction.reference}`} className="text-blue-600 hover:text-blue-900">
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {transactions.map((transaction) => {
+                  // Generate a reliable key based on transaction ID or reference
+                  const transactionKey = transaction.id || transaction._id || transaction.reference;
+                  
+                  return (
+                    <tr key={transactionKey} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{formatTransactionId(transaction.id)}</div>
+                        <div className="text-xs text-gray-500">{transaction.reference || "No reference"}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{transaction.userName || "Unknown user"}</div>
+                        <div className="text-xs text-gray-500">{getUserTypeLabel(transaction.userType)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">₵{transaction.amount ? transaction.amount.toFixed(2) : "0.00"}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{transaction.date ? formatDate(transaction.date) : "N/A"}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(transaction.status)}`}>
+                          {formatStatus(transaction.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {transaction.paymentMethod || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link to={`/admin/payments/transactions/${transaction.id || transaction._id || transaction.reference}`} className="text-blue-600 hover:text-blue-900">
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

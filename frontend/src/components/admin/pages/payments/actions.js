@@ -143,9 +143,35 @@ export const fetchTransactions = async (filters = {}, page = 1, limit = 10) => {
   try {
     const adminToken = localStorage.getItem('adminToken');
     
+    // Create a copy of filters to avoid modifying the original
+    const apiFilters = { ...filters };
+    
+    // Handle exact ID matching for search queries
+    if (apiFilters.exactMatch && (apiFilters.searchQuery || apiFilters.exactId)) {
+      // If exactId is explicitly specified, use it directly
+      if (apiFilters.exactId) {
+        console.log(`Searching for exact transaction ID: ${apiFilters.exactId}`);
+      }
+      // Otherwise, use searchQuery as a fallback
+      else if (apiFilters.searchQuery) {
+        apiFilters.exactId = apiFilters.searchQuery;
+        console.log(`Using search query as exact ID: ${apiFilters.exactId}`);
+      }
+    }
+    
+    // Handle payment status explicitly to ensure proper filtering
+    if (apiFilters.paymentStatus && apiFilters.paymentStatus !== 'all') {
+      // We're explicitly setting it to make sure it's passed correctly
+      apiFilters.paymentStatus = apiFilters.paymentStatus.toLowerCase();
+      console.log(`Filtering by payment status: ${apiFilters.paymentStatus}`);
+    }
+    
+    // When debugging issues with transaction search, uncomment this line:
+    console.log('API filters:', apiFilters);
+    
     const response = await axios.get(`${API_URL}/payment/admin/transactions`, {
       params: { 
-        ...filters,
+        ...apiFilters,
         page,
         limit
       },
@@ -155,6 +181,16 @@ export const fetchTransactions = async (filters = {}, page = 1, limit = 10) => {
     });
     
     if (response.data.success) {
+      // Log the status distribution of returned transactions for debugging
+      if (response.data.data.transactions && response.data.data.transactions.length > 0) {
+        const statusCounts = response.data.data.transactions.reduce((acc, t) => {
+          const status = t.status || 'unknown';
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('Transaction status distribution:', statusCounts);
+      }
+      
       return response.data.data;
     } else {
       throw new Error(response.data.message || 'Failed to fetch transactions');
@@ -236,15 +272,69 @@ export const fetchTransactionById = async (id) => {
     
     const adminToken = localStorage.getItem('adminToken');
     
-    // Step 1: Instead of using a direct path parameter, use query parameters which are more flexible
-    // This API approach is less likely to have routing issues with special characters in IDs
+    // Extract the unique parts from a transaction ID if present
+    const extractIdentifiers = (transactionId) => {
+      // Array to hold all possible identifiers from this ID
+      const identifiers = [transactionId]; // Always include the full ID
+      
+      // Handle complex transaction IDs with multiple parts
+      if (transactionId.includes('-')) {
+        // Add each segment as a potential identifier
+        const segments = transactionId.split('-').filter(Boolean);
+        segments.forEach(segment => {
+          if (segment.length >= 4) { // Only include meaningful segments
+            identifiers.push(segment);
+          }
+        });
+        
+        // Add combinations like "TRX-REF-12345"
+        if (segments.length >= 3) {
+          identifiers.push(`${segments[0]}-${segments[1]}-${segments[2]}`);
+        }
+        
+        // Add reference without TRX prefix
+        if (transactionId.startsWith('TRX-')) {
+          identifiers.push(transactionId.substring(4));
+        }
+      }
+      
+      // Remove duplicates and return
+      return [...new Set(identifiers)];
+    };
+    
+    // Get potential identifiers from the ID
+    const identifiers = extractIdentifiers(id);
+    console.log('Searching with identifiers:', identifiers);
+    
+    // Step 1: Try to find using the exactId parameter with all possible identifiers
+    try {
+      for (const identifier of identifiers) {
+        const response = await axios.get(`${API_URL}/payment/admin/transactions`, {
+          params: { 
+            exactId: identifier,
+            single: true,
+            limit: 1
+          },
+          headers: {
+            Authorization: adminToken ? `Bearer ${adminToken}` : ''
+          }
+        });
+        
+        if (response.data.success && response.data.data.transactions && response.data.data.transactions.length > 0) {
+          console.log(`Found transaction using identifier: ${identifier}`);
+          return response.data.data.transactions[0];
+        }
+      }
+    } catch (directError) {
+      console.log('First transaction fetch approach failed, trying alternative...', directError);
+    }
+    
+    // Step 2: If the first approach fails, try a direct search with query parameter
     try {
       const response = await axios.get(`${API_URL}/payment/admin/transactions`, {
         params: { 
-          id,
-          reference: id, // Try to match by both id and reference
-          single: true,  // Flag to return a single result
-          limit: 1
+          searchQuery: id,
+          limit: 10
         },
         headers: {
           Authorization: adminToken ? `Bearer ${adminToken}` : ''
@@ -252,25 +342,31 @@ export const fetchTransactionById = async (id) => {
       });
       
       if (response.data.success && response.data.data.transactions && response.data.data.transactions.length > 0) {
-        return response.data.data.transactions[0];
-      }
-    } catch (directError) {
-      console.log('First transaction fetch approach failed, trying alternative...', directError);
-    }
-    
-    // Step 2: If the first approach fails, try a different endpoint structure
-    try {
-      const response = await axios.get(`${API_URL}/payment/transactions/find`, {
-        params: { 
-          identifier: id  // Generic identifier field
-        },
-        headers: {
-          Authorization: adminToken ? `Bearer ${adminToken}` : ''
+        // Look for an exact match first
+        const exactMatch = response.data.data.transactions.find(t => 
+          t.id === id || t.reference === id
+        );
+        
+        if (exactMatch) {
+          return exactMatch;
         }
-      });
-      
-      if (response.data.success && response.data.data) {
-        return response.data.data;
+        
+        // If no exact match, look for partial matches
+        const partialMatches = response.data.data.transactions.filter(t => {
+          const possibleIds = [
+            t.id, 
+            t.reference
+          ].filter(Boolean);
+          
+          return possibleIds.some(pid => 
+            pid.includes(id) || id.includes(pid)
+          );
+        });
+        
+        if (partialMatches.length > 0) {
+          // Return the first partial match
+          return partialMatches[0];
+        }
       }
     } catch (error) {
       console.log('Second transaction fetch approach failed, trying final approach...', error);
@@ -291,27 +387,21 @@ export const fetchTransactionById = async (id) => {
     const transactions = allTransactionsResponse.data.data.transactions || [];
     
     // Find transaction by ID, reference, or any other possible identifier
-    // We're doing this comprehensive check to handle various ID formats
     const transaction = transactions.find(t => {
       const possibleIds = [
-        t._id, 
         t.id, 
         t.reference, 
-        t.transactionId,
-        t.txnId,
-        t.paymentId,
-        t.orderId
-      ].filter(Boolean); // Remove any null/undefined values
+        t._id,
+        t.transactionId
+      ].filter(Boolean);
       
-      // Check if any of the transaction's IDs match the requested ID
+      // Check if any of the transaction's IDs match any of our extracted identifiers
       return possibleIds.some(possibleId => 
-        // Exact match
-        possibleId === id || 
-        // Case-insensitive match
-        possibleId?.toLowerCase() === id?.toLowerCase() ||
-        // Contains match (for partial IDs)
-        possibleId?.includes(id) ||
-        id?.includes(possibleId)
+        identifiers.some(identifier => 
+          possibleId === identifier || 
+          possibleId?.includes(identifier) || 
+          identifier.includes(possibleId)
+        )
       );
     });
     

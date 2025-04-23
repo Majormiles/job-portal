@@ -389,12 +389,14 @@ export const getAdminTransactions = asyncHandler(async (req, res, next) => {
       dateRange = 'all', 
       paymentStatus = 'all', 
       userType = 'all',
+      searchQuery = '',
+      exactId = '',
       page = 1,
       limit = 10
     } = req.query;
     
     // Prepare filter criteria
-    const filter = { 'payment.isPaid': true };
+    let filter = { 'payment.isPaid': true };
     
     // Apply date filter
     if (dateRange !== 'all') {
@@ -420,49 +422,241 @@ export const getAdminTransactions = asyncHandler(async (req, res, next) => {
       }
     }
     
-    // Apply status filter
+    // Apply status filter - enhanced with robust status handling
     if (paymentStatus !== 'all') {
-      switch (paymentStatus) {
+      console.log(`Applying payment status filter: ${paymentStatus}`);
+      
+      // Remove the default isPaid filter since we're applying a specific status filter
+      if (filter['payment.isPaid']) {
+        delete filter['payment.isPaid'];
+      }
+      
+      switch (paymentStatus.toLowerCase()) {
         case 'successful':
-          filter['payment.isPaid'] = true;
+        case 'success':
+        case 'completed':
+          // Successful payments have isPaid=true AND may have status='successful' or similar
+          filter.$and = filter.$and || [];
+          filter.$and.push({
+            $or: [
+              // Primary indicator is the isPaid flag
+              { 'payment.isPaid': true },
+              // Also check for explicit status fields if they exist
+              { 'payment.status': { $in: ['successful', 'success', 'completed'] } },
+              { 'payment.metadata.status': { $in: ['successful', 'success', 'completed'] } }
+            ]
+          });
           break;
-        case 'failed':
-          // This would need additional data structure to identify failed payments
-          break;
+          
         case 'pending':
-          // This would need additional data structure to identify pending payments
+          // Pending payments are typically marked with specific status values
+          filter.$and = filter.$and || [];
+          filter.$and.push({
+            $or: [
+              // Look for pending status in various places
+              { 'payment.status': 'pending' },
+              { 'payment.metadata.status': 'pending' },
+              // Also consider transactions that have a reference but aren't marked as paid
+              { 
+                'payment.reference': { $exists: true, $ne: '' },
+                'payment.isPaid': { $ne: true },
+                'payment.status': { $nin: ['failed', 'refunded'] }
+              }
+            ]
+          });
           break;
+          
+        case 'failed':
+          // Failed payments usually have a specific status
+          filter.$and = filter.$and || [];
+          filter.$and.push({
+            $or: [
+              { 'payment.status': 'failed' },
+              { 'payment.metadata.status': 'failed' },
+              // Also consider transactions with failed flags
+              { 'payment.failed': true },
+              { 'payment.metadata.failed': true }
+            ]
+          });
+          break;
+          
+        case 'refunded':
+          // Refunded payments
+          filter.$and = filter.$and || [];
+          filter.$and.push({
+            $or: [
+              { 'payment.status': 'refunded' },
+              { 'payment.metadata.status': 'refunded' },
+              // Also check for refund-specific flags
+              { 'payment.refunded': true },
+              { 'payment.metadata.refunded': true }
+            ]
+          });
+          break;
+          
+        default:
+          // Default back to paid transactions if status is unknown
+          filter['payment.isPaid'] = true;
       }
     }
     
     // Apply user type filter
     if (userType !== 'all') {
-      filter.roleName = userType;
+      filter.$and = filter.$and || [];
+      filter.$and.push({ roleName: userType });
     }
+    
+    // Handle exact ID search query - this will prioritize finding by reference
+    if (exactId) {
+      console.log(`Searching for exact transaction ID: ${exactId}`);
+      
+      // Extract the core ID portion (without prefixes) to also search for partial matches
+      let coreId = exactId;
+      // First, handle combined prefixes like TRX-REF-
+      if (exactId.includes('TRX-REF-')) {
+        coreId = exactId.replace('TRX-REF-', '');
+      } else if (exactId.startsWith('TRX-')) {
+        coreId = exactId.replace('TRX-', '');
+      } else if (exactId.startsWith('REF-')) {
+        coreId = exactId.replace('REF-', '');
+      }
+      
+      // Save existing filters to combine with ID search
+      const existingFilters = { ...filter };
+      
+      // Reset and build new filter structure
+      filter = { $and: [] };
+      
+      // Add ID search criteria
+      filter.$and.push({
+        $or: [
+          { 'payment.reference': exactId },      // Direct match with full ID
+          { 'payment.reference': coreId },       // Match with core ID (without prefix)
+          { 'payment.reference': { $regex: coreId, $options: 'i' } } // Case-insensitive partial match
+        ]
+      });
+      
+      // Add other existing filters
+      if (existingFilters.$and) {
+        filter.$and = [...filter.$and, ...existingFilters.$and];
+      } else {
+        // Add non-$and filters from existing filters
+        const { $and, ...otherFilters } = existingFilters;
+        if (Object.keys(otherFilters).length > 0) {
+          filter.$and.push(otherFilters);
+        }
+      }
+    }
+    // Otherwise handle regular search if provided
+    else if (searchQuery) {
+      // We use regex for partial matching on fields
+      const searchRegex = new RegExp(searchQuery, 'i');
+      
+      // Apply search filter using $or for multiple fields
+      const searchFilter = {
+        $or: [
+          { name: searchRegex },
+          { email: searchRegex },
+          { 'payment.reference': searchRegex }
+        ]
+      };
+      
+      // Combine with existing filters
+      if (filter.$and) {
+        filter.$and.push(searchFilter);
+      } else {
+        const existingFilters = { ...filter };
+        filter = { $and: [existingFilters, searchFilter] };
+      }
+    }
+    
+    console.log('Final filter criteria:', JSON.stringify(filter, null, 2));
     
     // Get total count for pagination
     const totalCount = await User.countDocuments(filter);
     
     // Get users with payment data
     const users = await User.find(filter)
-      .select('name email payment roleName')
+      .select('name email payment roleName _id')
       .sort({ 'payment.date': -1 })
       .skip((page - 1) * limit)
       .limit(limit);
     
-    // Format transaction data
-    const transactions = users.map(user => ({
-      id: `TRX-${user.payment.reference}`.substring(0, 15),
-      userId: user._id,
-      userName: user.name,
-      userType: user.roleName,
-      amount: user.payment.amount,
-      date: user.payment.date,
-      status: user.payment.isPaid ? 'successful' : 'failed',
-      paymentMethod: user.payment.gateway || 'Card',
-      reference: user.payment.reference,
-      email: user.email
-    }));
+    console.log(`Found ${users.length} transactions matching the criteria`);
+    
+    // Helper function to determine the payment status
+    const determinePaymentStatus = (payment) => {
+      // Check explicit status fields first
+      if (payment.status) {
+        return payment.status;
+      }
+      
+      // Check metadata status
+      if (payment.metadata && payment.metadata.status) {
+        return payment.metadata.status;
+      }
+      
+      // Check refund status
+      if (payment.refunded || (payment.metadata && payment.metadata.refunded)) {
+        return 'refunded';
+      }
+      
+      // Check failure status
+      if (payment.failed || (payment.metadata && payment.metadata.failed)) {
+        return 'failed';
+      }
+      
+      // Default logic based on isPaid flag
+      if (payment.isPaid === true) {
+        return 'successful';
+      } else if (payment.reference) {
+        return 'pending';
+      } else {
+        return 'failed';
+      }
+    };
+    
+    // Helper function to generate a consistent transaction ID
+    const generateUniqueTransactionId = (user) => {
+      // Use MongoDB ObjectId as a base for uniqueness if available
+      const uniquePart = user._id ? user._id.toString().substring(0, 8) : '';
+      // Create a reference-based ID with consistent formatting
+      let reference = user.payment.reference || '';
+      
+      // Clean the reference to handle various formats
+      if (reference.includes('TRX-') || reference.includes('REF-')) {
+        // If it already has a prefix, use it directly but ensure it's trimmed
+        reference = reference.substring(0, 20);
+      } else {
+        // Otherwise add a consistent prefix
+        reference = `REF-${reference}`.substring(0, 20);
+      }
+      
+      // Combine for a unique but consistent ID
+      return `TRX-${uniquePart}-${reference}`;
+    };
+    
+    // Format transaction data with unique IDs
+    const transactions = users.map(user => {
+      // Generate a unique transaction ID
+      const transactionId = generateUniqueTransactionId(user);
+      
+      // Determine the proper status
+      const status = determinePaymentStatus(user.payment);
+      
+      return {
+        id: transactionId,
+        userId: user._id,
+        userName: user.name,
+        userType: user.roleName,
+        amount: user.payment.amount,
+        date: user.payment.date,
+        status: status,
+        paymentMethod: user.payment.gateway || 'Card',
+        reference: user.payment.reference,
+        email: user.email
+      };
+    });
     
     res.status(200).json({
       success: true,
