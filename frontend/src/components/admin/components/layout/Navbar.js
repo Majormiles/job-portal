@@ -207,9 +207,11 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
   // Mark notification as read
   const markNotificationAsRead = (notificationId) => {
     setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notificationId ? { ...notif, read: true } : notif
-      )
+      prev.map(notif => {
+        // Handle both id and _id formats
+        const matchesId = notif.id === notificationId || notif._id === notificationId;
+        return matchesId ? { ...notif, read: true } : notif;
+      })
     );
     
     // Update unread count
@@ -273,7 +275,13 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
         const response = await adminApi.get('/admin/notifications');
         
         if (response.data && response.data.success) {
-          setNotifications(response.data.data || []);
+          // Ensure each notification has a unique id property for React key
+          const notificationsWithKeys = (response.data.data || []).map(notification => ({
+            ...notification,
+            id: notification._id || notification.id || `notification-${Date.now()}-${Math.random()}`
+          }));
+          
+          setNotifications(notificationsWithKeys);
           setUnreadCount(response.data.unreadCount || 0);
         }
       } catch (error) {
@@ -384,6 +392,7 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
                 <h3 className="text-sm font-medium text-gray-700">Notifications</h3>
                 {unreadCount > 0 && (
                   <button 
+                    key="mark-all-read-button"
                     onClick={() => {
                       // Mark all as read
                       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
@@ -408,22 +417,58 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
                 {notifications.length > 0 ? (
                   notifications.map(notification => (
                     <button 
-                      key={notification.id}
+                      key={notification.id || notification._id || `notification-${Math.random()}`}
                       onClick={() => {
                         // Mark as read
                         if (!notification.read) {
-                          markNotificationAsRead(notification.id);
+                          markNotificationAsRead(notification.id || notification._id);
                         }
                         
-                        // Handle notification-specific actions
-                        if (notification.data?.type === 'user_registration') {
-                          // Navigate to user details page if available
-                          if (notification.data.userId) {
-                            navigate(`/admin/users/${notification.data.userId}`);
-                          } else {
-                            navigate('/admin/users');
-                          }
-                          setShowNotifications(false);
+                        // Handle notification-specific actions based on type
+                        const notificationType = notification.data?.type;
+                        const notificationId = notification.id || notification._id;
+                        
+                        // Close dropdown
+                        setShowNotifications(false);
+                        
+                        // Navigate based on notification type
+                        switch(notificationType) {
+                          case 'user_registration':
+                            // Navigate to user details page if available
+                            if (notification.data?.userId) {
+                              navigate(`/admin/users/${notification.data.userId}`);
+                            } else {
+                              navigate('/admin/users');
+                            }
+                            break;
+                          
+                          case 'job_application':
+                            // Navigate to application details
+                            if (notification.data?.applicationId) {
+                              navigate(`/admin/applications/${notification.data.applicationId}`);
+                            } else {
+                              navigate('/admin/applications');
+                            }
+                            break;
+                            
+                          case 'new_job':
+                            // Navigate to job details
+                            if (notification.data?.jobId) {
+                              navigate(`/admin/jobs/${notification.data.jobId}`);
+                            } else {
+                              navigate('/admin/jobs');
+                            }
+                            break;
+                            
+                          default:
+                            // For any other notification type or if type is missing,
+                            // navigate to notification details or notification list
+                            if (notificationId) {
+                              navigate(`/admin/notifications?highlight=${notificationId}`);
+                            } else {
+                              navigate('/admin/notifications');
+                            }
+                            break;
                         }
                       }}
                       className={`block w-full text-left px-4 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-0 ${
@@ -448,7 +493,11 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
                 )}
               </div>
               <div className="px-4 py-2 border-t border-gray-200">
-                <Link to="/admin/notifications" className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                <Link 
+                  to="/admin/notifications" 
+                  key="view-all-notifications-link"
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
                   View all notifications
                 </Link>
               </div>
@@ -522,6 +571,7 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
 
               <Link 
                 to="/admin/profile" 
+                key="profile-link"
                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 onClick={() => setShowDropdown(false)}
               >
@@ -531,6 +581,7 @@ function Navbar({ toggleSidebar, isSidebarOpen }) {
         
               <div className="border-t border-gray-100 my-1"></div>
               <button 
+                key="logout-button"
                 onClick={handleLogout}
                 className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
               >
