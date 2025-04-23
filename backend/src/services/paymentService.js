@@ -2,6 +2,7 @@ import axios from 'axios';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import User from '../models/user.model.js';
+import PaymentSettings from '../models/paymentSettings.model.js';
 import AppError from '../utils/appError.js';
 
 dotenv.config();
@@ -10,23 +11,43 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_API_SECRET;
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_API_KEY;
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
-// Payment amounts in Ghana cedis
-const PAYMENT_AMOUNTS = {
-  jobSeeker: 50,
-  employer: 100,
-  trainer: 100,
-  trainee: 50
+// Get payment amount from the database
+const getPaymentAmountFromDB = async (roleName) => {
+  try {
+    // Get settings from the database
+    const settings = await PaymentSettings.getSettings();
+    
+    // Validate role and determine amount
+    if (!settings[roleName]) {
+      throw new AppError(`Invalid role specified: ${roleName}`, 400);
+    }
+    
+    return settings[roleName];
+  } catch (error) {
+    console.error('Error getting payment amount from DB:', error);
+    
+    // Fallback to default values if DB lookup fails
+    const defaultAmounts = {
+      jobSeeker: 50,
+      employer: 100,
+      trainer: 100,
+      trainee: 50
+    };
+    
+    if (!defaultAmounts[roleName]) {
+      throw new AppError(`Invalid role specified: ${roleName}`, 400);
+    }
+    
+    return defaultAmounts[roleName];
+  }
 };
 
 // Initialize a payment transaction
 export const initializeTransaction = async (email, roleName, reference = null) => {
   try {
-    // Validate role and determine amount
-    if (!PAYMENT_AMOUNTS[roleName]) {
-      throw new AppError(`Invalid role specified: ${roleName}`, 400);
-    }
-
-    const amount = PAYMENT_AMOUNTS[roleName] * 100; // Convert to kobo (smallest currency unit)
+    // Get payment amount from the database
+    const amountInCedis = await getPaymentAmountFromDB(roleName);
+    const amount = amountInCedis * 100; // Convert to kobo (smallest currency unit)
     
     // Generate reference if not provided
     if (!reference) {
@@ -140,12 +161,35 @@ export const validateWebhookSignature = (signature, rawBody) => {
 };
 
 // Get payment amount by role
-export const getPaymentAmountByRole = (roleName) => {
-  if (!PAYMENT_AMOUNTS[roleName]) {
-    throw new AppError(`Invalid role specified: ${roleName}`, 400);
+export const getPaymentAmountByRole = async (roleName) => {
+  return await getPaymentAmountFromDB(roleName);
+};
+
+// Get all payment settings
+export const getAllPaymentSettings = async () => {
+  return await PaymentSettings.getSettings();
+};
+
+// Update payment settings
+export const updatePaymentSettings = async (roleAmounts, admin) => {
+  try {
+    // Get current settings
+    const settings = await PaymentSettings.getSettings();
+    
+    // Update each role amount if provided
+    for (const [role, amount] of Object.entries(roleAmounts)) {
+      if (settings[role] !== undefined && 
+          typeof amount === 'number' && 
+          amount >= 0) {
+        await settings.updateFee(role, amount, admin);
+      }
+    }
+    
+    return settings;
+  } catch (error) {
+    console.error('Error updating payment settings:', error);
+    throw error;
   }
-  
-  return PAYMENT_AMOUNTS[roleName];
 };
 
 // Log payment transaction for audit

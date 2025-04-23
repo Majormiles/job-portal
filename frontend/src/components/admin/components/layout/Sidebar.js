@@ -102,7 +102,8 @@ function Sidebar({ isOpen, onClose }) {
         { text: 'Overview', path: '/admin/payments' },
         { text: 'Transactions', path: '/admin/payments/transactions' },
         { text: 'Analytics', path: '/admin/payments/analytics' },
-        { text: 'Reports', path: '/admin/payments/reports' }
+        { text: 'Reports', path: '/admin/payments/reports' },
+        { text: 'Payment Settings', path: '/admin/payments/settings' }
       ]
     },
     {
@@ -211,9 +212,34 @@ function Sidebar({ isOpen, onClose }) {
                     ? 'text-blue-600 font-medium' 
                     : 'text-gray-600'
                 } ${disabled ? 'pointer-events-none opacity-50' : ''}`}
-                onClick={disabled ? (e) => e.preventDefault() : onClose}
+                onClick={(e) => {
+                  console.log(`Submenu item clicked: ${subItem.text} with path: ${subItem.path}`);
+                  console.log(`Current location:`, location.pathname);
+                  console.log('Submenu item details:', subItem);
+                  
+                  if (disabled) {
+                    console.log('Menu item is disabled, preventing navigation');
+                    e.preventDefault();
+                    return;
+                  }
+                  
+                  // If this is a forceReload item, use window.location.href instead
+                  if (subItem.forceReload) {
+                    console.log(`ForceReload menu item clicked: ${subItem.text}, using window.location.href`);
+                    e.preventDefault();
+                    window.location.href = subItem.path;
+                    return;
+                  }
+                  
+                  // Otherwise just close the sidebar
+                  console.log('Regular menu item, using default Link navigation');
+                  onClose?.();
+                }}
               >
                 {subItem.text}
+                {subItem.isNew && (
+                  <span className="ml-2 text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-100 text-orange-500">New</span>
+                )}
               </Link>
             ))}
           </div>
@@ -236,9 +262,28 @@ function Sidebar({ isOpen, onClose }) {
                     className={`block py-2 text-sm transition-colors hover:text-blue-600 ${
                       isActive(subItem.path) ? 'text-blue-600 font-medium' : 'text-gray-600'
                     }`}
-                    onClick={onClose}
+                    onClick={(e) => {
+                      console.log(`Collapsed submenu item clicked: ${subItem.text} with path: ${subItem.path}`);
+                      console.log(`Current location:`, location.pathname);
+                      console.log('Collapsed submenu item details:', subItem);
+                      
+                      // If this is a forceReload item, use window.location.href instead
+                      if (subItem.forceReload) {
+                        console.log(`ForceReload menu item clicked in collapsed menu: ${subItem.text}`);
+                        e.preventDefault();
+                        window.location.href = subItem.path;
+                        return;
+                      }
+                      
+                      // Otherwise just close the sidebar
+                      console.log('Regular menu item in collapsed menu, using default Link navigation');
+                      onClose?.();
+                    }}
                   >
                     {subItem.text}
+                    {subItem.isNew && (
+                      <span className="ml-2 text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-100 text-orange-500">New</span>
+                    )}
                   </Link>
                 ))}
               </div>

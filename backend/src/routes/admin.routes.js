@@ -6,6 +6,9 @@ import Application from '../models/application.model.js';
 import JobType from '../models/jobType.model.js';
 import Interest from '../models/interest.model.js';
 import CompanyType from '../models/companyType.model.js';
+import { addAdminFlag } from '../middleware/adminCheck.middleware.js';
+import AppError from '../utils/appError.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
@@ -452,5 +455,40 @@ router.post('/initialize-data', async (req, res) => {
     });
   }
 });
+
+// Special route to check admin permissions
+router.get('/check-permissions', addAdminFlag, asyncHandler(async (req, res, next) => {
+  console.log('Admin permission check requested');
+  console.log('User object:', {
+    id: req.user._id,
+    role: req.user.roleName,
+    isAdmin: req.user.isAdmin || false
+  });
+  console.log('Headers:', {
+    'x-admin-role': req.headers['x-admin-role'],
+    'x-admin-type': req.headers['x-admin-type']
+  });
+  
+  // Check if user has admin role
+  if (req.user.roleName !== 'admin') {
+    return next(new AppError('You do not have admin role in your user record', 403));
+  }
+  
+  // Check if isAdmin flag is properly set
+  if (!req.user.isAdmin) {
+    return next(new AppError('Your isAdmin flag is not set properly', 403));
+  }
+  
+  // If we made it here, everything is good
+  res.status(200).json({
+    success: true,
+    message: 'You have the required admin permissions',
+    details: {
+      userId: req.user._id,
+      role: req.user.roleName,
+      isAdmin: req.user.isAdmin
+    }
+  });
+}));
 
 export default router; 

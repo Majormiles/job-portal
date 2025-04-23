@@ -163,7 +163,7 @@ export const getPaymentAmount = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    const amount = paymentService.getPaymentAmountByRole(roleName);
+    const amount = await paymentService.getPaymentAmountByRole(roleName);
     
     res.status(200).json({
       success: true,
@@ -1038,6 +1038,95 @@ export const getUserReceipts = asyncHandler(async (req, res, next) => {
     console.error('Error fetching user receipts:', error);
     return next(
       new AppError('Failed to fetch receipts', 500)
+    );
+  }
+});
+
+// @desc    Get all payment settings
+// @route   GET /api/payment/settings
+// @access  Admin
+export const getPaymentSettings = asyncHandler(async (req, res, next) => {
+  try {
+    // Get all payment settings
+    const settings = await paymentService.getAllPaymentSettings();
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        settings,
+        currency: settings.currency || 'GHS'
+      }
+    });
+  } catch (error) {
+    console.error('Error getting payment settings:', error);
+    return next(
+      new AppError(error.message || 'Failed to get payment settings', error.statusCode || 500)
+    );
+  }
+});
+
+// @desc    Update payment settings
+// @route   PUT /api/payment/settings
+// @access  Admin
+export const updatePaymentSettings = asyncHandler(async (req, res, next) => {
+  const { jobSeeker, employer, trainer, trainee } = req.body;
+  
+  // Validate inputs
+  const roleAmounts = {};
+  
+  if (jobSeeker !== undefined) {
+    const amount = parseFloat(jobSeeker);
+    if (isNaN(amount) || amount < 0) {
+      return next(new AppError('Job seeker amount must be a positive number', 400));
+    }
+    roleAmounts.jobSeeker = amount;
+  }
+  
+  if (employer !== undefined) {
+    const amount = parseFloat(employer);
+    if (isNaN(amount) || amount < 0) {
+      return next(new AppError('Employer amount must be a positive number', 400));
+    }
+    roleAmounts.employer = amount;
+  }
+  
+  if (trainer !== undefined) {
+    const amount = parseFloat(trainer);
+    if (isNaN(amount) || amount < 0) {
+      return next(new AppError('Trainer amount must be a positive number', 400));
+    }
+    roleAmounts.trainer = amount;
+  }
+  
+  if (trainee !== undefined) {
+    const amount = parseFloat(trainee);
+    if (isNaN(amount) || amount < 0) {
+      return next(new AppError('Trainee amount must be a positive number', 400));
+    }
+    roleAmounts.trainee = amount;
+  }
+  
+  // Check if user is admin
+  if (!req.user || !req.user.isAdmin) {
+    return next(new AppError('You do not have permission to update payment settings', 403));
+  }
+  
+  try {
+    // Update payment settings
+    const updatedSettings = await paymentService.updatePaymentSettings(roleAmounts, req.user);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Payment settings updated successfully',
+      data: {
+        settings: updatedSettings,
+        currency: updatedSettings.currency || 'GHS'
+      }
+    });
+  } catch (error) {
+    console.error('Error updating payment settings:', error);
+    return next(
+      new AppError(error.message || 'Failed to update payment settings', error.statusCode || 500)
     );
   }
 }); 

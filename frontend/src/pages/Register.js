@@ -47,6 +47,16 @@ const RegisterPage = () => {
   const [companyTypes, setCompanyTypes] = useState([]);
   const [loadingCompanyTypes, setLoadingCompanyTypes] = useState(false);
 
+  // State for dynamic payment amounts
+  const [paymentAmounts, setPaymentAmounts] = useState({
+    jobSeeker: 50,
+    employer: 100,
+    trainer: 100,
+    trainee: 50
+  });
+  const [paymentCurrency, setPaymentCurrency] = useState('GHS');
+  const [loadingPaymentAmounts, setLoadingPaymentAmounts] = useState(false);
+
   // State for form errors
   const [formErrors, setFormErrors] = useState({});
 
@@ -167,6 +177,38 @@ const RegisterPage = () => {
       }
     };
 
+    // Fetch payment amounts for different user types
+    const fetchPaymentAmounts = async () => {
+      setLoadingPaymentAmounts(true);
+      try {
+        // Fetch each role's payment amount
+        const roles = ['jobSeeker', 'employer', 'trainer', 'trainee'];
+        const amounts = { ...paymentAmounts };
+        
+        for (const role of roles) {
+          try {
+            const response = await axios.get(`${API_URL}/payment/amount/${role}`);
+            if (response.data.success) {
+              amounts[role] = response.data.data.amount;
+              if (response.data.data.currency) {
+                setPaymentCurrency(response.data.data.currency);
+              }
+            }
+          } catch (roleError) {
+            console.error(`Error fetching payment amount for ${role}:`, roleError);
+            // Keep default amount for this role
+          }
+        }
+        
+        setPaymentAmounts(amounts);
+      } catch (error) {
+        console.error('Error fetching payment amounts:', error);
+        // Default amounts are already set in state initialization
+      } finally {
+        setLoadingPaymentAmounts(false);
+      }
+    };
+
     // Try to fetch roles to understand the correct role names
     const fetchRoles = async () => {
       try {
@@ -225,6 +267,7 @@ const RegisterPage = () => {
     fetchCompanyTypes();
     fetchRoles();
     fetchInterests();
+    fetchPaymentAmounts();
   }, []);
 
   const handleChange = (e) => {
@@ -1060,10 +1103,22 @@ const RegisterPage = () => {
 
   // Determine payment amount based on user type
   const getPaymentAmount = () => {
-    if (userType === 'employer' || (userType === 'talent' && talentType === 'trainer')) {
-      return '100 GHS';
+    if (loadingPaymentAmounts) {
+      return 'Loading...';
     }
-    return '50 GHS';
+    
+    if (userType === 'employer') {
+      return `${paymentAmounts.employer} ${paymentCurrency}`;
+    } else if (userType === 'talent') {
+      if (talentType === 'trainer') {
+        return `${paymentAmounts.trainer} ${paymentCurrency}`;
+      } else if (talentType === 'trainee') {
+        return `${paymentAmounts.trainee} ${paymentCurrency}`;
+      }
+    }
+    
+    // Default to job seeker
+    return `${paymentAmounts.jobSeeker} ${paymentCurrency}`;
   };
 
   // Check if we should show the registration form

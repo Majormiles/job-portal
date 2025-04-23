@@ -1,5 +1,5 @@
-import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import Dashboard from '../pages/Dashboard';
 import Login from '../pages/Login';
@@ -21,10 +21,20 @@ import {
   TransactionsPage,
   AnalyticsPage,
   ReportsPage,
-  TransactionDetails
+  TransactionDetails,
 } from '../pages/payments';
 
+// Import PaymentSettingsPage directly to avoid potential loading issues
+import PaymentSettingsPage from '../pages/payments/PaymentSettingsPage';
+
 const AdminRoutes = () => {
+  const location = useLocation();
+  
+  // Log route changes for debugging
+  useEffect(() => {
+    console.log('AdminRoutes - Route changed to:', location.pathname);
+  }, [location]);
+  
   return (
     <Routes>
       <Route path="login" element={<Login />} />
@@ -60,6 +70,10 @@ const AdminRoutes = () => {
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="receipts" element={<ReceiptManagement />} />
+          <Route 
+            path="settings" 
+            element={<PaymentSettingsPage />} 
+          />
         </Route>
       </Route>
     </Routes>

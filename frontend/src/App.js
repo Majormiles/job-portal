@@ -65,7 +65,8 @@ import {
   TransactionsPage,
   AnalyticsPage,
   ReportsPage,
-  TransactionDetails
+  TransactionDetails,
+  PaymentSettingsPage
 } from './components/admin/pages/payments';
 
 import './App.css';
@@ -481,6 +482,7 @@ const AppContent = () => {
           <Route path="payments/transactions/:id" element={<TransactionDetails />} />
           <Route path="payments/analytics" element={<AnalyticsPage />} />
           <Route path="payments/reports" element={<ReportsPage />} />
+          <Route path="payments/settings" element={<PaymentSettingsPage />} />
         </Route>
 
         {/* Catch all route */}
