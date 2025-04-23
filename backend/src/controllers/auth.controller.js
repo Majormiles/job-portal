@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import Onboarding from '../models/onboarding.model.js';
 import Role from '../models/role.model.js';
 import Location from '../models/location.model.js';
+import notificationService from '../services/notificationService.js';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -256,6 +257,15 @@ const register = asyncHandler(async (req, res, next) => {
     const user = await User.create(userData);
     console.log('New user created successfully:', user.email);
     
+    // Send admin notification about new user registration
+    try {
+      await notificationService.sendNewUserRegistrationNotification(user);
+      console.log('Admin notification for new user registration sent');
+    } catch (notificationError) {
+      console.error('Failed to send admin notification:', notificationError);
+      // We don't want to fail registration if notification fails
+    }
+
     // Send verification email
     console.log('Attempting to send verification email');
     try {

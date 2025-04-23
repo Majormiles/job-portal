@@ -21,7 +21,8 @@ import {
   ChevronDown,
   DollarSign,
   CreditCard,
-  PieChart
+  PieChart,
+  Bell
 } from 'lucide-react';
 import '../../css/scrollbar.css';
 
@@ -80,6 +81,12 @@ function Sidebar({ isOpen, onClose }) {
       icon: Monitor,
       text: 'Dashboard',
       path: '/admin/dashboard',
+      subItems: []
+    },
+    {
+      icon: Bell,
+      text: 'Notifications',
+      path: '/admin/notifications',
       subItems: []
     },
     {

@@ -69,6 +69,9 @@ import {
   PaymentSettingsPage
 } from './components/admin/pages/payments';
 
+// Import NotificationsPage
+import NotificationsPage from './components/admin/pages/NotificationsPage';
+
 import './App.css';
 
 // Error Boundary Component
@@ -483,6 +486,9 @@ const AppContent = () => {
           <Route path="payments/analytics" element={<AnalyticsPage />} />
           <Route path="payments/reports" element={<ReportsPage />} />
           <Route path="payments/settings" element={<PaymentSettingsPage />} />
+
+          {/* Notifications Route */}
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* Catch all route */}

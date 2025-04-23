@@ -14,6 +14,7 @@ import JobCreate from '../pages/JobCreate';
 import JobEdit from '../pages/JobEdit';
 import Invoice from '../pages/Invoice';
 import ReceiptManagement from '../pages/ReceiptManagement';
+import NotificationsPage from '../pages/NotificationsPage';
 
 // Import payment portal components
 import { 
@@ -61,6 +62,9 @@ const AdminRoutes = () => {
           <Route path="edit/:id" element={<JobEdit />} />
         </Route>
         <Route path="invoice" element={<Invoice />} />
+
+        {/* Notifications Route */}
+        <Route path="notifications" element={<NotificationsPage />} />
 
         {/* Payment Portal Routes */}
         <Route path="payments">

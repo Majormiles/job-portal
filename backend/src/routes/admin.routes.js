@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, authorize } from '../middleware/auth.middleware.js';
+import { protect, authorize, adminOnly } from '../middleware/auth.middleware.js';
 import User from '../models/user.model.js';
 import Job from '../models/job.model.js';
 import Application from '../models/application.model.js';
@@ -9,6 +9,14 @@ import CompanyType from '../models/companyType.model.js';
 import { addAdminFlag } from '../middleware/adminCheck.middleware.js';
 import AppError from '../utils/appError.js';
 import asyncHandler from '../utils/asyncHandler.js';
+import { 
+  getAdminNotifications, 
+  markNotificationAsRead, 
+  markAllNotificationsAsRead, 
+  deleteNotification, 
+  deleteAllNotifications,
+  getNotificationStats
+} from '../controllers/admin.notification.controller.js';
 
 const router = express.Router();
 
@@ -490,5 +498,13 @@ router.get('/check-permissions', addAdminFlag, asyncHandler(async (req, res, nex
     }
   });
 }));
+
+// Notification routes
+router.get('/notifications', protect, adminOnly, getAdminNotifications);
+router.get('/notifications/stats', protect, adminOnly, getNotificationStats);
+router.put('/notifications/:id/read', protect, adminOnly, markNotificationAsRead);
+router.put('/notifications/read-all', protect, adminOnly, markAllNotificationsAsRead);
+router.delete('/notifications/:id', protect, adminOnly, deleteNotification);
+router.delete('/notifications', protect, adminOnly, deleteAllNotifications);
 
 export default router; 

@@ -88,6 +88,31 @@ export const authorize = (...roles) => {
   };
 };
 
+// Admin only middleware - Specifically checks for admin role
+export const adminOnly = (req, res, next) => {
+  // Check if the user object exists in req
+  if (!req.user) {
+    return next(
+      new ApiError(401, 'Not authorized to access this route')
+    );
+  }
+  
+  // Get role from user object
+  const userRole = req.user.roleName;
+  
+  // Check if user is admin
+  if (userRole !== 'admin') {
+    return next(
+      new ApiError(
+        403,
+        'Only administrators can access this route'
+      )
+    );
+  }
+  
+  next();
+};
+
 // Check if user is the owner of the resource
 export const checkOwnership = (Model) => {
   return asyncHandler(async (req, res, next) => {
