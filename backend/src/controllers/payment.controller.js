@@ -92,6 +92,10 @@ export const verifyPayment = asyncHandler(async (req, res, next) => {
       
       // Log transaction for audit
       await paymentService.logPaymentTransaction(verificationData.data);
+      
+      // Generate receipt for the payment
+      await paymentService.generateReceipt(updatedUser, verificationData.data);
+      console.log('Receipt generated for payment:', reference);
     }
 
     res.status(200).json({
@@ -207,7 +211,7 @@ export const handleWebhook = asyncHandler(async (req, res, next) => {
         const email = data.customer.email;
         
         // Update user payment status
-        await paymentService.updateUserPaymentStatus(
+        const updatedUser = await paymentService.updateUserPaymentStatus(
           email,
           data.reference,
           'success',
@@ -216,6 +220,10 @@ export const handleWebhook = asyncHandler(async (req, res, next) => {
         
         // Log transaction for audit
         await paymentService.logPaymentTransaction(data);
+        
+        // Generate receipt for the payment
+        await paymentService.generateReceipt(updatedUser, data);
+        console.log('Receipt generated for webhook payment:', data.reference);
         break;
         
       // Handle other events as needed
@@ -995,6 +1003,41 @@ export const getAdminPaymentReports = asyncHandler(async (req, res, next) => {
     console.error('Error generating admin payment report:', error);
     return next(
       new AppError(error.message || 'Failed to generate payment report', 500)
+    );
+  }
+});
+
+// @desc    Get receipts for a user
+// @route   GET /api/receipts/user/:userId
+// @access  Private
+export const getUserReceipts = asyncHandler(async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    
+    // Check if user exists
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+    
+    // Check if the requesting user is authorized (either the user themselves or admin)
+    if (req.user.id !== userId && req.user.roleName !== 'admin') {
+      return next(new AppError('Not authorized to access these receipts', 403));
+    }
+    
+    // Return the receipts
+    const receipts = user.receipts || [];
+    
+    res.status(200).json({
+      success: true,
+      count: receipts.length,
+      data: receipts
+    });
+  } catch (error) {
+    console.error('Error fetching user receipts:', error);
+    return next(
+      new AppError('Failed to fetch receipts', 500)
     );
   }
 }); 

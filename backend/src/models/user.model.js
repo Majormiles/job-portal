@@ -294,6 +294,20 @@ const userSchema = new mongoose.Schema({
       default: 'paystack'
     },
     metadata: Object
+  }],
+  receipts: [{
+    userId: mongoose.Schema.Types.ObjectId,
+    userName: String,
+    email: String,
+    phoneNumber: String,
+    accountType: String,
+    userRole: String,
+    amount: Number,
+    transactionId: String,
+    referenceNumber: String,
+    paymentMethod: String,
+    date: Date,
+    location: String
   }]
 }, {
   timestamps: true

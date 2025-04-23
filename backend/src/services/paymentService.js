@@ -179,4 +179,48 @@ export const logPaymentTransaction = async (transactionData) => {
     // We don't want to throw here as this is a secondary operation
     return false;
   }
+};
+
+// Generate receipt after successful payment
+export const generateReceipt = async (user, transactionData) => {
+  try {
+    if (!user || !transactionData) {
+      console.error('Missing user or transaction data for receipt generation');
+      return null;
+    }
+
+    // Create receipt data
+    const receiptData = {
+      userId: user._id,
+      userName: user.name,
+      email: user.email,
+      phoneNumber: user.phone || 'Not provided',
+      accountType: user.roleName ? user.roleName.charAt(0).toUpperCase() + user.roleName.slice(1) : 'User',
+      userRole: user.roleName || 'jobSeeker',
+      amount: transactionData.amount / 100, // Convert from kobo to cedis
+      transactionId: transactionData.id,
+      referenceNumber: transactionData.reference,
+      paymentMethod: transactionData.channel || 'Card Payment',
+      date: new Date(transactionData.paid_at || Date.now()).toISOString(),
+      location: user.location || 'Ghana'
+    };
+
+    // In a real implementation, you might want to save this receipt to a database
+    // For now, we'll just add it to the user's payment data
+    
+    if (!user.receipts) {
+      user.receipts = [];
+    }
+    
+    user.receipts.push(receiptData);
+    await user.save();
+    
+    console.log(`Receipt generated for user ${user.email} with reference ${transactionData.reference}`);
+    
+    return receiptData;
+  } catch (error) {
+    console.error('Error generating receipt:', error);
+    // Don't throw error, just return null as this is a secondary operation
+    return null;
+  }
 }; 

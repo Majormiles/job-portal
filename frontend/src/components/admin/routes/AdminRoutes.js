@@ -13,6 +13,7 @@ import Jobs from '../pages/Jobs';
 import JobCreate from '../pages/JobCreate';
 import JobEdit from '../pages/JobEdit';
 import Invoice from '../pages/Invoice';
+import ReceiptManagement from '../pages/ReceiptManagement';
 
 // Import payment portal components
 import { 
@@ -58,6 +59,7 @@ const AdminRoutes = () => {
           <Route path="transactions/:id" element={<TransactionDetails />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="reports" element={<ReportsPage />} />
+          <Route path="receipts" element={<ReceiptManagement />} />
         </Route>
       </Route>
     </Routes>
