@@ -367,7 +367,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 100px 20px 50px; /* Increased top padding from 80px to 120px */
+  padding: 70px 20px 50px; /* Increased top padding from 80px to 120px */
   max-width: 1200px;
   margin: 0 auto;
   flex-wrap: wrap;
