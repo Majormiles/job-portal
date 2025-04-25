@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const PAYSTACK_PUBLIC_KEY = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY || 'pk_test_d9f61985375cd7230009ca227e1177bfd0a8d2a5';
+const PAYSTACK_PUBLIC_KEY = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY || 'pk_live_d757d8727c111504151389a7b1071720b62c20f5';
 
 const PaymentModal = ({ isOpen, onClose }) => {
   const { user, updateUser } = useAuth();
