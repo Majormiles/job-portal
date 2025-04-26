@@ -8,86 +8,119 @@ const createTransporter = async () => {
     console.log('=== EMAIL SERVICE CONFIGURATION ===');
     console.log('Checking environment variables...');
     console.log('GOOGLE_EMAIL:', process.env.GOOGLE_EMAIL);
-    console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
+    console.log('GOOGLE_APP_PASSWORD:', process.env.GOOGLE_APP_PASSWORD ? '✓ Set' : 'Not set');
+    console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? '✓ Set' : 'Not set');
     console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? '✓ Set' : 'Not set');
     console.log('GOOGLE_REFRESH_TOKEN length:', process.env.GOOGLE_REFRESH_TOKEN ? process.env.GOOGLE_REFRESH_TOKEN.length : 'Not set');
     console.log('=== END EMAIL SERVICE CONFIGURATION ===');
 
-    // Validate required environment variables
-    const requiredVars = ['GOOGLE_EMAIL', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN'];
-    const missingVars = requiredVars.filter(varName => !process.env[varName]);
-    
-    if (missingVars.length > 0) {
-      console.error('Missing environment variables:', missingVars);
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-    }
-
-    // Create OAuth2 client
-    const oauth2Client = new OAuth2Client(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      'https://developers.google.com/oauthplayground'  // Standard OAuth2 playground URL
-    );
-
-    // Set credentials and get access token
-    console.log('Setting OAuth2 credentials with refresh token...');
-    oauth2Client.setCredentials({
-      refresh_token: process.env.GOOGLE_REFRESH_TOKEN
-    });
-    console.log('OAuth2 credentials set successfully');
-
-    // Get access token
-    console.log('Getting access token...');
-    let token;
-    try {
-      const { credentials } = await oauth2Client.refreshAccessToken();
-      token = credentials.access_token;
-      console.log('Successfully obtained access token');
-    } catch (tokenError) {
-      console.error('Error getting access token:', tokenError);
-      console.error('Token error details:', {
-        message: tokenError.message,
-        code: tokenError.code,
-        stack: tokenError.stack
-      });
+    // Check if we can use App Password method
+    if (process.env.GOOGLE_EMAIL && process.env.GOOGLE_APP_PASSWORD) {
+      console.log('Using App Password authentication for Gmail');
       
-      if (tokenError.message.includes('invalid_grant')) {
-        console.error('Invalid refresh token. Please generate a new refresh token.');
-        throw new Error('Invalid refresh token. Please generate a new refresh token.');
-      }
-      throw new Error('Failed to get access token. Please check your OAuth2 credentials.');
-    }
-
-    // Create transporter with OAuth2
-    console.log('Creating nodemailer transporter...');
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        type: 'OAuth2',
-        user: process.env.GOOGLE_EMAIL,
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-        accessToken: token
-      }
-    });
-
-    // Verify transporter configuration
-    console.log('Verifying transporter configuration...');
-    try {
-      await transporter.verify();
-      console.log('Transporter verified successfully');
-    } catch (verifyError) {
-      console.error('Transporter verification failed:', verifyError);
-      console.error('Verification error details:', {
-        message: verifyError.message,
-        code: verifyError.code,
-        stack: verifyError.stack
+      // Create transporter with App Password
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GOOGLE_EMAIL,
+          pass: process.env.GOOGLE_APP_PASSWORD
+        }
       });
-      throw new Error(`Transporter verification failed: ${verifyError.message}`);
+
+      // Verify transporter configuration
+      console.log('Verifying transporter configuration...');
+      try {
+        await transporter.verify();
+        console.log('Transporter verified successfully');
+        return transporter;
+      } catch (verifyError) {
+        console.error('App Password transporter verification failed:', verifyError);
+        console.error('Verification error details:', {
+          message: verifyError.message,
+          code: verifyError.code,
+          stack: verifyError.stack
+        });
+        // Don't throw an error yet, try OAuth method if available
+      }
     }
+
+    // Try OAuth2 method if App Password failed or not configured
+    if (process.env.GOOGLE_EMAIL && process.env.GOOGLE_CLIENT_ID && 
+        process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN) {
+      console.log('Using OAuth2 authentication for Gmail');
+      
+      // Create OAuth2 client
+      const oauth2Client = new OAuth2Client(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        'https://developers.google.com/oauthplayground'  // Standard OAuth2 playground URL
+      );
+
+      // Set credentials and get access token
+      console.log('Setting OAuth2 credentials with refresh token...');
+      oauth2Client.setCredentials({
+        refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+      });
+      console.log('OAuth2 credentials set successfully');
+
+      // Get access token
+      console.log('Getting access token...');
+      let token;
+      try {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        token = credentials.access_token;
+        console.log('Successfully obtained access token');
+      } catch (tokenError) {
+        console.error('Error getting access token:', tokenError);
+        console.error('Token error details:', {
+          message: tokenError.message,
+          code: tokenError.code,
+          stack: tokenError.stack
+        });
+        
+        if (tokenError.message.includes('invalid_grant')) {
+          console.error('Invalid refresh token. Please generate a new refresh token.');
+          throw new Error('Invalid refresh token. Please generate a new refresh token.');
+        }
+        throw new Error('Failed to get access token. Please check your OAuth2 credentials.');
+      }
+
+      // Create transporter with OAuth2
+      console.log('Creating nodemailer transporter with OAuth2...');
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          type: 'OAuth2',
+          user: process.env.GOOGLE_EMAIL,
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+          accessToken: token
+        }
+      });
+
+      // Verify transporter configuration
+      console.log('Verifying OAuth2 transporter configuration...');
+      try {
+        await transporter.verify();
+        console.log('OAuth2 transporter verified successfully');
+        return transporter;
+      } catch (verifyError) {
+        console.error('OAuth2 transporter verification failed:', verifyError);
+        console.error('Verification error details:', {
+          message: verifyError.message,
+          code: verifyError.code,
+          stack: verifyError.stack
+        });
+        throw new Error(`OAuth2 transporter verification failed: ${verifyError.message}`);
+      }
+    }
+
+    // If we get here, neither authentication method is configured properly
+    const errorMsg = 'Email service configuration error: Neither App Password nor OAuth2 credentials are properly configured.';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
     
-    return transporter;
   } catch (error) {
     console.error('Error creating transporter:', error);
     console.error('Error details:', {
