@@ -26,6 +26,7 @@ import { GoogleOAuthProvider } from './contexts/GoogleOAuthContext';
 import EmailVerificationTest from './components/EmailVerificationTest';
 import VerifyEmail from './pages/VerifyEmail';
 import { NotificationProvider } from './contexts/NotificationContext';
+import PaymentPage from './pages/PaymentPage';
 
 // Dashboard Components for different user roles
 import DashboardEmployer from './components/ui/DashboardEmployer';
@@ -57,6 +58,19 @@ import AdminTimeline from './components/admin/pages/Timeline';
 import AdminJobSeekers from './components/admin/pages/JobSeekers';
 import AdminManageApplications from './components/admin/pages/ManageApplications';
 import AdminJobApplicants from './components/admin/pages/JobApplicants';
+
+// Import payment components
+import { 
+  PaymentDashboard,
+  TransactionsPage,
+  AnalyticsPage,
+  ReportsPage,
+  TransactionDetails,
+  PaymentSettingsPage
+} from './components/admin/pages/payments';
+
+// Import NotificationsPage
+import NotificationsPage from './components/admin/pages/NotificationsPage';
 
 import './App.css';
 
@@ -116,6 +130,13 @@ const OnboardingRoute = ({ children }) => {
       isCheckingRef.current = true;
 
       try {
+        // First check if payment is completed
+        if (!user?.payment?.isPaid) {
+          console.log("Payment not completed, redirecting to payment page");
+          navigate('/payment', { replace: true });
+          return;
+        }
+
         // Always check status on mount
         const status = await checkOnboardingStatus(true);
         setOnboardingStatus(status);
@@ -203,16 +224,14 @@ const OnboardingRoute = ({ children }) => {
           navigate(nextSection.path, { replace: true });
         }
       } catch (error) {
-        console.error('Error checking onboarding status:', error);
-        // If there's an error, redirect to login
-        navigate('/login', { replace: true });
+        console.error("Error in onboarding route check:", error);
       } finally {
         isCheckingRef.current = false;
       }
     };
 
     verifyOnboardingStatus();
-  }, [location.pathname, checkOnboardingStatus, navigate, loading, isAuthenticated]);
+  }, [loading, isAuthenticated, user, location.pathname, navigate, checkOnboardingStatus]);
 
   // Show loading spinner while checking auth or onboarding status
   if (loading || !onboardingStatus) {
@@ -339,6 +358,7 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/payment" element={<PaymentPage />} />
         <Route 
           path="/test-email-verification" 
           element={
@@ -458,6 +478,17 @@ const AppContent = () => {
           <Route path="job-seekers" element={<AdminJobSeekers />} />
           <Route path="manage-applications" element={<AdminManageApplications />} />
           <Route path="job-applicants" element={<AdminJobApplicants />} />
+          
+          {/* Payment Portal Routes */}
+          <Route path="payments" element={<PaymentDashboard />} />
+          <Route path="payments/transactions" element={<TransactionsPage />} />
+          <Route path="payments/transactions/:id" element={<TransactionDetails />} />
+          <Route path="payments/analytics" element={<AnalyticsPage />} />
+          <Route path="payments/reports" element={<ReportsPage />} />
+          <Route path="payments/settings" element={<PaymentSettingsPage />} />
+
+          {/* Notifications Route */}
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* Catch all route */}

@@ -3,13 +3,16 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import emailImage from '../assets/images/verify_email.jpg';
+import { useAuth } from '../contexts/AuthContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const email = searchParams.get('email');
   const navigate = useNavigate();
+  const { isAuthenticated, login } = useAuth();
   
   const [verificationStatus, setVerificationStatus] = useState({
     isLoading: true,
@@ -17,6 +20,9 @@ const VerifyEmail = () => {
     message: '',
     error: ''
   });
+  
+  // Add a ref to track if a success toast has been shown
+  const [toastShown, setToastShown] = useState(false);
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -43,7 +49,16 @@ const VerifyEmail = () => {
             message: 'Your email has been verified successfully.',
             error: ''
           });
-          toast.success('Email verified successfully!');
+          
+          if (!toastShown) {
+            toast.success('Email verified successfully!');
+            setToastShown(true);
+          }
+          
+          // If user is authenticated, redirect to payment page
+          if (isAuthenticated) {
+            setTimeout(() => navigate('/payment'), 2000);
+          }
           return;
         }
         
@@ -61,7 +76,38 @@ const VerifyEmail = () => {
             message: response.data.message || 'Email verified successfully!',
             error: ''
           });
-          toast.success('Email verified successfully!');
+          
+          if (!toastShown) {
+            toast.success('Email verified successfully!');
+            setToastShown(true);
+          }
+          
+          // If user is authenticated, redirect to payment page
+          if (isAuthenticated) {
+            setTimeout(() => navigate('/payment'), 2000);
+          } else if (email) {
+            // Try to login the user automatically if email is available
+            try {
+              // Save user type from localStorage before login attempts, since login might clear it
+              const registrationData = localStorage.getItem('registrationData');
+              const userType = registrationData ? JSON.parse(registrationData)?.userType : null;
+              const isEmployer = userType === 'employer';
+              
+              console.log('Attempting auto-login after verification with email:', email);
+              await login({ email });
+              console.log('Auto-login successful, user type:', isEmployer ? 'employer' : 'job seeker');
+              
+              // Redirect based on user type
+              if (isEmployer) {
+                setTimeout(() => navigate('/payment'), 2000);
+              } else {
+                setTimeout(() => navigate('/dashboard-jobseeker'), 2000);
+              }
+            } catch (loginError) {
+              console.error('Auto login failed after verification:', loginError);
+              // Will show the continue button instead of auto-redirecting
+            }
+          }
         } else {
           setVerificationStatus({
             isLoading: false,
@@ -86,7 +132,16 @@ const VerifyEmail = () => {
               message: 'Your email has been verified successfully.',
               error: ''
             });
-            toast.success('Email verified successfully!');
+            
+            if (!toastShown) {
+              toast.success('Email verified successfully!');
+              setToastShown(true);
+            }
+            
+            // If user is authenticated, redirect to payment page
+            if (isAuthenticated) {
+              setTimeout(() => navigate('/payment'), 2000);
+            }
             return;
           }
         
@@ -97,9 +152,19 @@ const VerifyEmail = () => {
             setVerificationStatus({
               isLoading: false,
               success: true,
-              message: 'Your email is already verified. You can now log in.',
+              message: 'Your email is already verified. You can now continue to payment.',
               error: ''
             });
+            
+            if (!toastShown) {
+              toast.success('Email verified successfully!');
+              setToastShown(true);
+            }
+            
+            // If user is authenticated, redirect to payment page
+            if (isAuthenticated) {
+              setTimeout(() => navigate('/payment'), 2000);
+            }
             return;
           } else if (error.response.data?.message) {
             errorMessage = error.response.data.message;
@@ -117,7 +182,30 @@ const VerifyEmail = () => {
     };
 
     verifyEmail();
-  }, [token]);
+  }, [token, email, navigate, isAuthenticated, login, toastShown]);
+
+  const handleContinueToPayment = () => {
+    // Check localStorage for registration data to identify user type
+    try {
+      const registrationDataStr = localStorage.getItem('registrationData');
+      if (registrationDataStr) {
+        const registrationData = JSON.parse(registrationDataStr);
+        const userType = registrationData?.userType;
+        
+        if (userType === 'employer') {
+          console.log('Redirecting employer to payment page');
+          navigate('/payment');
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing registration data:', error);
+    }
+    
+    // Default behavior - if not an employer, go to jobseeker dashboard
+    console.log('Redirecting non-employer to jobseeker dashboard');
+    navigate('/dashboard-jobseeker');
+  };
 
   const handleLoginRedirect = () => {
     navigate('/login');
@@ -235,28 +323,23 @@ const VerifyEmail = () => {
             
             <div className="text-center bg-white p-8 rounded-lg">
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <svg className="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-900">
-                Email Verified Successfully!
+                Email Verified!
               </h2>
-              <p className="mt-3 text-gray-600">
-                {verificationStatus.message}
+              <p className="mt-2 text-gray-600">
+                {verificationStatus.message || 'Your email has been verified successfully.'}
               </p>
-              <div className="mt-6">
-                <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500 rounded-full animate-pulse" style={{ width: '100%' }}></div>
-                </div>
-              </div>
+              
               <div className="mt-6">
                 <button
-                  onClick={handleLoginRedirect}
-                  className="w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-                  style={{ backgroundColor: '#2A9D8F' }}
+                  onClick={handleContinueToPayment}
+                  className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 >
-                  Login to Your Account
+                  Continue to Payment
                 </button>
               </div>
             </div>
@@ -290,35 +373,77 @@ const VerifyEmail = () => {
             />
           </div>
           
-          <div className="text-center bg-white p-8 rounded-lg">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+          {verificationStatus.isLoading ? (
+            <div className="text-center bg-white p-8 rounded-lg">
+              <div className="animate-spin mx-auto h-12 w-12 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="#2A9D8F" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="#2A9D8F" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Verifying your email...
+              </h2>
+              <p className="mt-2 text-gray-600">
+                Please wait while we verify your email address.
+              </p>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              Verification Failed
-            </h2>
-            <p className="mt-3 text-gray-600">
-              {verificationStatus.error}
-            </p>
-            
-            <div className="mt-6 space-y-3">
-              <button
-                onClick={handleResendVerification}
-                className="w-full inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Resend Verification Email
-              </button>
+          ) : verificationStatus.success ? (
+            <div className="text-center bg-white p-8 rounded-lg">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Email Verified!
+              </h2>
+              <p className="mt-2 text-gray-600">
+                {verificationStatus.message || 'Your email has been verified successfully.'}
+              </p>
               
-              <button
-                onClick={handleLoginRedirect}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Return to Login
-              </button>
+              <div className="mt-6">
+                <button
+                  onClick={handleContinueToPayment}
+                  className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  Continue to Payment
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center bg-white p-8 rounded-lg">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Verification Failed
+              </h2>
+              <p className="mt-2 text-gray-600">
+                {verificationStatus.error || 'There was a problem verifying your email.'}
+              </p>
+              
+              <div className="mt-6 space-y-3">
+                {email && (
+                  <button
+                    onClick={handleResendVerification}
+                    className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Resend Verification Email
+                  </button>
+                )}
+                
+                <button
+                  onClick={handleLoginRedirect}
+                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Return to Login
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

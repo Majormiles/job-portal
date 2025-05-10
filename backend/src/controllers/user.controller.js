@@ -6,6 +6,7 @@ import AppError from '../utils/appError.js';
 import { sendEmail } from '../utils/emailService.js';
 import crypto from 'crypto';
 import Application from '../models/application.model.js';
+import mongoose from 'mongoose';
 
 // @desc    Get current logged in user
 // @route   GET /api/users/me
@@ -515,4 +516,117 @@ const calculateProfileCompletion = (user, onboarding) => {
   }
 
   return Math.round((completionScore / totalFields) * 100);
-}; 
+};
+
+/**
+ * Update user role
+ * @route   PUT /api/users/role
+ * @access  Private
+ */
+export const updateUserRole = asyncHandler(async (req, res, next) => {
+  try {
+    const { role, userType, roleName, talentType } = req.body;
+    
+    if (!role && !userType && !roleName && !talentType) {
+      return next(new AppError('Please provide at least one of: role, userType, roleName, or talentType', 400));
+    }
+    
+    // Log the incoming request for debugging
+    console.log('Role update request received:', { role, userType, roleName, talentType, userId: req.user.id });
+    
+    // Determine the role to use based on the provided parameters
+    let dbRoleName;
+    
+    // Handle the "talent" special case
+    if (role === 'talent' || userType === 'talent' || roleName === 'talent') {
+      // If talent is specified, we need to look at talentType to determine the actual role
+      if (talentType === 'trainer') {
+        dbRoleName = 'trainer';
+        console.log('Mapping "talent" with talentType "trainer" to "trainer" role');
+      } else if (talentType === 'trainee') {
+        dbRoleName = 'trainee';
+        console.log('Mapping "talent" with talentType "trainee" to "trainee" role');
+      } else {
+        // Default to jobSeeker if talentType is not specified
+        dbRoleName = 'jobSeeker';
+        console.log('Mapping "talent" with no talentType to "jobSeeker" role');
+      }
+    } else {
+      // Use the first available value in order of priority: role, userType, roleName
+      dbRoleName = role || userType || roleName;
+      
+      // Map "user" to "jobSeeker" if needed
+      if (dbRoleName === 'user') {
+        dbRoleName = 'jobSeeker';
+        console.log('Mapping "user" to "jobSeeker" role');
+      }
+    }
+    
+    // Valid roles check
+    const validRoleNames = ['admin', 'jobSeeker', 'employer', 'trainer', 'trainee'];
+    if (!validRoleNames.includes(dbRoleName)) {
+      console.log(`Invalid role specified: ${dbRoleName}`);
+      return next(new AppError(`Invalid role specified: ${dbRoleName}. Valid roles are: ${validRoleNames.join(', ')}`, 400));
+    }
+    
+    console.log(`Looking for role document with name: ${dbRoleName}`);
+    
+    // Find the Role document based on role name
+    const Role = mongoose.model('Role');
+    let roleDoc = await Role.findOne({ name: dbRoleName });
+    
+    if (!roleDoc) {
+      console.log(`Role "${dbRoleName}" not found in the database`);
+      
+      // If role document doesn't exist, try to initialize it
+      try {
+        const { initializeRoles } = await import('../models/role.model.js');
+        await initializeRoles();
+        console.log('Initialized default roles, trying to find role again');
+        
+        // Try again after initialization
+        roleDoc = await Role.findOne({ name: dbRoleName });
+        if (!roleDoc) {
+          return next(new AppError(`Role "${dbRoleName}" not found in the database even after initialization`, 404));
+        }
+        
+        console.log(`Role document found after initialization: ${roleDoc._id}`);
+      } catch (initError) {
+        console.error('Error initializing roles:', initError);
+        return next(new AppError(`Role "${dbRoleName}" not found and could not initialize roles`, 500));
+      }
+    }
+    
+    console.log(`Found role document: ${roleDoc._id}`);
+    
+    // Update the user role
+    const updateData = { 
+      role: roleDoc._id,
+      roleName: dbRoleName
+    };
+    
+    console.log(`Updating user ${req.user.id} with role data:`, updateData);
+    
+    const user = await User.findByIdAndUpdate(
+      req.user.id, 
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    if (!user) {
+      console.log('User not found for role update');
+      return next(new AppError('User not found', 404));
+    }
+    
+    console.log(`Successfully updated user role to ${dbRoleName}`);
+    
+    res.status(200).json({
+      success: true,
+      data: user,
+      message: `User role updated to ${dbRoleName} successfully`
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    return next(new AppError(`Failed to update user role: ${error.message}`, 500));
+  }
+}); 

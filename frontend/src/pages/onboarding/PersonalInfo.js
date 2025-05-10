@@ -870,9 +870,27 @@ const PersonalInfo = () => {
           console.error('Error checking storage in submit:', e);
         }
         
+        // Check current interface state for role type
+        if (isTrainer()) {
+          return 'trainer';
+        }
+        
+        if (isTrainee()) {
+          return 'trainee';
+        }
+        
         // If company fields are filled, this is likely an employer
         if (formData.companyName || formData.industry || formData.companySize) {
           return 'employer';
+        }
+        
+        // Check current userRole value from state
+        if (userRole === 'trainer' || userRole.includes('trainer')) {
+          return 'trainer';
+        }
+        
+        if (userRole === 'trainee' || userRole.includes('trainee')) {
+          return 'trainee';
         }
         
         // Default to whatever state we have
@@ -979,25 +997,52 @@ const PersonalInfo = () => {
       if (response && response.data && response.data.success) {
         toast.success('Personal information saved successfully');
         
-        // If the user is an employer, explicitly update their role
-        if (finalIsEmployer) {
-          try {
-            console.log('Attempting to explicitly update user role to employer');
-            const updateRoleResponse = await onboardingApi.put('/users/role', { 
-              role: 'employer',
-              userType: 'employer',
-              roleName: 'employer'
-            });
-            
-            if (updateRoleResponse.data && updateRoleResponse.data.success) {
-              console.log('Successfully updated user role to employer');
+        // Update user role explicitly based on the detected user type
+        try {
+          console.log(`Attempting to explicitly update user role to ${userType}`);
+          
+          // Create the role update payload
+          const roleUpdatePayload = { 
+            role: userType,
+            userType: userType,
+            roleName: userType
+          };
+          
+          // If this is a talent user type, we need to include the talent type
+          if (userType === 'talent') {
+            // Determine talent type based on role helpers
+            if (isTrainer()) {
+              roleUpdatePayload.talentType = 'trainer';
+            } else if (isTrainee()) {
+              roleUpdatePayload.talentType = 'trainee';
             } else {
-              console.warn('Role update API call succeeded but returned success:false');
+              // Try to get talent type from local storage if available
+              try {
+                const storageData = localStorage.getItem('registrationData');
+                if (storageData) {
+                  const parsedData = JSON.parse(storageData);
+                  if (parsedData.talentType) {
+                    roleUpdatePayload.talentType = parsedData.talentType;
+                  }
+                }
+              } catch (e) {
+                console.error('Error retrieving talent type from storage:', e);
+              }
             }
-          } catch (roleError) {
-            console.error('Error updating user role:', roleError);
-            // Continue with the flow even if role update fails
+            
+            console.log(`Including talent type in role update: ${roleUpdatePayload.talentType}`);
           }
+          
+          const updateRoleResponse = await onboardingApi.put('/users/role', roleUpdatePayload);
+          
+          if (updateRoleResponse.data && updateRoleResponse.data.success) {
+            console.log(`Successfully updated user role to ${userType}${roleUpdatePayload.talentType ? ' (' + roleUpdatePayload.talentType + ')' : ''}`);
+          } else {
+            console.warn('Role update API call succeeded but returned success:false');
+          }
+        } catch (roleError) {
+          console.error('Error updating user role:', roleError);
+          // Continue with the flow even if role update fails
         }
         
         // Navigate to next step

@@ -242,5 +242,65 @@
       "content": "Use the filter options on the Jobs page to narrow results by location, salary, job type, experience level, and more.",
       "timestamp": 1744884601571
     }
+  ],
+  "t1GqiBSQk7QGihiwAAAB": [
+    {
+      "role": "user",
+      "content": "Which role is right for me?",
+      "timestamp": 1745472165563
+    },
+    {
+      "role": "assistant",
+      "content": "If you're looking for employment, select 'Job Seeker'. If you're offering jobs, select 'Employer'. If you want to provide training, select 'Trainer'. If you want to receive training, select 'Trainee'. For more detailed guidance, use our role selection wizard in the registration process.",
+      "timestamp": 1745472166202
+    }
+  ],
+  "2Qy6YMbbkhQfAuufAAAD": [
+    {
+      "role": "user",
+      "content": "What is the payment structure?",
+      "timestamp": 1745472197317
+    },
+    {
+      "role": "assistant",
+      "content": "We accept Mobile Money, Bank Transfer, Credit Card, and PayPal. Detailed payment instructions will be provided during the registration process.",
+      "timestamp": 1745472197842
+    }
+  ],
+  "EOcYaO7dn_hKui5VAAAF": [
+    {
+      "role": "user",
+      "content": "What is the payment structure?",
+      "timestamp": 1745472257410
+    },
+    {
+      "role": "assistant",
+      "content": "We accept Mobile Money, Bank Transfer, Credit Card, and PayPal. Detailed payment instructions will be provided during the registration process.",
+      "timestamp": 1745472258749
+    }
+  ],
+  "kyEwiBBEwqqokmA7AAAH": [
+    {
+      "role": "user",
+      "content": "What is the payment structure?",
+      "timestamp": 1745472308520
+    },
+    {
+      "role": "assistant",
+      "content": "We accept Mobile Money, Bank Transfer, Credit Card, and PayPal. Detailed payment instructions will be provided during the registration process.",
+      "timestamp": 1745472310011
+    }
+  ],
+  "iC45HowFFtDy7PzoAAAB": [
+    {
+      "role": "user",
+      "content": "What is the payment structure?",
+      "timestamp": 1745472345712
+    },
+    {
+      "role": "assistant",
+      "content": "We accept Mobile Money, Bank Transfer, Credit Card, and . Detailed payment instructions will be provided during the registration process.",
+      "timestamp": 1745472346959
+    }
   ]
 }

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
+import Notification from '../models/notification.model.js';
 import { WebSocketServer } from 'ws';
 
 // Store active WebSocket connections
@@ -134,14 +135,23 @@ export const initializeWebSocketServer = (server) => {
 // Send notification to specific user
 export const sendNotification = async (userId, notification) => {
   try {
-    // Save notification to database (implement this based on your DB schema)
-    // const savedNotification = await saveNotificationToDatabase(userId, notification);
+    // Save notification to database 
+    const notificationData = {
+      recipient: userId,
+      recipientType: 'user',
+      type: notification.notificationType || 'info',
+      message: notification.message,
+      data: notification.data || {}
+    };
+
+    // Create and save notification
+    const savedNotification = await Notification.create(notificationData);
     
-    // For now, we'll use a mock notification ID
+    // Add notification ID to response
     const notificationWithId = {
       ...notification,
-      id: `notification-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
-      timestamp: new Date().toISOString()
+      id: savedNotification._id.toString(),
+      timestamp: savedNotification.createdAt.toISOString()
     };
     
     // Send to all active connections for this user
@@ -158,8 +168,8 @@ export const sendNotification = async (userId, notification) => {
       return true;
     }
     
-    // User not connected, store for later delivery
-    console.log(`User ${userId} not connected, notification stored for later delivery`);
+    // User not connected, notification is stored in database for later delivery
+    console.log(`User ${userId} not connected, notification stored in database for later delivery`);
     return false;
   } catch (error) {
     console.error('Error sending notification:', error);
@@ -229,30 +239,220 @@ export const sendApplicationStatusNotification = async (applicationId, status, u
   return await sendNotification(userId, notification);
 };
 
-// Helper functions for notification management (these would interact with your database)
+// Helper functions for notification management
 const sendPendingNotifications = async (userId) => {
-  // Implement to fetch and send pending notifications from database
-  console.log(`Sending pending notifications for user ${userId}`);
+  try {
+    // Check if this is an admin user
+    const isAdmin = userId.startsWith('admin-');
+    
+    // Find unread notifications for this user
+    let pendingNotifications;
+    
+    if (isAdmin) {
+      // Get admin notifications
+      pendingNotifications = await Notification.find({
+        recipientType: 'admin',
+        read: false,
+        isExpired: false
+      }).sort({ createdAt: -1 }).limit(20);
+    } else {
+      // Get user-specific notifications
+      pendingNotifications = await Notification.find({
+        recipient: userId,
+        read: false,
+        isExpired: false
+      }).sort({ createdAt: -1 }).limit(20);
+    }
+    
+    console.log(`Sending ${pendingNotifications.length} pending notifications for ${isAdmin ? 'admin' : 'user'} ${userId}`);
+    
+    // Get connection for this user
+    const connections = activeConnections.get(userId);
+    if (!connections || connections.size === 0) return;
+    
+    // Send each notification
+    for (const notification of pendingNotifications) {
+      const notificationData = {
+        type: 'notification',
+        notificationType: notification.type,
+        id: notification._id.toString(),
+        message: notification.message,
+        timestamp: notification.createdAt.toISOString(),
+        data: notification.data || {}
+      };
+      
+      connections.forEach((connection) => {
+        if (connection.readyState === 1) { // OPEN
+          connection.send(JSON.stringify(notificationData));
+        }
+      });
+    }
+  } catch (error) {
+    console.error(`Error sending pending notifications for user ${userId}:`, error);
+  }
 };
 
 const markNotificationAsRead = async (userId, notificationId) => {
-  // Implement to mark notification as read in database
-  console.log(`Marking notification ${notificationId} as read for user ${userId}`);
+  try {
+    // Determine if this is an admin user
+    const isAdmin = userId.startsWith('admin-');
+    
+    // Find and update the notification
+    let notification;
+    
+    if (isAdmin) {
+      notification = await Notification.findOne({
+        _id: notificationId,
+        recipientType: 'admin'
+      });
+    } else {
+      notification = await Notification.findOne({
+        _id: notificationId,
+        recipient: userId
+      });
+    }
+    
+    if (notification) {
+      notification.read = true;
+      await notification.save();
+      console.log(`Marked notification ${notificationId} as read for ${isAdmin ? 'admin' : 'user'} ${userId}`);
+    }
+  } catch (error) {
+    console.error(`Error marking notification ${notificationId} as read:`, error);
+  }
 };
 
 const markAllNotificationsAsRead = async (userId) => {
-  // Implement to mark all notifications as read in database
-  console.log(`Marking all notifications as read for user ${userId}`);
+  try {
+    // Determine if this is an admin user
+    const isAdmin = userId.startsWith('admin-');
+    
+    // Update all unread notifications
+    if (isAdmin) {
+      await Notification.markAllAsReadForAdmin();
+    } else {
+      await Notification.markAllAsReadForUser(userId);
+    }
+    
+    console.log(`Marked all notifications as read for ${isAdmin ? 'admin' : 'user'} ${userId}`);
+  } catch (error) {
+    console.error(`Error marking all notifications as read for user ${userId}:`, error);
+  }
 };
 
 const deleteNotification = async (userId, notificationId) => {
-  // Implement to delete notification from database
-  console.log(`Deleting notification ${notificationId} for user ${userId}`);
+  try {
+    // Determine if this is an admin user
+    const isAdmin = userId.startsWith('admin-');
+    
+    // Find and delete the notification
+    if (isAdmin) {
+      await Notification.deleteOne({
+        _id: notificationId,
+        recipientType: 'admin'
+      });
+    } else {
+      await Notification.deleteOne({
+        _id: notificationId,
+        recipient: userId
+      });
+    }
+    
+    console.log(`Deleted notification ${notificationId} for ${isAdmin ? 'admin' : 'user'} ${userId}`);
+  } catch (error) {
+    console.error(`Error deleting notification ${notificationId}:`, error);
+  }
 };
 
 const clearAllNotifications = async (userId) => {
-  // Implement to clear all notifications from database
-  console.log(`Clearing all notifications for user ${userId}`);
+  try {
+    // Determine if this is an admin user
+    const isAdmin = userId.startsWith('admin-');
+    
+    // Delete all notifications
+    if (isAdmin) {
+      await Notification.deleteMany({ recipientType: 'admin' });
+    } else {
+      await Notification.deleteMany({ recipient: userId });
+    }
+    
+    console.log(`Cleared all notifications for ${isAdmin ? 'admin' : 'user'} ${userId}`);
+  } catch (error) {
+    console.error(`Error clearing all notifications for user ${userId}:`, error);
+  }
+};
+
+// Send notification to all admin users
+export const sendAdminNotification = async (notification) => {
+  try {
+    // Save admin notification to database
+    const notificationData = {
+      recipientType: 'admin',
+      type: notification.notificationType || 'info',
+      message: notification.message,
+      data: notification.data || {}
+    };
+
+    // Create and save notification
+    const savedNotification = await Notification.create(notificationData);
+    
+    // Add notification ID and timestamp to the notification object
+    const notificationWithId = {
+      ...notification,
+      id: savedNotification._id.toString(),
+      timestamp: savedNotification.createdAt.toISOString()
+    };
+    
+    // Get all admin user IDs
+    const adminUserIds = Array.from(activeConnections.keys()).filter(userId => 
+      userId.startsWith('admin-')
+    );
+    
+    // If no admins are connected, notification is already stored in DB
+    if (adminUserIds.length === 0) {
+      console.log('No admin users connected, notification stored in database for later delivery');
+      return true;
+    }
+    
+    // Send to all connected admin users
+    let sentCount = 0;
+    for (const adminId of adminUserIds) {
+      const connections = activeConnections.get(adminId);
+      if (connections) {
+        connections.forEach((connection) => {
+          if (connection.readyState === 1) { // OPEN
+            connection.send(JSON.stringify(notificationWithId));
+            sentCount++;
+          }
+        });
+      }
+    }
+    
+    console.log(`Admin notification sent to ${sentCount} active admin connections`);
+    return true;
+  } catch (error) {
+    console.error('Error sending admin notification:', error);
+    return false;
+  }
+};
+
+// Send notification for new user registration
+export const sendNewUserRegistrationNotification = async (userData) => {
+  const notification = {
+    type: 'notification',
+    notificationType: 'success',
+    message: `New user registered: ${userData.name || 'Unknown user'}`,
+    data: {
+      type: 'user_registration',
+      userId: userData._id.toString(),
+      userName: userData.name || 'Unknown user',
+      userEmail: userData.email,
+      userType: userData.role || 'user',
+      timestamp: new Date().toISOString()
+    }
+  };
+  
+  return await sendAdminNotification(notification);
 };
 
 export default {
@@ -261,5 +461,7 @@ export default {
   sendBulkNotifications,
   broadcastNotification,
   sendJobNotification,
-  sendApplicationStatusNotification
+  sendApplicationStatusNotification,
+  sendAdminNotification,
+  sendNewUserRegistrationNotification
 }; 

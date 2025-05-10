@@ -88,6 +88,12 @@ const userSchema = new mongoose.Schema({
     resume: String,
     jobPreferences: {
       jobType: [String],
+      preferredJobTypes: [{
+        type: String,
+        ref: 'JobType',
+        localField: 'jobType',
+        foreignField: 'id'
+      }],
       salary: {
         min: Number,
         max: Number,
@@ -107,6 +113,12 @@ const userSchema = new mongoose.Schema({
   employerProfile: {
     companyName: String,
     industry: String,
+    companyType: {
+      type: String,
+      ref: 'CompanyType',
+      localField: 'industry',
+      foreignField: '_id'
+    },
     companySize: String,
     companyDescription: String,
     companyLogo: String,
@@ -142,6 +154,12 @@ const userSchema = new mongoose.Schema({
   traineeProfile: {
     educationLevel: String,
     interests: [String],
+    preferredInterests: [{
+      type: String,
+      ref: 'Interest',
+      localField: 'interests',
+      foreignField: 'id'
+    }],
     previousTrainings: [
       {
         title: String,
@@ -228,7 +246,69 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  // Add the payment fields
+  payment: {
+    isPaid: {
+      type: Boolean,
+      default: false
+    },
+    reference: {
+      type: String
+    },
+    amount: {
+      type: Number,
+      validate: {
+        validator: function(value) {
+          // Only validate if isPaid is true
+          if (this.payment && this.payment.isPaid) {
+            return value !== undefined && value !== null && value > 0;
+          }
+          return true;
+        },
+        message: 'Payment amount must be greater than 0 when payment is marked as paid'
+      }
+    },
+    currency: {
+      type: String,
+      default: 'GHS'
+    },
+    date: {
+      type: Date
+    },
+    gateway: {
+      type: String,
+      default: 'paystack'
+    },
+    metadata: {
+      type: Object
+    }
+  },
+  paymentHistory: [{
+    reference: String,
+    amount: Number,
+    status: String,
+    date: Date,
+    gateway: {
+      type: String,
+      default: 'paystack'
+    },
+    metadata: Object
+  }],
+  receipts: [{
+    userId: mongoose.Schema.Types.ObjectId,
+    userName: String,
+    email: String,
+    phoneNumber: String,
+    accountType: String,
+    userRole: String,
+    amount: Number,
+    transactionId: String,
+    referenceNumber: String,
+    paymentMethod: String,
+    date: Date,
+    location: String
+  }]
 }, {
   timestamps: true
 });
@@ -250,6 +330,35 @@ userSchema.pre('save', async function(next) {
 // Update timestamps on save
 userSchema.pre('save', function (next) {
   this.updatedAt = new Date();
+  next();
+});
+
+// Ensure payment data has valid amount
+userSchema.pre('save', function (next) {
+  // Define payment amounts by role
+  const PAYMENT_AMOUNTS = {
+    jobSeeker: 50,
+    employer: 100,
+    trainer: 100,
+    trainee: 50
+  };
+
+  // Only fix payment if it's marked as paid
+  if (this.payment && this.payment.isPaid === true) {
+    // Fix missing or invalid payment amount using role-based pricing
+    if (!this.payment.amount || this.payment.amount <= 0) {
+      console.log(`Fixing zero/invalid payment amount for user ${this.email}`);
+      
+      // Get amount based on role
+      if (this.roleName && PAYMENT_AMOUNTS[this.roleName]) {
+        this.payment.amount = PAYMENT_AMOUNTS[this.roleName];
+      } else {
+        // Use default fallback amount
+        this.payment.amount = 50;
+      }
+    }
+  }
+  
   next();
 });
 

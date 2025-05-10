@@ -17,7 +17,7 @@ const CompanySection = () => {
             At our organization, we believe in providing an environment where talent thrives, ideas flourish, and individuals are empowered to reach their full potential.
           </p>
           <div className="hero-buttons">
-            <Link to='/jobs'><button className="btn btn-primary">Search Job</button></Link>
+            <Link to='/register'><button className="btn btn-primary">Apply Now</button></Link>
           </div>
         </div>
       </div>

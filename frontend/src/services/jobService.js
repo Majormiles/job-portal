@@ -1,5 +1,6 @@
 import api from '../utils/api';
 import adminApi from '../utils/adminApi';
+import { getJobTypes } from './jobTypeService';
 
 /**
  * Service for handling job-related API operations
@@ -365,35 +366,6 @@ export const getJobStats = async () => {
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: 'Failed to fetch job statistics' };
-  }
-};
-
-/**
- * Get job types
- * @returns {Promise} - The API response with job types
- */
-export const getJobTypes = async () => {
-  try {
-    const response = await api.get('/jobs/types');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching job types:', error);
-    // Return default job types if the API call fails
-    return {
-      success: true,
-      data: [
-        { id: 'full-time', name: 'Full-time' },
-        { id: 'part-time', name: 'Part-time' },
-        { id: 'contract', name: 'Contract' },
-        { id: 'temporary', name: 'Temporary' },
-        { id: 'internship', name: 'Internship' },
-        { id: 'remote', name: 'Remote' },
-        { id: 'hybrid', name: 'Hybrid' },
-        { id: 'seasonal', name: 'Seasonal' },
-        { id: 'freelance', name: 'Freelance' },
-        { id: 'volunteer', name: 'Volunteer' }
-      ]
-    };
   }
 };
 

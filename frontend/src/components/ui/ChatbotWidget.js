@@ -61,48 +61,88 @@ const ChatbotWidget = () => {
     if (path === '/') {
       return {
         page: 'home page',
-        description: 'Homepage with featured job listings and job search functionality',
-        features: ['Featured jobs', 'Quick search', 'Category browsing']
-      };
-    }
-    
-    if (path.includes('/jobs')) {
-      return {
-        page: 'jobs listing page',
-        description: 'Browse all available job postings with filtering options',
-        features: ['Search filters', 'Sort by date/relevance', 'Save jobs to favorites']
-      };
-    }
-    
-    if (path.includes('/job-detail')) {
-      return {
-        page: 'job details page',
-        description: 'Detailed view of a specific job posting',
-        features: ['Job description', 'Company information', 'Apply button', 'Similar jobs']
-      };
-    }
-    
-    if (path.includes('/dashboard')) {
-      return {
-        page: 'user dashboard',
-        description: 'Personal dashboard for managing job applications and profile',
-        features: ['Application status', 'Profile completion', 'Saved jobs', 'Job recommendations']
+        description: 'Welcome to our job portal platform with four distinct user roles',
+        features: ['User Role Selection', 'Email-only Login', 'One-time Payment Structure']
       };
     }
     
     if (path.includes('/register')) {
       return {
         page: 'registration page',
-        description: 'Create a new account to access full features',
-        features: ['Account creation', 'Profile setup']
+        description: 'Create an account by selecting your user role and completing email verification',
+        features: ['Role Selection', 'Email Verification', 'One-time Payment']
       };
     }
     
     if (path.includes('/login')) {
       return {
         page: 'login page',
-        description: 'Log in to your existing account',
-        features: ['Account access', 'Password recovery']
+        description: 'Log in to your existing account using your email',
+        features: ['Email-only Login', 'Password Recovery']
+      };
+    }
+    
+    if (path.includes('/verify-email')) {
+      return {
+        page: 'email verification page',
+        description: 'Verify your email to proceed with your registration',
+        features: ['Email Verification', 'Resend Verification Email']
+      };
+    }
+    
+    if (path.includes('/payment')) {
+      return {
+        page: 'payment page',
+        description: 'Complete your one-time payment based on your selected role',
+        features: ['Payment Methods', 'Secure Transaction', 'Role-based Pricing']
+      };
+    }
+    
+    if (path.includes('/job-seeker')) {
+      return {
+        page: 'job seeker dashboard',
+        description: 'Manage your job seeker profile and resume',
+        features: ['Resume Upload', 'Profile Management', 'Opportunity Notifications']
+      };
+    }
+    
+    if (path.includes('/employer')) {
+      return {
+        page: 'employer dashboard',
+        description: 'Manage your employer profile and job openings',
+        features: ['Job Avenue Application', 'Admin Connection', 'Candidate Matching']
+      };
+    }
+    
+    if (path.includes('/trainer')) {
+      return {
+        page: 'trainer dashboard',
+        description: 'Manage your trainer profile and training programs',
+        features: ['Resume Upload', 'Training Program Creation', 'Trainee Matching']
+      };
+    }
+    
+    if (path.includes('/trainee')) {
+      return {
+        page: 'trainee dashboard',
+        description: 'Manage your trainee profile and access training opportunities',
+        features: ['Job Avenue Application', 'Training Program Access', 'Skill Development']
+      };
+    }
+    
+    if (path.includes('/resume')) {
+      return {
+        page: 'resume management',
+        description: 'Upload and manage your resume for job seeking or training opportunities',
+        features: ['Resume Upload', 'Resume Editing', 'Format Guidelines']
+      };
+    }
+    
+    if (path.includes('/job-avenue')) {
+      return {
+        page: 'job avenue',
+        description: 'Connect with admin for job opportunities or access training programs',
+        features: ['Application Process', 'Admin Connection', 'Opportunity Matching']
       };
     }
     
@@ -119,15 +159,28 @@ const ChatbotWidget = () => {
     if (!user) {
       return {
         isLoggedIn: false,
-        message: "You're currently browsing as a guest. Creating an account will allow you to apply for jobs and save your preferences."
+        message: "You're currently browsing as a guest. To access our platform features, please register and select your user role: Job Seeker, Employer, Trainer, or Trainee."
       };
+    }
+    
+    // Role-specific messaging
+    let roleMessage = "";
+    if (user.role === 'job_seeker') {
+      roleMessage = "As a Job Seeker, you can upload your resume and get matched with potential employers.";
+    } else if (user.role === 'employer') {
+      roleMessage = "As an Employer, you can apply for Job Avenue and connect with admin to provide job opportunities.";
+    } else if (user.role === 'trainer') {
+      roleMessage = "As a Trainer, you can upload your resume and offer training programs to trainees.";
+    } else if (user.role === 'trainee') {
+      roleMessage = "As a Trainee, you can apply for Job Avenue and access specialized training programs.";
     }
     
     return {
       isLoggedIn: true,
       name: user.name,
       email: user.email,
-      message: `You're logged in as ${user.name}. You can manage your applications, update your profile, or search for new opportunities.`
+      role: user.role,
+      message: `You're logged in as ${user.name}. ${roleMessage}`
     };
   };
 
@@ -139,7 +192,8 @@ const ChatbotWidget = () => {
       query: { 
         sessionId,
         username: user?.name || 'Guest',
-        isLoggedIn: user ? 'true' : 'false'
+        isLoggedIn: user ? 'true' : 'false',
+        userRole: user?.role || 'guest'
       }
     });
     
@@ -153,12 +207,37 @@ const ChatbotWidget = () => {
       const pageContext = getPageContext();
       const userContext = getUserContext();
       
-      // Personalized welcome message
-      const greeting = userContext.isLoggedIn 
-        ? `Hello ${userContext.name}! How can I help you with your job search today?` 
-        : 'Hello! How can I help you with your job search today?';
+      // Personalized welcome message based on user role
+      let greeting = '';
+      let contextMessage = '';
       
-      const contextMessage = `I see you're on the ${pageContext.page}. ${pageContext.description}. Is there anything specific you'd like to know about ${pageContext.features.join(', ')}?`;
+      if (userContext.isLoggedIn) {
+        // Role-specific welcome messages
+        if (user.role === 'job_seeker') {
+          greeting = `Hello ${userContext.name}! How can I help with your job seeking journey today?`;
+          contextMessage = `I see you're on the ${pageContext.page}. As a Job Seeker, you can upload your resume and get matched with potential employers. Would you like assistance with ${pageContext.features.join(', ')}?`;
+        } 
+        else if (user.role === 'employer') {
+          greeting = `Hello ${userContext.name}! How can I assist with your recruitment needs today?`;
+          contextMessage = `I see you're on the ${pageContext.page}. As an Employer, you can apply for Job Avenue and connect with admin to provide job opportunities. Would you like assistance with ${pageContext.features.join(', ')}?`;
+        }
+        else if (user.role === 'trainer') {
+          greeting = `Hello ${userContext.name}! How can I help with your training programs today?`;
+          contextMessage = `I see you're on the ${pageContext.page}. As a Trainer, you can upload your resume and offer training to trainees. Would you like assistance with ${pageContext.features.join(', ')}?`;
+        }
+        else if (user.role === 'trainee') {
+          greeting = `Hello ${userContext.name}! How can I help with your training journey today?`;
+          contextMessage = `I see you're on the ${pageContext.page}. As a Trainee, you can apply for Job Avenue and access specialized training programs. Would you like assistance with ${pageContext.features.join(', ')}?`;
+        }
+        else {
+          greeting = `Hello ${userContext.name}! How can I help you today?`;
+          contextMessage = `I see you're on the ${pageContext.page}. ${pageContext.description}. Would you like to know more about ${pageContext.features.join(', ')}?`;
+        }
+      } else {
+        // Guest welcome message introducing the new system
+        greeting = 'Hello! Welcome to our Job Portal with four distinct user roles.';
+        contextMessage = `I see you're on the ${pageContext.page}. Our platform connects Job Seekers, Employers, Trainers, and Trainees through a one-time payment system with email-only login. Would you like to know more about our user roles and features?`;
+      }
       
       setMessages([{
         sender: 'bot',
@@ -312,7 +391,32 @@ const ChatbotWidget = () => {
   useEffect(() => {
     if (isOpen && isConnected && socket && messages.length > 0) {
       const pageContext = getPageContext();
-      const contextMessage = `I notice you've navigated to the ${pageContext.page}. ${pageContext.description}. Let me know if you have questions about ${pageContext.features.join(', ')}.`;
+      const userContext = getUserContext();
+      
+      // Customize message based on user role and page
+      let contextMessage = '';
+      
+      if (userContext.isLoggedIn) {
+        // Role-specific navigation messages
+        if (userContext.role === 'job_seeker') {
+          contextMessage = `I notice you've navigated to the ${pageContext.page}. ${pageContext.description}. As a Job Seeker, you can ${pageContext.features.join(', ')}. Let me know if you need assistance.`;
+        } 
+        else if (userContext.role === 'employer') {
+          contextMessage = `I notice you've navigated to the ${pageContext.page}. ${pageContext.description}. As an Employer, you can ${pageContext.features.join(', ')}. Let me know if you need assistance.`;
+        }
+        else if (userContext.role === 'trainer') {
+          contextMessage = `I notice you've navigated to the ${pageContext.page}. ${pageContext.description}. As a Trainer, you can ${pageContext.features.join(', ')}. Let me know if you need assistance.`;
+        }
+        else if (userContext.role === 'trainee') {
+          contextMessage = `I notice you've navigated to the ${pageContext.page}. ${pageContext.description}. As a Trainee, you can ${pageContext.features.join(', ')}. Let me know if you need assistance.`;
+        }
+        else {
+          contextMessage = `I notice you've navigated to the ${pageContext.page}. ${pageContext.description}. Let me know if you have questions about ${pageContext.features.join(', ')}.`;
+        }
+      } else {
+        // Guest navigation message
+        contextMessage = `I notice you've navigated to the ${pageContext.page}. ${pageContext.description}. Let me know if you have questions about ${pageContext.features.join(', ')} or our user roles.`;
+      }
       
       setMessages((prevMessages) => [
         ...prevMessages,
@@ -373,7 +477,9 @@ const ChatbotWidget = () => {
         page: pageContext.page,
         user: {
           isLoggedIn: userContext.isLoggedIn,
-          name: userContext.name || 'Guest'
+          name: userContext.name || 'Guest',
+          role: userContext.role || null,
+          email: userContext.email || null
         },
         sessionId
       }
@@ -415,46 +521,123 @@ const ChatbotWidget = () => {
     }
   };
   
-  // Generate suggested questions based on current page
+  // Generate suggested questions based on current page and user role
   const getSuggestedQuestions = () => {
     const pageContext = getPageContext();
+    const userContext = getUserContext();
     
+    // Common questions for all users
     const commonQuestions = [
-      "How do I create an account?",
-      "What types of jobs are available?",
-      "How do I update my profile?"
+      "What are the different user roles?",
+      "How much does it cost to register?",
+      "Is the payment a one-time fee?",
+      "How does email verification work?"
     ];
     
-    // Add page-specific questions
+    // For logged-in users, provide role-specific questions
+    if (userContext.isLoggedIn && userContext.role) {
+      // Job Seeker specific questions
+      if (userContext.role === 'job_seeker') {
+        return [
+          "How do I upload my resume?",
+          "What file formats are accepted for my resume?",
+          "How will I be matched with employers?",
+          "Why has the system changed from job browsing?"
+        ];
+      }
+      
+      // Employer specific questions
+      if (userContext.role === 'employer') {
+        return [
+          "How do I apply for Job Avenue?",
+          "How do I connect with admin to provide jobs?",
+          "What information should I provide about job openings?",
+          "How will I be matched with candidates?"
+        ];
+      }
+      
+      // Trainer specific questions
+      if (userContext.role === 'trainer') {
+        return [
+          "How do I upload my resume?",
+          "How do I create training programs?",
+          "How will I be matched with trainees?",
+          "What makes a good training program?"
+        ];
+      }
+      
+      // Trainee specific questions
+      if (userContext.role === 'trainee') {
+        return [
+          "How do I apply for Job Avenue?",
+          "How do I access training programs?",
+          "How will I be matched with trainers?",
+          "What should I focus on during training?"
+        ];
+      }
+    }
+    
+    // Page-specific questions for non-logged-in users or general pages
     if (pageContext.page === 'home page') {
       return [
-        "How do I search for jobs?",
-        "What are the top job categories?",
-        "How can I filter job results?"
+        "Which role is right for me?",
+        "What is the payment structure?",
+        "How does the system work?",
+        "What is Job Avenue?"
       ];
     }
     
-    if (pageContext.page === 'jobs listing page') {
+    if (pageContext.page === 'registration page') {
       return [
-        "How do I sort these jobs?",
-        "Can I save jobs for later?",
-        "What do the job tags mean?"
+        "How do I choose the right role?",
+        "What information do I need to register?",
+        "How does the payment process work?",
+        "Why do I need to verify my email?"
       ];
     }
     
-    if (pageContext.page === 'job details page') {
+    if (pageContext.page === 'login page') {
       return [
-        "How do I apply for this job?",
-        "Will the company see my profile?",
-        "What should I include in my application?"
+        "How does email-only login work?",
+        "I forgot my password, what should I do?",
+        "Why can't I log in?",
+        "How do I reset my account?"
       ];
     }
     
-    if (pageContext.page === 'user dashboard') {
+    if (pageContext.page === 'email verification page') {
       return [
-        "How can I track my applications?",
-        "Can I update my resume?",
-        "Where do I find recommended jobs?"
+        "I didn't receive my verification email",
+        "How long does verification take?",
+        "Why is email verification required?",
+        "Can I verify later?"
+      ];
+    }
+    
+    if (pageContext.page === 'payment page') {
+      return [
+        "What payment methods are accepted?",
+        "Is this a subscription or one-time payment?",
+        "What if I need a refund?",
+        "Is my payment information secure?"
+      ];
+    }
+    
+    if (pageContext.page.includes('resume')) {
+      return [
+        "What file formats are accepted?",
+        "What should I include in my resume?",
+        "How large can my resume file be?",
+        "Can I update my resume later?"
+      ];
+    }
+    
+    if (pageContext.page.includes('job avenue')) {
+      return [
+        "What is Job Avenue?",
+        "How do I apply for Job Avenue?",
+        "How does Job Avenue work for employers?",
+        "How does Job Avenue work for trainees?"
       ];
     }
     

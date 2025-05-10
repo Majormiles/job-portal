@@ -5,6 +5,7 @@
   color: black;
   padding: 10px 20%;
   overflow: hidden;
+  position: relative;
 }
 
 .partners-heading {
@@ -19,55 +20,119 @@
   position: relative;
 }
 
+/* Container for the track with gradient mask effect */
+.partners-track-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Left fade gradient mask */
+.partners-track-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Right fade gradient mask */
+.partners-track-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20%;
+  height: 100%;
+  background: linear-gradient(to left, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
 .partners-track {
   display: flex;
   width: fit-content;
+  will-change: transform;
 }
 
 .partner-logo-container {
-  flex: 0 0 auto; /* Changed from percentage-based to auto */
-  padding: 0 10px; /* Reduced horizontal padding from 20px to 10px */
+  flex: 0 0 auto;
+  padding: 0 20px;
   color: black;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  min-width: 160px; /* Reduced min-width */
-  gap: 10px; /* Gap between logo and name */
+  min-width: 160px;
+  gap: 10px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Scale effect for logos when in center (optional) */
+.partner-logo-container:hover {
+  transform: scale(1.05);
 }
 
 .partner-logo {
-  max-width: 60px; /* Slightly reduced logo size */
+  max-width: 60px;
   max-height: 50px;
   background-color: white;
   padding: 8px;
   border-radius: 15%;
   object-fit: contain;
+  filter: grayscale(30%);
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.partner-logo:hover {
+  filter: grayscale(0%);
+  transform: scale(1.1);
 }
 
 .partner-name {
   font-weight: 500;
-  font-size: 0.9rem; /* Slightly smaller font size */
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partners-track {
+    animation: none;
+    transition: none;
+  }
 }
 
 @media (max-width: 768px) {
   .partner-logo-container {
     min-width: 150px;
-    padding: 0 8px; /* Further reduced padding for medium screens */
+    padding: 0 8px;
   }
   
   .partners-carousel-container {
     padding: 10px 10%;
+  }
+  
+  .partners-track-container::before,
+  .partners-track-container::after {
+    width: 15%;
   }
 }
 
 @media (max-width: 480px) {
   .partner-logo-container {
     min-width: 130px;
-    padding: 0 5px; /* Minimal padding for mobile */
+    padding: 0 5px;
   }
   
   .partners-carousel-container {
     padding: 10px 5%;
+  }
+  
+  .partners-track-container::before,
+  .partners-track-container::after {
+    width: 10%;
   }
 }

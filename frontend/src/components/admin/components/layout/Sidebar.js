@@ -18,7 +18,11 @@ import {
   Grid,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  DollarSign,
+  CreditCard,
+  PieChart,
+  Bell
 } from 'lucide-react';
 import '../../css/scrollbar.css';
 
@@ -35,14 +39,14 @@ function Sidebar({ isOpen, onClose }) {
     const path = location.pathname;
     const newOpenMenus = { ...openMenus };
     
-    if (path.includes('/admin/categories')) {
-      newOpenMenus.manageCategories = true;
-    }
     if (path.includes('/admin/resume') || path.includes('/admin/calendar')) {
       newOpenMenus.manageResumes = true;
     }
     if (path.includes('/admin/jobs') || path.includes('/admin/profile') || path.includes('/admin/invoice')) {
       newOpenMenus.manageJobs = true;
+    }
+    if (path.includes('/admin/payments')) {
+      newOpenMenus.managePayments = true;
     }
     
     setOpenMenus(newOpenMenus);
@@ -80,6 +84,12 @@ function Sidebar({ isOpen, onClose }) {
       subItems: []
     },
     {
+      icon: Bell,
+      text: 'Notifications',
+      path: '/admin/notifications',
+      subItems: []
+    },
+    {
       icon: Command,
       text: 'Manage Resumes',
       path: '/admin/resume',
@@ -90,13 +100,17 @@ function Sidebar({ isOpen, onClose }) {
       ]
     },
     {
-      icon: Mail,
-      text: 'Manage Categories',
-      path: '/admin/categories',
-      menuKey: 'manageCategories',
+      icon: DollarSign,
+      text: 'Payment Portal',
+      path: '/admin/payments',
+      menuKey: 'managePayments',
+      isNew: true,
       subItems: [
-        { text: 'All Categories', path: '/admin/categories' },
-        { text: 'Create Category', path: '/admin/categories/create' }
+        { text: 'Overview', path: '/admin/payments' },
+        { text: 'Transactions', path: '/admin/payments/transactions' },
+        { text: 'Analytics', path: '/admin/payments/analytics' },
+        { text: 'Reports', path: '/admin/payments/reports' },
+        { text: 'Payment Settings', path: '/admin/payments/settings' }
       ]
     },
     {
@@ -205,9 +219,34 @@ function Sidebar({ isOpen, onClose }) {
                     ? 'text-blue-600 font-medium' 
                     : 'text-gray-600'
                 } ${disabled ? 'pointer-events-none opacity-50' : ''}`}
-                onClick={disabled ? (e) => e.preventDefault() : onClose}
+                onClick={(e) => {
+                  console.log(`Submenu item clicked: ${subItem.text} with path: ${subItem.path}`);
+                  console.log(`Current location:`, location.pathname);
+                  console.log('Submenu item details:', subItem);
+                  
+                  if (disabled) {
+                    console.log('Menu item is disabled, preventing navigation');
+                    e.preventDefault();
+                    return;
+                  }
+                  
+                  // If this is a forceReload item, use window.location.href instead
+                  if (subItem.forceReload) {
+                    console.log(`ForceReload menu item clicked: ${subItem.text}, using window.location.href`);
+                    e.preventDefault();
+                    window.location.href = subItem.path;
+                    return;
+                  }
+                  
+                  // Otherwise just close the sidebar
+                  console.log('Regular menu item, using default Link navigation');
+                  onClose?.();
+                }}
               >
                 {subItem.text}
+                {subItem.isNew && (
+                  <span className="ml-2 text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-100 text-orange-500">New</span>
+                )}
               </Link>
             ))}
           </div>
@@ -229,10 +268,29 @@ function Sidebar({ isOpen, onClose }) {
                     to={subItem.path} 
                     className={`block py-2 text-sm transition-colors hover:text-blue-600 ${
                       isActive(subItem.path) ? 'text-blue-600 font-medium' : 'text-gray-600'
-                    } ${disabled ? 'pointer-events-none opacity-50' : ''}`}
-                    onClick={disabled ? (e) => e.preventDefault() : onClose}
+                    }`}
+                    onClick={(e) => {
+                      console.log(`Collapsed submenu item clicked: ${subItem.text} with path: ${subItem.path}`);
+                      console.log(`Current location:`, location.pathname);
+                      console.log('Collapsed submenu item details:', subItem);
+                      
+                      // If this is a forceReload item, use window.location.href instead
+                      if (subItem.forceReload) {
+                        console.log(`ForceReload menu item clicked in collapsed menu: ${subItem.text}`);
+                        e.preventDefault();
+                        window.location.href = subItem.path;
+                        return;
+                      }
+                      
+                      // Otherwise just close the sidebar
+                      console.log('Regular menu item in collapsed menu, using default Link navigation');
+                      onClose?.();
+                    }}
                   >
                     {subItem.text}
+                    {subItem.isNew && (
+                      <span className="ml-2 text-xs font-semibold px-1.5 py-0.5 rounded bg-orange-100 text-orange-500">New</span>
+                    )}
                   </Link>
                 ))}
               </div>
@@ -247,14 +305,14 @@ function Sidebar({ isOpen, onClose }) {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={onClose}
         ></div>
       )}
-      
+
       {/* Sidebar */}
-      <aside 
+      <aside
         ref={sidebarRef}
         className={`bg-white h-screen border-r shadow-md transition-all duration-300 ease-in-out ${
           isCollapsed ? 'w-16' : 'w-64'
@@ -268,23 +326,23 @@ function Sidebar({ isOpen, onClose }) {
             <div className="font-bold text-lg text-blue-600">Job Portal</div>
           )}
           <div className="flex items-center">
-            <button 
-              onClick={toggleSidebar} 
+            <button
+              onClick={toggleSidebar}
               className="p-1 hover:bg-gray-100 rounded-md text-gray-500 transition-colors lg:block hidden"
             >
               {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="p-1 hover:bg-gray-100 rounded-md text-gray-500 transition-colors lg:hidden ml-2"
             >
               <X size={20} />
             </button>
           </div>
         </div>
-        
+
         {/* Scrollable content */}
-        <div 
+        <div
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto sidebar-scroll scrollbar-extra-light p-3"
         >
@@ -295,8 +353,8 @@ function Sidebar({ isOpen, onClose }) {
         
         {/* Logout button at the bottom */}
         <div className="p-3 border-t mt-auto">
-          <button 
-            onClick={handleLogout} 
+          <button
+            onClick={handleLogout}
             className={`flex items-center p-2 w-full text-left rounded-md hover:bg-red-50 hover:text-red-600 transition-colors duration-200 ${
               isCollapsed ? 'justify-center' : ''
             }`}

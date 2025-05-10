@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import jobService from '../services/jobService';
+import jobTypeService from '../services/jobTypeService';
+import interestService from '../services/interestService';
+import interestTypeService from '../services/interestTypeService';
+import companyTypeService from '../services/companyTypeService';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -43,6 +47,16 @@ const RegisterPage = () => {
   const [companyTypes, setCompanyTypes] = useState([]);
   const [loadingCompanyTypes, setLoadingCompanyTypes] = useState(false);
 
+  // State for dynamic payment amounts
+  const [paymentAmounts, setPaymentAmounts] = useState({
+    jobSeeker: 50,
+    employer: 100,
+    trainer: 100,
+    trainee: 50
+  });
+  const [paymentCurrency, setPaymentCurrency] = useState('GHS');
+  const [loadingPaymentAmounts, setLoadingPaymentAmounts] = useState(false);
+
   // State for form errors
   const [formErrors, setFormErrors] = useState({});
 
@@ -73,66 +87,6 @@ const RegisterPage = () => {
       { _id: 'transportation', name: 'Transportation & Logistics' },
       { _id: 'media', name: 'Media & Communication' },
       { _id: 'other', name: 'Other' }
-    ];
-
-    // Default job types if API fails
-    const defaultJobTypes = [
-      { id: 'full-time', name: 'Full-time' },
-      { id: 'part-time', name: 'Part-time' },
-      { id: 'contract', name: 'Contract' },
-      { id: 'temporary', name: 'Temporary' },
-      { id: 'internship', name: 'Internship' },
-      { id: 'remote', name: 'Remote' },
-      { id: 'hybrid', name: 'Hybrid' },
-      { id: 'seasonal', name: 'Seasonal' },
-      { id: 'freelance', name: 'Freelance' },
-      { id: 'volunteer', name: 'Volunteer' }
-    ];
-
-    // Default interests for trainees if API fails
-    const defaultInterests = [
-      { id: 'web-development', name: 'Web Development' },
-      { id: 'mobile-app-development', name: 'Mobile App Development' },
-      { id: 'graphic-design', name: 'Graphic Design' },
-      { id: 'ui-ux-design', name: 'UI/UX Design' },
-      { id: 'digital-marketing', name: 'Digital Marketing' },
-      { id: 'data-analysis', name: 'Data Analysis' },
-      { id: 'business-admin', name: 'Business Administration' },
-      { id: 'accounting', name: 'Accounting & Finance' },
-      { id: 'language', name: 'Language & Communication' },
-      { id: 'healthcare', name: 'Healthcare & Wellness' },
-      { id: 'culinary', name: 'Culinary Arts' },
-      { id: 'fashion', name: 'Fashion & Beauty' },
-      { id: 'photography', name: 'Photography & Videography' },
-      { id: 'music-production', name: 'Music Production' },
-      { id: 'electrical', name: 'Electrical Engineering' },
-      { id: 'mechanical', name: 'Mechanical Engineering' },
-      { id: 'carpentry', name: 'Carpentry & Woodworking' },
-      { id: 'plumbing', name: 'Plumbing' },
-      { id: 'welding', name: 'Welding & Metalwork' },
-      { id: 'agriculture', name: 'Agriculture & Farming' },
-      { id: 'other', name: 'Other' }
-    ];
-
-    // Default company types if API fails
-    const defaultCompanyTypes = [
-      { _id: 'corporation', name: 'Corporation' },
-      { _id: 'limited-liability', name: 'Limited Liability Company (LLC)' },
-      { _id: 'partnership', name: 'Partnership' },
-      { _id: 'sole-proprietorship', name: 'Sole Proprietorship' },
-      { _id: 'non-profit', name: 'Non-Profit Organization' },
-      { _id: 'startup', name: 'Startup' },
-      { _id: 'government', name: 'Government Agency' },
-      { _id: 'educational', name: 'Educational Institution' },
-      { _id: 'other', name: 'Other' }
-    ];
-
-    // Default roles if API fails
-    const defaultRoles = [
-      { name: 'user', displayName: 'User' },
-      { name: 'employer', displayName: 'Employer' },
-      { name: 'trainer', displayName: 'Trainer' },
-      { name: 'trainee', displayName: 'Trainee' }
     ];
 
     const fetchLocations = async () => {
@@ -174,18 +128,13 @@ const RegisterPage = () => {
     const fetchJobTypes = async () => {
       setLoadingJobTypes(true);
       try {
-        // Use the job service instead of direct axios call
-        const response = await jobService.getJobTypes();
+        // Use the dedicated job type service instead of job service
+        const response = await jobTypeService.getJobTypes();
         if (response.success && response.data.length > 0) {
           setJobTypes(response.data);
-        } else {
-          // Use default job types if API returns empty data
-          setJobTypes(defaultJobTypes);
         }
       } catch (error) {
         console.error('Error fetching job types:', error);
-        // Use default job types in case of error
-        setJobTypes(defaultJobTypes);
       } finally {
         setLoadingJobTypes(false);
       }
@@ -195,46 +144,18 @@ const RegisterPage = () => {
     const fetchInterests = async () => {
       setLoadingInterests(true);
       try {
-        // Try to fetch interests from a dedicated training interests endpoint
-        try {
-          // First try a dedicated interests endpoint
-          const response = await axios.get(`${API_URL}/training/interests`);
-          if (response.data.success && response.data.data.length > 0) {
-            // Make sure "Other" option is included
-            const interestsData = response.data.data;
-            if (!interestsData.some(item => item.name === 'Other' || item.id === 'other')) {
-              interestsData.push({ id: 'other', name: 'Other' });
-            }
-            setInterests(interestsData);
-            return;
+        // Use the dedicated interest type service
+        const response = await interestTypeService.getInterestTypes();
+        if (response.success && response.data.length > 0) {
+          // Make sure "Other" option is included
+          const interestsData = response.data;
+          if (!interestsData.some(item => item.name === 'Other' || item.id === 'other')) {
+            interestsData.push({ id: 'other', name: 'Other' });
           }
-        } catch (interestsError) {
-          console.log('Dedicated training interests endpoint not available:', interestsError.message);
+          setInterests(interestsData);
         }
-
-        // Try a secondary interests endpoint
-        try {
-          const response = await axios.get(`${API_URL}/categories/interests`);
-          if (response.data.success && response.data.data.length > 0) {
-            // Make sure "Other" option is included
-            const interestsData = response.data.data;
-            if (!interestsData.some(item => item.name === 'Other' || item.id === 'other')) {
-              interestsData.push({ id: 'other', name: 'Other' });
-            }
-            setInterests(interestsData);
-            return;
-          }
-        } catch (secondaryInterestsError) {
-          console.log('Secondary interests endpoint not available:', secondaryInterestsError.message);
-        }
-
-        // Instead of using categories as a fallback, use our comprehensive default interests list
-        console.log('Using predefined training interests as no API endpoint was available');
-        setInterests(defaultInterests);
       } catch (error) {
         console.error('Error fetching interests:', error);
-        // Use default interests in case of error
-        setInterests(defaultInterests);
       } finally {
         setLoadingInterests(false);
       }
@@ -244,43 +165,47 @@ const RegisterPage = () => {
     const fetchCompanyTypes = async () => {
       setLoadingCompanyTypes(true);
       try {
-        // Try different endpoints that might contain company types
-        const endpoints = [
-          '/company-types',
-          '/industries', 
-          '/categories/industries',
-          '/employer/industries'
-        ];
-        
-        let companyTypesData = null;
-        
-        for (const endpoint of endpoints) {
-          try {
-            console.log(`Attempting to fetch company types from ${API_URL}${endpoint}`);
-            const response = await axios.get(`${API_URL}${endpoint}`);
-            if (response.data && (response.data.success || response.data.data)) {
-              companyTypesData = response.data.data || response.data;
-              console.log('Successfully fetched company types:', companyTypesData);
-              break;
-            }
-          } catch (err) {
-            // Try the next endpoint
-            console.log(`Endpoint ${endpoint} failed:`, err.message);
-          }
-        }
-        
-        if (companyTypesData && Array.isArray(companyTypesData) && companyTypesData.length > 0) {
-          setCompanyTypes(companyTypesData);
-        } else {
-          // Use job categories as company types if no dedicated endpoint exists
-          console.log('Using job categories as company types');
-          setCompanyTypes(defaultCompanyTypes);
+        // Use the company type service
+        const response = await companyTypeService.getCompanyTypes();
+        if (response.success && response.data.length > 0) {
+          setCompanyTypes(response.data);
         }
       } catch (error) {
         console.error('Error fetching company types:', error);
-        setCompanyTypes(defaultCompanyTypes);
       } finally {
         setLoadingCompanyTypes(false);
+      }
+    };
+
+    // Fetch payment amounts for different user types
+    const fetchPaymentAmounts = async () => {
+      setLoadingPaymentAmounts(true);
+      try {
+        // Fetch each role's payment amount
+        const roles = ['jobSeeker', 'employer', 'trainer', 'trainee'];
+        const amounts = { ...paymentAmounts };
+        
+        for (const role of roles) {
+          try {
+            const response = await axios.get(`${API_URL}/payment/amount/${role}`);
+            if (response.data.success) {
+              amounts[role] = response.data.data.amount;
+              if (response.data.data.currency) {
+                setPaymentCurrency(response.data.data.currency);
+              }
+            }
+          } catch (roleError) {
+            console.error(`Error fetching payment amount for ${role}:`, roleError);
+            // Keep default amount for this role
+          }
+        }
+        
+        setPaymentAmounts(amounts);
+      } catch (error) {
+        console.error('Error fetching payment amounts:', error);
+        // Default amounts are already set in state initialization
+      } finally {
+        setLoadingPaymentAmounts(false);
       }
     };
 
@@ -316,12 +241,22 @@ const RegisterPage = () => {
           setRoles(rolesData);
           console.log('Valid role names are:', rolesData.map(r => r.name));
         } else {
-          console.log('Using default roles:', defaultRoles);
-          setRoles(defaultRoles);
+          console.log('Using default roles');
+          setRoles([
+            { name: 'user', displayName: 'User' },
+            { name: 'employer', displayName: 'Employer' },
+            { name: 'trainer', displayName: 'Trainer' },
+            { name: 'trainee', displayName: 'Trainee' }
+          ]);
         }
       } catch (error) {
         console.error('Error fetching roles:', error);
-        setRoles(defaultRoles);
+        setRoles([
+          { name: 'user', displayName: 'User' },
+          { name: 'employer', displayName: 'Employer' },
+          { name: 'trainer', displayName: 'Trainer' },
+          { name: 'trainee', displayName: 'Trainee' }
+        ]);
       }
     };
 
@@ -332,6 +267,7 @@ const RegisterPage = () => {
     fetchCompanyTypes();
     fetchRoles();
     fetchInterests();
+    fetchPaymentAmounts();
   }, []);
 
   const handleChange = (e) => {
@@ -568,8 +504,26 @@ const RegisterPage = () => {
       
       // Explicitly set the role and user type based on selection
       registrationData.userType = userType;
-      registrationData.role = userType;
-      registrationData.roleName = userType;
+      
+      // Map the frontend user types to the backend role names
+      if (userType === 'talent') {
+        if (talentType === 'trainee') {
+          registrationData.roleName = 'trainee';
+          registrationData.role = 'trainee';
+        } else if (talentType === 'trainer') {
+          registrationData.roleName = 'trainer';
+          registrationData.role = 'trainer';
+        } else {
+          registrationData.roleName = 'jobSeeker'; // default fallback
+          registrationData.role = 'jobSeeker';
+        }
+      } else if (userType === 'employer') {
+        registrationData.roleName = 'employer';
+        registrationData.role = 'employer';
+      } else {
+        registrationData.roleName = 'jobSeeker'; // default fallback
+        registrationData.role = 'jobSeeker';
+      }
       
       // Add role-specific data based on user selection
       if (userType === 'jobSeeker') {
@@ -633,6 +587,22 @@ const RegisterPage = () => {
           console.log('Registration server response status:', directResponse.status);
           console.log('Registration server response headers:', directResponse.headers);
           console.log('Registration server response data:', directResponse.data);
+          
+          // Check for role-related errors
+          if (directResponse.status === 500 && 
+              directResponse.data && 
+              typeof directResponse.data.message === 'string' &&
+              (directResponse.data.message.includes('role') || 
+               directResponse.data.message.includes('Role'))) {
+            console.error('Role-related error detected:', directResponse.data.message);
+            console.error('Attempted registration with role:', registrationData.roleName);
+            console.error('User type:', userType, 'Talent type:', talentType);
+            
+            toast.error('Registration failed due to a role configuration issue. Please try again or contact support.');
+            
+            setLoading(false);
+            return;
+          }
           
           // Handle specific error for existing user
           if (directResponse.status === 500 && 
@@ -733,6 +703,20 @@ const RegisterPage = () => {
         } catch (directError) {
           console.error('Direct registration attempt failed:', directError);
           console.error('Error details:', directError.response?.data || directError.message);
+          
+          // Check for role-related errors
+          if (directError.response?.data?.message &&
+              (directError.response.data.message.includes('role') || 
+               directError.response.data.message.includes('Role'))) {
+            console.error('Role-related error detected:', directError.response.data.message);
+            console.error('Attempted registration with role:', registrationData.roleName);
+            console.error('User type:', userType, 'Talent type:', talentType);
+            
+            toast.error('Registration failed due to a role configuration issue. Please try again or contact support.');
+            
+            setLoading(false);
+            return;
+          }
           
           // Handle specific error for existing user
           if (directError.message && 
@@ -1119,10 +1103,22 @@ const RegisterPage = () => {
 
   // Determine payment amount based on user type
   const getPaymentAmount = () => {
-    if (userType === 'employer') {
-      return '100 GHS';
+    if (loadingPaymentAmounts) {
+      return 'Loading...';
     }
-    return '50 GHS';
+    
+    if (userType === 'employer') {
+      return `${paymentAmounts.employer} ${paymentCurrency}`;
+    } else if (userType === 'talent') {
+      if (talentType === 'trainer') {
+        return `${paymentAmounts.trainer} ${paymentCurrency}`;
+      } else if (talentType === 'trainee') {
+        return `${paymentAmounts.trainee} ${paymentCurrency}`;
+      }
+    }
+    
+    // Default to job seeker
+    return `${paymentAmounts.jobSeeker} ${paymentCurrency}`;
   };
 
   // Check if we should show the registration form
@@ -1347,7 +1343,11 @@ const RegisterPage = () => {
                   <input
                     type="text"
                     name="fullName"
-                    placeholder="Full Name or Business Name"
+                    placeholder={
+                      userType === 'employer' 
+                        ? "Company Name or Business Name" 
+                        : "Full Name"
+                    }
                     value={formData.fullName}
                     onChange={handleChange}
                     className={`w-full p-3 border ${formErrors.fullName ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -1646,7 +1646,11 @@ const RegisterPage = () => {
                 
                 <button
                   type="submit"
-                  className="w-full bg-blue-500 text-white py-3 rounded-md font-medium hover:bg-blue-600 transition duration-300"
+                  className={`w-full py-3 rounded-md font-medium transition duration-300 ${
+                    loading 
+                      ? 'bg-gray-400 text-white cursor-not-allowed' 
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
                   disabled={loading}
                 >
                   {loading ? 'Processing...' : 'Register'}
